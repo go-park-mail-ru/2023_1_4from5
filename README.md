@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 2023_1_4from5
 
 Проект Patreon команды 4from5
@@ -11,3 +12,7 @@
 Полезные ссылки
 Деплой: sub-me.ru:8080/
 Репозиторий фронтенда: https://github.com/frontend-park-mail-ru/2023_1_4from5.git
+=======
+# 2023_1_4from5
+Проект Patreon команды "4from5"
+>>>>>>> 5a17b7d (Initial commit)
