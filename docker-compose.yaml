@@ -1,0 +1,9 @@
+version: "3.3"
+
+services:
+  main:
+    build:
+      context: .
+      dockerfile: ./build/main.Dockerfile
+    ports:
+      - "5433:5432"

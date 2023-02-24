@@ -1,9 +1,13 @@
+-- drop table if exists "creator";
+
 create table "user"
 (
-    user_id       serial not null
+    user_id       uuid not null
         constraint user_pk
             primary key,
-    login         text   not null,
+    login         text   not null
+        constraint login_pk
+            unique,
     display_name  text   not null,
     profile_photo text,
     password_hash text   not null
@@ -12,10 +16,10 @@ create table "user"
 
 create table creator
 (
-    creator_id      serial            not null
+    creator_id      uuid            not null
         constraint creator_pk
             primary key,
-    user_id         integer           not null
+    user_id         uuid           not null
         constraint creator_user_user_id_fk
             references "user" (user_id),
     cover_photo     text,
@@ -27,10 +31,10 @@ create table creator
 
 create table subscription
 (
-    subscription_id serial  not null
+    subscription_id uuid  not null
         constraint subscription_pk
             primary key,
-    creator_id      integer not null
+    creator_id      uuid not null
         constraint subscription_creator_creator_id_fk
             references creator (creator_id),
     month_cost      money   not null,
@@ -40,10 +44,10 @@ create table subscription
 
 create table post
 (
-    post_id    serial             not null
+    post_id    uuid             not null
         constraint post_pk
             primary key,
-    creator_id integer            not null
+    creator_id uuid            not null
         constraint post_creator_creator_id_fk
             references creator (creator_id),
     date       date default now() not null,
@@ -53,13 +57,13 @@ create table post
 
 create table comment
 (
-    comment_id serial             not null
+    comment_id uuid             not null
         constraint comment_pk
             primary key,
-    post_id    integer            not null
+    post_id    uuid            not null
         constraint comment_post_post_id_fk
             references post (post_id),
-    user_id    integer            not null
+    user_id    uuid            not null
         constraint comment_user_user_id_fk
             references "user" (user_id),
     content    text               not null,
@@ -68,7 +72,7 @@ create table comment
 
 create table attachment_type
 (
-    type_id serial not null
+    type_id uuid not null
         constraint attachment_type_pk
             primary key,
     title   text   not null
@@ -76,13 +80,13 @@ create table attachment_type
 
 create table attachment
 (
-    attachment_id serial  not null
+    attachment_id uuid  not null
         constraint attachment_pk
             primary key,
-    post_id       integer not null
+    post_id       uuid not null
         constraint attachment_post_post_id_fk
             references post (post_id),
-    type_id       integer not null
+    type_id       uuid not null
         constraint attachment_attachment_type_type_id_fk
             references attachment_type (type_id),
     content       text    not null
@@ -90,10 +94,10 @@ create table attachment
 
 create table user_subscription
 (
-    subscription_id integer not null
+    subscription_id uuid not null
         constraint user_subscription_subscription_subscription_id_fk
             references subscription (subscription_id),
-    user_id         integer not null
+    user_id         uuid not null
         constraint user_subscription_user_user_id_fk
             references "user" (user_id),
     end_date        date    not null
@@ -101,17 +105,17 @@ create table user_subscription
 
 create table subscription_post
 (
-    post_id         integer not null
+    post_id         uuid not null
         constraint subscription_post_post_post_id_fk
             references post (post_id),
-    subscription_id integer not null
+    subscription_id uuid not null
         constraint subscription_post_subscription_subscription_id_fk
             references subscription (subscription_id)
 );
 
 create table tag
 (
-    tag_id serial not null
+    tag_id uuid not null
         constraint tag_pk
             primary key,
     title  text   not null
@@ -119,30 +123,30 @@ create table tag
 
 create table creator_tag
 (
-    creator_id integer not null
+    creator_id uuid not null
         constraint creator_tag_creator_creator_id_fk
             references creator (creator_id),
-    tag_id     integer not null
+    tag_id     uuid not null
         constraint creator_tag_tag_tag_id_fk
             references tag (tag_id)
 );
 
 create table like_post
 (
-    post_id integer not null
+    post_id uuid not null
         constraint like_post_post_post_id_fk
             references post (post_id),
-    user_id integer not null
+    user_id uuid not null
         constraint like_post_user_user_id_fk
             references "user" (user_id)
 );
 
 create table like_comment
 (
-    comment_id integer not null
+    comment_id uuid not null
         constraint like_comment_comment_comment_id_fk
             references comment (comment_id),
-    user_id    integer not null
+    user_id    uuid not null
         constraint like_comment_user_user_id_fk
             references "user" (user_id)
 );
