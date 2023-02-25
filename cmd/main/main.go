@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	authDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/http"
 	authRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/repo"
@@ -26,31 +27,28 @@ func run() error {
 
 	srv := http.Server{Handler: r, Addr: fmt.Sprintf(":%s", "8000")}
 
-	conn, err := config.GetConnectionString() //вытаскивать зашитые данные придумать!!!
+	str, err := middleware.GetConnectionString()
 	if err != nil {
 		return err
 	}
 
-	//pool, err := pgxpool.Connect(context.Background(), conn)
-	//if err != nil {
-	//	return err
-	//}
+	db, err := sql.Open("postgresql", str)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
 
 	tokenGenerator := authUsecase.NewTokenator()
-	authRepo := authRepository.NewAuthRepo(pool)
+	authRepo := authRepository.NewAuthRepo(db)
 	authUse := authUsecase.NewAuthUsecase(authRepo, tokenGenerator)
-	authHandler := authDelivery.NewAuthHandler(authUse, onlineRepo)
+	authHandler := authDelivery.NewAuthHandler(authUse)
 
-	auth := r.PathPrefix("/user").Subrouter()
+	auth := r.PathPrefix("/api/user").Subrouter()
 	{
-		auth.HandleFunc("/login", authHandler.Login).Methods(http.MethodPost)
-		auth.HandleFunc("/logout", authHandler.Logout).Methods(http.MethodPost, http.MethodOptions)
-		auth.HandleFunc("/signup", authHandler.SignUp).Methods(http.MethodPost)
-		auth.HandleFunc("/auth", authHandler.AuthStatus).Methods(http.MethodGet)
+		auth.HandleFunc("/signUp", authHandler.SignUp).Methods(http.MethodPost)
+		auth.HandleFunc("/signIn", authHandler.SignIn).Methods(http.MethodGet)
 	}
 
 	http.Handle("/", r)
-	log.Print("main running on: ", srv.Addr)
 	return srv.ListenAndServe()
-	return nil
 }
