@@ -21,7 +21,7 @@ func main() {
 }
 
 func run() error {
-	r := mux.NewRouter()
+	r := mux.NewRouter().PathPrefix("/api").Subrouter()
 
 	r.Use(middleware.CORSMiddleware)
 
@@ -34,7 +34,7 @@ func run() error {
 
 	db, err := sql.Open("postgresql", str)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer db.Close()
 
@@ -43,7 +43,7 @@ func run() error {
 	authUse := authUsecase.NewAuthUsecase(authRepo, tokenGenerator)
 	authHandler := authDelivery.NewAuthHandler(authUse)
 
-	auth := r.PathPrefix("/api/user").Subrouter()
+	auth := r.PathPrefix("/user").Subrouter()
 	{
 		auth.HandleFunc("/signUp", authHandler.SignUp).Methods(http.MethodPost)
 		auth.HandleFunc("/signIn", authHandler.SignIn).Methods(http.MethodGet)

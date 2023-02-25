@@ -12,8 +12,8 @@ type AuthUsecase interface {
 }
 
 type AuthRepo interface {
-	CreateUser(user models.User) (models.User, int)
-	CheckUser(user models.User) (models.User, int)
+	CreateUser(user models.User) (models.User, error)
+	CheckUser(user models.User) (models.User, error)
 }
 
 type TokenGenerator interface {

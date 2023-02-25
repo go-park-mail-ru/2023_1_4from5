@@ -18,6 +18,19 @@ func NewAuthHandler(uc auth.AuthUsecase) *AuthHandler {
 	}
 }
 
+func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	user := models.LoginUser{}
+	accessToken, err := middleware.ExtractTokenMetadata(r, middleware.ExtractToken)
+	if err != nil || accessToken == nil {
+		middleware.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	user.Login = accessToken.Login
+
+	middleware.Response(w, http.StatusOK, nil)
+}
+
 func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 	var user models.LoginUser
 	err := easyjson.UnmarshalFromReader(r.Body, &user)

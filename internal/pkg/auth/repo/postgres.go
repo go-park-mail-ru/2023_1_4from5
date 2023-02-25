@@ -2,9 +2,9 @@ package repo
 
 import (
 	"database/sql"
+	"errors"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
-	"net/http"
 )
 
 const (
@@ -21,14 +21,14 @@ func NewAuthRepo(db *sql.DB) *AuthRepo {
 	return &AuthRepo{db: db}
 }
 
-func (r *AuthRepo) CreateUser(user models.User) (models.User, int) {
+func (r *AuthRepo) CreateUser(user models.User) (models.User, error) {
 	var id uuid.UUID
 	user.Id = uuid.New()
 	row := r.db.QueryRow(CREATE_USER, user.Id, user.Login, user.DisplayName, user.ProfilePhoto, user.PasswordHash)
 
 	err := row.Scan(&id)
 	if err != nil {
-		return models.User{}, http.StatusInternalServerError
+		return models.User{}, err
 	}
 
 	userOut := models.User{
@@ -37,10 +37,10 @@ func (r *AuthRepo) CreateUser(user models.User) (models.User, int) {
 		PasswordHash: user.PasswordHash,
 	}
 
-	return userOut, http.StatusOK
+	return userOut, nil
 }
 
-func (r *AuthRepo) CheckUser(user models.User) (models.User, int) {
+func (r *AuthRepo) CheckUser(user models.User) (models.User, error) {
 	var (
 		pwd string
 		id  uuid.UUID
@@ -48,11 +48,11 @@ func (r *AuthRepo) CheckUser(user models.User) (models.User, int) {
 	row := r.db.QueryRow(CHECK_USER, user.Login)
 
 	if err := row.Scan(&id, &pwd); err != nil {
-		return models.User{}, http.StatusInternalServerError
+		return models.User{}, errors.New("InternalError")
 	}
 
 	if pwd != user.PasswordHash {
-		return models.User{}, http.StatusUnauthorized
+		return models.User{}, errors.New("Unauthorized")
 	}
 
 	userOut := models.User{
@@ -61,5 +61,5 @@ func (r *AuthRepo) CheckUser(user models.User) (models.User, int) {
 		PasswordHash: user.PasswordHash,
 	}
 
-	return userOut, http.StatusOK
+	return userOut, nil
 }
