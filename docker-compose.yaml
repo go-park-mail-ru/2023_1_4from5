@@ -4,4 +4,6 @@ services:
   main:
     build:
       context: .
-      dockerfile: ./build/main.Dockerfile
+      dockerfile: build/Dockerfile
+    ports:
+      - "8000:8000"
