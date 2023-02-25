@@ -5,5 +5,3 @@ services:
     build:
       context: .
       dockerfile: ./build/main.Dockerfile
-    ports:
-      - "5433:5432"

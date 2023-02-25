@@ -13,4 +13,13 @@ type AuthUsecase interface {
 
 type AuthRepo interface {
 	CreateUser(user models.User) (models.User, int)
+	CheckUser(user models.User) (models.User, int)
+}
+
+type TokenGenerator interface {
+	GetToken(user models.User) string
+}
+
+type Encrypter interface {
+	EncryptPswd(pswd string) string
 }
