@@ -47,6 +47,7 @@ func run() error {
 	{
 		auth.HandleFunc("/signUp", authHandler.SignUp).Methods(http.MethodPost)
 		auth.HandleFunc("/signIn", authHandler.SignIn).Methods(http.MethodGet)
+		auth.HandleFunc("/logout", authHandler.Logout).Methods(http.MethodPost, http.MethodOptions)
 	}
 
 	http.Handle("/", r)
