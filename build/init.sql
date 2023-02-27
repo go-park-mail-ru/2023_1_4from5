@@ -94,16 +94,16 @@ create table attachment_type
 
 create table attachment
 (
-    attachment_id uuid not null
+    attachment_id   uuid not null
         constraint attachment_pk
             primary key,
-    post_id       uuid not null
+    post_id         uuid not null
         constraint attachment_post_post_id_fk
             references post (post_id),
-    type_id       uuid not null
+    type_id         uuid not null
         constraint attachment_attachment_type_type_id_fk
             references attachment_type (type_id),
-    attachment_path       text not null
+    attachment_path text not null
 );
 
 create table user_subscription
@@ -129,7 +129,7 @@ create table subscription_post
 
 create table tag
 (
-    tag_id uuid not null
+    tag_id uuid        not null
         constraint tag_pk
             primary key,
     title  varchar(40) not null
