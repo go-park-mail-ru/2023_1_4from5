@@ -6,7 +6,7 @@ import "github.com/google/uuid"
 
 type Creator struct {
 	Id             uuid.UUID `json:"id"`
-	UserId         uuid.UUID `json:"user_id"`
+	User           uuid.UUID `json:"user"`
 	CoverPhoto     string    `json:"cover_photo"`
 	FollowersCount int       `json:"followers_count"`
 	Description    string    `json:"description"`

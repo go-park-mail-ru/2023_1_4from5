@@ -1,14 +1,29 @@
+drop table if exists "like_comment";
+drop table if exists "like_post";
+drop table if exists "creator_tag";
+drop table if exists "tag";
+drop table if exists "subscription_post";
+drop table if exists "user_subscription";
+drop table if exists "attachment";
+drop table if exists "attachment_type";
+drop table if exists "comment";
+drop table if exists "post";
+drop table if exists "subscription";
+drop table if exists "creator";
+drop table if exists "user";
+
+
 create table "user"
 (
-    user_id          uuid                    not null
+    user_id           uuid                    not null
         constraint user_pk
             primary key,
-    login            text                    not null
+    login             text                    not null
         constraint login_pk
             unique,
-    display_name     text                    not null,
-    profile_photo    text,
-    password_hash    text                    not null,
+    display_name      text                    not null,
+    profile_photo     text,
+    password_hash     text                    not null,
     registration_date timestamp default now() not null
 );
 
@@ -43,15 +58,15 @@ create table subscription
 
 create table post
 (
-    post_id    uuid               not null
+    post_id       uuid               not null
         constraint post_pk
             primary key,
-    creator_id uuid               not null
+    creator_id    uuid               not null
         constraint post_creator_creator_id_fk
             references creator (creator_id),
-    date       date default now() not null,
-    title      text,
-    content    text
+    creation_date date default now() not null,
+    title         text,
+    content       text
 );
 
 create table comment
