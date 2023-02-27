@@ -17,7 +17,7 @@ var (
 	_ easyjson.Marshaler
 )
 
-func easyjson7c25d2a6DecodeSubMeBackendInternalModels(in *jlexer.Lexer, out *Creator) {
+func easyjson7c25d2a6DecodeGithubComGoParkMailRu202314from5InternalModels(in *jlexer.Lexer, out *Creator) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -37,9 +37,13 @@ func easyjson7c25d2a6DecodeSubMeBackendInternalModels(in *jlexer.Lexer, out *Cre
 		}
 		switch key {
 		case "id":
-			out.Id = int(in.Int())
+			if data := in.UnsafeBytes(); in.Ok() {
+				in.AddError((out.Id).UnmarshalText(data))
+			}
 		case "user_id":
-			out.UserId = int(in.Int())
+			if data := in.UnsafeBytes(); in.Ok() {
+				in.AddError((out.UserId).UnmarshalText(data))
+			}
 		case "cover_photo":
 			out.CoverPhoto = string(in.String())
 		case "followers_count":
@@ -58,19 +62,19 @@ func easyjson7c25d2a6DecodeSubMeBackendInternalModels(in *jlexer.Lexer, out *Cre
 		in.Consumed()
 	}
 }
-func easyjson7c25d2a6EncodeSubMeBackendInternalModels(out *jwriter.Writer, in Creator) {
+func easyjson7c25d2a6EncodeGithubComGoParkMailRu202314from5InternalModels(out *jwriter.Writer, in Creator) {
 	out.RawByte('{')
 	first := true
 	_ = first
 	{
 		const prefix string = ",\"id\":"
 		out.RawString(prefix[1:])
-		out.Int(int(in.Id))
+		out.RawText((in.Id).MarshalText())
 	}
 	{
 		const prefix string = ",\"user_id\":"
 		out.RawString(prefix)
-		out.Int(int(in.UserId))
+		out.RawText((in.UserId).MarshalText())
 	}
 	{
 		const prefix string = ",\"cover_photo\":"
@@ -98,23 +102,23 @@ func easyjson7c25d2a6EncodeSubMeBackendInternalModels(out *jwriter.Writer, in Cr
 // MarshalJSON supports json.Marshaler interface
 func (v Creator) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson7c25d2a6EncodeSubMeBackendInternalModels(&w, v)
+	easyjson7c25d2a6EncodeGithubComGoParkMailRu202314from5InternalModels(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v Creator) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson7c25d2a6EncodeSubMeBackendInternalModels(w, v)
+	easyjson7c25d2a6EncodeGithubComGoParkMailRu202314from5InternalModels(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *Creator) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson7c25d2a6DecodeSubMeBackendInternalModels(&r, v)
+	easyjson7c25d2a6DecodeGithubComGoParkMailRu202314from5InternalModels(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *Creator) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson7c25d2a6DecodeSubMeBackendInternalModels(l, v)
+	easyjson7c25d2a6DecodeGithubComGoParkMailRu202314from5InternalModels(l, v)
 }
