@@ -2,6 +2,8 @@ package models
 
 import "github.com/google/uuid"
 
+// easyjson -all ./internal/models/user.go
+
 type User struct {
 	Id           uuid.UUID `json:"id"`
 	Login        string    `json:"login"    example:"Hacker2003"`
