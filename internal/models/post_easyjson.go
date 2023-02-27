@@ -40,18 +40,18 @@ func easyjson5a72dc82DecodeGithubComGoParkMailRu202314from5InternalModels(in *jl
 			if data := in.UnsafeBytes(); in.Ok() {
 				in.AddError((out.Id).UnmarshalText(data))
 			}
-		case "creator_id":
+		case "creator":
 			if data := in.UnsafeBytes(); in.Ok() {
-				in.AddError((out.CreatorId).UnmarshalText(data))
+				in.AddError((out.Creator).UnmarshalText(data))
 			}
 		case "creation_date":
 			if data := in.Raw(); in.Ok() {
-				in.AddError((out.CreationDate).UnmarshalJSON(data))
+				in.AddError((out.Creation).UnmarshalJSON(data))
 			}
 		case "title":
 			out.Title = string(in.String())
-		case "content":
-			out.Content = string(in.String())
+		case "text":
+			out.Text = string(in.String())
 		default:
 			in.SkipRecursive()
 		}
@@ -72,14 +72,14 @@ func easyjson5a72dc82EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 		out.RawText((in.Id).MarshalText())
 	}
 	{
-		const prefix string = ",\"creator_id\":"
+		const prefix string = ",\"creator\":"
 		out.RawString(prefix)
-		out.RawText((in.CreatorId).MarshalText())
+		out.RawText((in.Creator).MarshalText())
 	}
 	{
 		const prefix string = ",\"creation_date\":"
 		out.RawString(prefix)
-		out.Raw((in.CreationDate).MarshalJSON())
+		out.Raw((in.Creation).MarshalJSON())
 	}
 	{
 		const prefix string = ",\"title\":"
@@ -87,9 +87,9 @@ func easyjson5a72dc82EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 		out.String(string(in.Title))
 	}
 	{
-		const prefix string = ",\"content\":"
+		const prefix string = ",\"text\":"
 		out.RawString(prefix)
-		out.String(string(in.Content))
+		out.String(string(in.Text))
 	}
 	out.RawByte('}')
 }

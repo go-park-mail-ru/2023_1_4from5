@@ -42,12 +42,16 @@ func easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels(in *jl
 			}
 		case "login":
 			out.Login = string(in.String())
-		case "password":
-			out.DisplayName = string(in.String())
+		case "name":
+			out.Name = string(in.String())
 		case "profile_photo":
 			out.ProfilePhoto = string(in.String())
 		case "password_hash":
 			out.PasswordHash = string(in.String())
+		case "registration":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Registration).UnmarshalJSON(data))
+			}
 		default:
 			in.SkipRecursive()
 		}
@@ -73,9 +77,9 @@ func easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 		out.String(string(in.Login))
 	}
 	{
-		const prefix string = ",\"password\":"
+		const prefix string = ",\"name\":"
 		out.RawString(prefix)
-		out.String(string(in.DisplayName))
+		out.String(string(in.Name))
 	}
 	{
 		const prefix string = ",\"profile_photo\":"
@@ -86,6 +90,11 @@ func easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 		const prefix string = ",\"password_hash\":"
 		out.RawString(prefix)
 		out.String(string(in.PasswordHash))
+	}
+	{
+		const prefix string = ",\"registration\":"
+		out.RawString(prefix)
+		out.Raw((in.Registration).MarshalJSON())
 	}
 	out.RawByte('}')
 }

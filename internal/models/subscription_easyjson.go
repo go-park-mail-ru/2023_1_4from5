@@ -45,7 +45,7 @@ func easyjsonFfbd3743DecodeGithubComGoParkMailRu202314from5InternalModels(in *jl
 				in.AddError((out.Creator).UnmarshalText(data))
 			}
 		case "month_const":
-			out.MonthConst = float64(in.Float64())
+			out.MonthConst = int(in.Int())
 		case "title":
 			out.Title = string(in.String())
 		case "description":
@@ -77,7 +77,7 @@ func easyjsonFfbd3743EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 	{
 		const prefix string = ",\"month_const\":"
 		out.RawString(prefix)
-		out.Float64(float64(in.MonthConst))
+		out.Int(int(in.MonthConst))
 	}
 	{
 		const prefix string = ",\"title\":"

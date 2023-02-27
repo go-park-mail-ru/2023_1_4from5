@@ -8,9 +8,9 @@ import (
 )
 
 type Post struct {
-	Id           uuid.UUID `json:"id"`
-	CreatorId    uuid.UUID `json:"creator_id"`
-	CreationDate time.Time `json:"creation_date"`
-	Title        string    `json:"title"`
-	Content      string    `json:"content"`
+	Id       uuid.UUID `json:"id"`
+	Creator  uuid.UUID `json:"creator"`
+	Creation time.Time `json:"creation_date"`
+	Title    string    `json:"title"`
+	Text     string    `json:"text"`
 }
