@@ -8,6 +8,7 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
 	"github.com/mailru/easyjson"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -48,11 +49,12 @@ func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	url, _ := os.LookupEnv("URL") //TODO: закинуть отдельно
 	SSCookie := &http.Cookie{
 		Name:     "SSID",
 		Value:    "",
 		Path:     "/",
-		Domain:   "???????????????",
+		Domain:   url,
 		HttpOnly: true,
 		Expires:  time.Unix(0, 0),
 	}
@@ -62,8 +64,8 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	var user models.User
-	fmt.Println(r.Body)
 	err := easyjson.UnmarshalFromReader(r.Body, &user)
+	fmt.Println(r.Body)
 	if err != nil || !middleware.UserIsValid(user) {
 		middleware.Response(w, http.StatusBadRequest, nil)
 		return

@@ -10,7 +10,7 @@ import (
 
 const (
 	//SElECT_USER = "SELECT id, email, login, encrypted_password, created_at FROM public.users;"
-	CHECK_USER  = "SELECT password_hash FROM public.user WHERE login=$1;"
+	CHECK_USER  = "SELECT user_id, password_hash FROM public.user WHERE login=$1;"
 	CREATE_USER = "INSERT INTO public.user(user_id, login, display_name, profile_photo, password_hash, registration_date) VALUES($1, $2, $3, $4, $5, $6) RETURNING user_id;"
 )
 
@@ -47,7 +47,6 @@ func (r *AuthRepo) CheckUser(user models.User) (models.User, error) {
 		id  uuid.UUID
 	)
 	row := r.db.QueryRow(CHECK_USER, user.Login)
-
 	if err := row.Scan(&id, &pwd); err != nil {
 		return models.User{}, errors.New("InternalError")
 	}

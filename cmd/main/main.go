@@ -40,14 +40,15 @@ func run() error {
 	defer db.Close()
 
 	tokenGenerator := authUsecase.NewTokenator()
+	ecnrptr := authUsecase.NewEncrypter()
 	authRepo := authRepository.NewAuthRepo(db)
-	authUse := authUsecase.NewAuthUsecase(authRepo, tokenGenerator)
+	authUse := authUsecase.NewAuthUsecase(authRepo, tokenGenerator, ecnrptr)
 	authHandler := authDelivery.NewAuthHandler(authUse)
 
 	auth := r.PathPrefix("/user").Subrouter()
 	{
 		auth.HandleFunc("/signUp", authHandler.SignUp).Methods(http.MethodPost)
-		auth.HandleFunc("/signIn", authHandler.SignIn).Methods(http.MethodGet)
+		auth.HandleFunc("/signIn", authHandler.SignIn).Methods(http.MethodPost)
 		auth.HandleFunc("/logout", authHandler.Logout).Methods(http.MethodPost, http.MethodOptions)
 	}
 

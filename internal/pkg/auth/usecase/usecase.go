@@ -13,8 +13,8 @@ type AuthUsecase struct {
 	encrypter auth.Encrypter
 }
 
-func NewAuthUsecase(repo auth.AuthRepo, tokenator auth.TokenGenerator) *AuthUsecase {
-	return &AuthUsecase{repo: repo, tokenator: tokenator}
+func NewAuthUsecase(repo auth.AuthRepo, tokenator auth.TokenGenerator, encrypter auth.Encrypter) *AuthUsecase {
+	return &AuthUsecase{repo: repo, tokenator: tokenator, encrypter: encrypter}
 }
 
 func (u *AuthUsecase) SignIn(user models.LoginUser) (string, int) {
@@ -24,7 +24,6 @@ func (u *AuthUsecase) SignIn(user models.LoginUser) (string, int) {
 
 	user.PasswordHash = u.encrypter.EncryptPswd(user.PasswordHash)
 	DBUser, status := u.repo.CheckUser(models.User{Login: user.Login, PasswordHash: user.PasswordHash})
-
 	token := u.tokenator.GetToken(DBUser)
 	if status == nil && token != "" {
 		return token, http.StatusOK
