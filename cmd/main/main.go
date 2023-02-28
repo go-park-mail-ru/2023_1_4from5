@@ -10,6 +10,8 @@ import (
 	userDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/http"
 	userRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/repo"
 	userUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/usecase"
+
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"log"
@@ -31,7 +33,7 @@ func run() error {
 
 	srv := http.Server{Handler: r, Addr: fmt.Sprintf(":%s", "8000")}
 
-	str, err := middleware.GetConnectionString()
+	str, err := utils.GetConnectionString()
 	if err != nil {
 		return err
 	}
@@ -53,6 +55,10 @@ func run() error {
 	userUse := userUsecase.NewUserUsecase(userRepo)
 	userHandler := userDelivery.NewUserHandler(userUse)
 
+	//creatorRepo := creatorRepository.NewCreatorRepo(db)
+	//creatorUse := creatorUsecase.NewUserUsecase(creatorRepo)
+	//creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse)
+
 	//TODO: придумать как отдавать статус авторства
 	auth := r.PathPrefix("/auth").Subrouter()
 	{
@@ -66,6 +72,10 @@ func run() error {
 		user.HandleFunc("/profile", userHandler.GetProfile).Methods(http.MethodGet)
 	}
 
+	//creator := r.PathPrefix("/creator").Subrouter()
+	//{
+	//	creator.HandleFunc("/myPage", creatorHandler.GetPage).Methods(http.MethodGet)
+	//}
 	http.Handle("/", r)
 	return srv.ListenAndServe()
 }

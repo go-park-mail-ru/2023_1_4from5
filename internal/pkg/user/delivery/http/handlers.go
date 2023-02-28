@@ -3,6 +3,7 @@ package http
 import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"net/http"
 )
 
@@ -19,13 +20,13 @@ func NewUserHandler(uc user.UserUsecase) *UserHandler {
 func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	userInfo, err := middleware.ExtractTokenMetadata(r, middleware.ExtractTokenFromCookie)
 	if err != nil {
-		middleware.Response(w, http.StatusUnauthorized, nil)
+		utils.Response(w, http.StatusUnauthorized, nil)
 	}
 
 	userProfile, err := h.usecase.GetProfile(*userInfo)
 	if err != nil {
-		middleware.Response(w, http.StatusInternalServerError, nil)
+		utils.Response(w, http.StatusInternalServerError, nil)
 	}
 
-	middleware.Response(w, http.StatusOK, userProfile)
+	utils.Response(w, http.StatusOK, userProfile)
 }

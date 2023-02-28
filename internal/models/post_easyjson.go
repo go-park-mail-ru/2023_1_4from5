@@ -52,6 +52,8 @@ func easyjson5a72dc82DecodeGithubComGoParkMailRu202314from5InternalModels(in *jl
 			out.Title = string(in.String())
 		case "text":
 			out.Text = string(in.String())
+		case "is_available":
+			out.IsAvailable = bool(in.Bool())
 		default:
 			in.SkipRecursive()
 		}
@@ -90,6 +92,11 @@ func easyjson5a72dc82EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 		const prefix string = ",\"text\":"
 		out.RawString(prefix)
 		out.String(string(in.Text))
+	}
+	{
+		const prefix string = ",\"is_available\":"
+		out.RawString(prefix)
+		out.Bool(bool(in.IsAvailable))
 	}
 	out.RawByte('}')
 }

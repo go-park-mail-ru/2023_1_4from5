@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 )
 
-//go:generate mockgen -source=interfaces.go -destination=./mocks/auth_mock.go -package=mock
+//go:generate mockgen -source=interfaces.go -destination=./mocks/user_mock.go -package=mock
 
 type UserUsecase interface {
 	GetProfile(details models.AccessDetails) (models.UserProfile, error)
