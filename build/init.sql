@@ -1,14 +1,29 @@
+drop table if exists "like_comment";
+drop table if exists "like_post";
+drop table if exists "creator_tag";
+drop table if exists "tag";
+drop table if exists "subscription_post";
+drop table if exists "user_subscription";
+drop table if exists "attachment";
+drop table if exists "attachment_type";
+drop table if exists "comment";
+drop table if exists "post";
+drop table if exists "subscription";
+drop table if exists "creator";
+drop table if exists "user";
+
+
 create table "user"
 (
-    user_id          uuid                    not null
+    user_id           uuid                    not null
         constraint user_pk
             primary key,
-    login            text                    not null
+    login             text                    not null
         constraint login_pk
             unique,
-    display_name     text                    not null,
-    profile_photo    text,
-    password_hash    text                    not null,
+    display_name      varchar(40)             not null,
+    profile_photo     text,
+    password_hash     varchar(64)             not null,
     registration_date timestamp default now() not null
 );
 
@@ -23,72 +38,72 @@ create table creator
             references "user" (user_id),
     cover_photo     text,
     followers_count integer default 0 not null,
-    description     text,
+    description     varchar(500),
     posts_count     integer default 0 not null
 
 );
 
 create table subscription
 (
-    subscription_id uuid  not null
+    subscription_id uuid        not null
         constraint subscription_pk
             primary key,
-    creator_id      uuid  not null
+    creator_id      uuid        not null
         constraint subscription_creator_creator_id_fk
             references creator (creator_id),
-    month_cost      money not null,
-    title           text  not null,
-    description     text
+    month_cost      money       not null,
+    title           varchar(40) not null,
+    description     varchar(200)
 );
 
 create table post
 (
-    post_id    uuid               not null
+    post_id       uuid               not null
         constraint post_pk
             primary key,
-    creator_id uuid               not null
+    creator_id    uuid               not null
         constraint post_creator_creator_id_fk
             references creator (creator_id),
-    date       date default now() not null,
-    title      text,
-    content    text
+    creation_date date default now() not null,
+    title         varchar(40),
+    post_text     varchar(4000)
 );
 
 create table comment
 (
-    comment_id uuid               not null
+    comment_id    uuid               not null
         constraint comment_pk
             primary key,
-    post_id    uuid               not null
+    post_id       uuid               not null
         constraint comment_post_post_id_fk
             references post (post_id),
-    user_id    uuid               not null
+    user_id       uuid               not null
         constraint comment_user_user_id_fk
             references "user" (user_id),
-    content    text               not null,
-    date       date default now() not null
+    comment_text  text               not null,
+    creation_date date default now() not null
 );
 
 create table attachment_type
 (
-    type_id uuid not null
+    type_id uuid        not null
         constraint attachment_type_pk
             primary key,
-    title   text not null
+    title   varchar(40) not null
 );
 
 create table attachment
 (
-    attachment_id uuid not null
+    attachment_id   uuid not null
         constraint attachment_pk
             primary key,
-    post_id       uuid not null
+    post_id         uuid not null
         constraint attachment_post_post_id_fk
             references post (post_id),
-    type_id       uuid not null
+    type_id         uuid not null
         constraint attachment_attachment_type_type_id_fk
             references attachment_type (type_id),
-    content       text not null
+    attachment_path text not null
 );
 
 create table user_subscription
@@ -114,10 +129,10 @@ create table subscription_post
 
 create table tag
 (
-    tag_id uuid not null
+    tag_id uuid        not null
         constraint tag_pk
             primary key,
-    title  text not null
+    title  varchar(40) not null
 );
 
 create table creator_tag

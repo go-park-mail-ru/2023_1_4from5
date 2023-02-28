@@ -5,12 +5,13 @@ import (
 	"errors"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
+	"time"
 )
 
 const (
 	//SElECT_USER = "SELECT id, email, login, encrypted_password, created_at FROM public.users;"
 	CHECK_USER  = "SELECT password_hash FROM public.user WHERE login=$1;"
-	CREATE_USER = "INSERT INTO public.user(user_id, login, display_name, profile_photo, password_hash) VALUES($1, $2, $3, $4, $5) RETURNING user_id;"
+	CREATE_USER = "INSERT INTO public.user(user_id, login, display_name, profile_photo, password_hash, registration_date) VALUES($1, $2, $3, $4, $5, $6) RETURNING user_id;"
 )
 
 type AuthRepo struct {
@@ -24,7 +25,7 @@ func NewAuthRepo(db *sql.DB) *AuthRepo {
 func (r *AuthRepo) CreateUser(user models.User) (models.User, error) {
 	var id uuid.UUID
 	user.Id = uuid.New()
-	row := r.db.QueryRow(CREATE_USER, user.Id, user.Login, user.DisplayName, user.ProfilePhoto, user.PasswordHash)
+	row := r.db.QueryRow(CREATE_USER, user.Id, user.Login, user.Name, user.ProfilePhoto, user.PasswordHash, time.Now())
 
 	err := row.Scan(&id)
 	if err != nil {
