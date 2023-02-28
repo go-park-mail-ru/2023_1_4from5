@@ -10,7 +10,7 @@ type Encrypter struct {
 	salt string
 }
 
-func NewEncrypter() *Encrypter {
+func NewEncryptor() *Encrypter {
 	salt := os.Getenv("SECRET")
 	return &Encrypter{salt: salt}
 }

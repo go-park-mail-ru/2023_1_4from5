@@ -7,6 +7,9 @@ import (
 	authRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/repo"
 	authUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
+	userDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/http"
+	userRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/repo"
+	userUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/usecase"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"log"
@@ -40,16 +43,27 @@ func run() error {
 	defer db.Close()
 
 	tokenGenerator := authUsecase.NewTokenator()
-	ecnrptr := authUsecase.NewEncrypter()
+	encryptor := authUsecase.NewEncryptor()
+
 	authRepo := authRepository.NewAuthRepo(db)
-	authUse := authUsecase.NewAuthUsecase(authRepo, tokenGenerator, ecnrptr)
+	authUse := authUsecase.NewAuthUsecase(authRepo, tokenGenerator, encryptor)
 	authHandler := authDelivery.NewAuthHandler(authUse)
 
-	auth := r.PathPrefix("/user").Subrouter()
+	userRepo := userRepository.NewUserRepo(db)
+	userUse := userUsecase.NewUserUsecase(userRepo)
+	userHandler := userDelivery.NewUserHandler(userUse)
+
+	//TODO: придумать как отдавать статус авторства
+	auth := r.PathPrefix("/auth").Subrouter()
 	{
 		auth.HandleFunc("/signUp", authHandler.SignUp).Methods(http.MethodPost)
 		auth.HandleFunc("/signIn", authHandler.SignIn).Methods(http.MethodPost)
-		auth.HandleFunc("/logout", authHandler.Logout).Methods(http.MethodPost, http.MethodOptions)
+		auth.HandleFunc("/logout", authHandler.Logout).Methods(http.MethodGet, http.MethodOptions)
+	}
+
+	user := r.PathPrefix("/user").Subrouter()
+	{
+		user.HandleFunc("/profile", userHandler.GetProfile).Methods(http.MethodGet)
 	}
 
 	http.Handle("/", r)

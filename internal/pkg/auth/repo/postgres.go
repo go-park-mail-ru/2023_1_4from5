@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	//SElECT_USER = "SELECT id, email, login, encrypted_password, created_at FROM public.users;"
+	//SElECT_USER = "SELECT id, email, login, encrypted_password, created_at FROM public.user;"
 	CHECK_USER  = "SELECT user_id, password_hash FROM public.user WHERE login=$1;"
 	CREATE_USER = "INSERT INTO public.user(user_id, login, display_name, profile_photo, password_hash, registration_date) VALUES($1, $2, $3, $4, $5, $6) RETURNING user_id;"
 )

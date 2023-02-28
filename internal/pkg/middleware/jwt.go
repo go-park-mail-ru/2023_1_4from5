@@ -6,17 +6,21 @@ import (
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 )
 
-type AccessDetails struct {
-	Login string
-}
+const (
+	errExpiredToken = "expired token"
+	errNoToken      = "no token"
+	errNoAuthToken  = "no auth data"
+	errInvalidToken = "invalid token"
+)
 
-type Extracter func(r *http.Request) string
+type Extractor func(r *http.Request) string
 
 func ExtractToken(r *http.Request) string {
 	token := models.TokenView{}
@@ -32,8 +36,12 @@ func ExtractToken(r *http.Request) string {
 	return strArr[0]
 }
 
-func ExtractTokenFromHeader(r *http.Request) string {
-	token := r.Header.Get("Authorization")
+func ExtractTokenFromCookie(r *http.Request) string {
+	tokenCookie, err := r.Cookie("SSID")
+	if err != nil {
+		return ""
+	}
+	token := tokenCookie.Value
 	strArr := strings.Split(token, " ")
 	if len(strArr) == 2 {
 		return strArr[1]
@@ -41,10 +49,10 @@ func ExtractTokenFromHeader(r *http.Request) string {
 	return strArr[0]
 }
 
-func VerifyToken(r *http.Request, extracter Extracter) (*models.Token, error) {
-	tokenStr := extracter(r)
+func VerifyToken(r *http.Request, extractor Extractor) (*models.Token, error) {
+	tokenStr := extractor(r)
 	if tokenStr == "" {
-		return nil, errors.New("no token")
+		return nil, errors.New(errNoToken)
 	}
 
 	token, err := jwt.ParseWithClaims(tokenStr, &models.Token{}, func(token *jwt.Token) (interface{}, error) {
@@ -61,22 +69,26 @@ func VerifyToken(r *http.Request, extracter Extracter) (*models.Token, error) {
 	if ok && token.Valid {
 		return claims, nil
 	}
-	return nil, errors.New("no auth data")
+	return nil, errors.New(errNoAuthToken)
 }
 
-func ExtractTokenMetadata(r *http.Request, extracter Extracter) (*AccessDetails, error) {
-	token, err := VerifyToken(r, extracter)
+func ExtractTokenMetadata(r *http.Request, extractor Extractor) (*models.AccessDetails, error) {
+	token, err := VerifyToken(r, extractor)
 	if err != nil {
 		return nil, err
 	}
 	exp := token.ExpiresAt
 	now := time.Now().Unix()
 	if exp < now {
-		return nil, errors.New("token expired")
+		return nil, errors.New(errExpiredToken)
 	}
-	data := &AccessDetails{Login: token.Login}
-	if data.Login == "" {
-		return nil, errors.New("invalid token")
+	uid, err := uuid.Parse(token.Id)
+	if err != nil {
+		return nil, err
+	}
+	data := &models.AccessDetails{Login: token.Login, Id: uid}
+	if data.Login == "" || data.Id.String() == "" {
+		return nil, errors.New(errInvalidToken)
 	}
 
 	return data, err

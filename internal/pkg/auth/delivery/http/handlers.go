@@ -2,7 +2,6 @@ package http
 
 // TODO Add domain
 import (
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
@@ -56,7 +55,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		Path:     "/",
 		Domain:   url,
 		HttpOnly: true,
-		Expires:  time.Unix(0, 0),
+		Expires:  time.Now(),
 	}
 	http.SetCookie(w, SSCookie)
 	middleware.Response(w, http.StatusOK, nil)
@@ -65,7 +64,6 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	err := easyjson.UnmarshalFromReader(r.Body, &user)
-	fmt.Println(r.Body)
 	if err != nil || !middleware.UserIsValid(user) {
 		middleware.Response(w, http.StatusBadRequest, nil)
 		return
