@@ -8,6 +8,7 @@ import (
 	authUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
 	"github.com/gorilla/mux"
+	_ "github.com/lib/pq"
 	"log"
 	"net/http"
 	"os"
@@ -32,7 +33,7 @@ func run() error {
 		return err
 	}
 
-	db, err := sql.Open("postgresql", str)
+	db, err := sql.Open("postgres", str)
 	if err != nil {
 		return err
 	}
