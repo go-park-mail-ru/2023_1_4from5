@@ -1,0 +1,11 @@
+linters:
+  enable:
+    - cyclop
+    - deadcode
+    - dupl
+    - errcheck
+    - gocognit
+    - goconst
+    - gofmt
+    - nilerr
+  fast: true

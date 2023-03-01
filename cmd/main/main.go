@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	authDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/http"
 	authRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/repo"
 	authUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
@@ -21,11 +20,14 @@ import (
 	"os"
 )
 
+//linter + tests + TODOхи
+
 func main() {
 	if err := run(); err != nil {
 		log.Print(err)
 		os.Exit(1)
 	}
+	//TODO: Postman в git
 }
 
 func run() error {
@@ -33,7 +35,7 @@ func run() error {
 
 	r.Use(middleware.CORSMiddleware)
 
-	srv := http.Server{Handler: r, Addr: fmt.Sprintf(":%s", "8000")}
+	srv := http.Server{Handler: r, Addr: ":8000"}
 
 	str, err := utils.GetConnectionString()
 	if err != nil {
@@ -61,11 +63,10 @@ func run() error {
 	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo)
 	creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse)
 
-	//TODO: придумать как отдавать статус авторства
 	auth := r.PathPrefix("/auth").Subrouter()
 	{
-		auth.HandleFunc("/signUp", authHandler.SignUp).Methods(http.MethodPost)
-		auth.HandleFunc("/signIn", authHandler.SignIn).Methods(http.MethodPost)
+		auth.HandleFunc("/signUp", authHandler.SignUp).Methods(http.MethodPost, http.MethodOptions)
+		auth.HandleFunc("/signIn", authHandler.SignIn).Methods(http.MethodPost, http.MethodOptions)
 		auth.HandleFunc("/logout", authHandler.Logout).Methods(http.MethodGet, http.MethodOptions)
 	}
 

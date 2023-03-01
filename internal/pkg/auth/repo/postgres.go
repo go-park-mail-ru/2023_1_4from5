@@ -10,7 +10,7 @@ import (
 
 const (
 	//SElECT_USER = "SELECT id, email, login, encrypted_password, created_at FROM public.user;"
-	CHECK_USER  = "SELECT user_id, password_hash FROM public.user WHERE login=$1;"
+	CHECK_USER  = "SELECT user_id, login FROM public.user WHERE login=$1;"
 	CREATE_USER = "INSERT INTO public.user(user_id, login, display_name, profile_photo, password_hash, registration_date) VALUES($1, $2, $3, $4, $5, $6) RETURNING user_id;"
 )
 
@@ -43,16 +43,16 @@ func (r *AuthRepo) CreateUser(user models.User) (models.User, error) {
 
 func (r *AuthRepo) CheckUser(user models.User) (models.User, error) {
 	var (
-		pwd string
-		id  uuid.UUID
+		login string
+		id    uuid.UUID
 	)
 	row := r.db.QueryRow(CHECK_USER, user.Login)
-	if err := row.Scan(&id, &pwd); err != nil {
+	if err := row.Scan(&id, &login); err != nil {
 		return models.User{}, errors.New("InternalError")
 	}
 
-	if pwd != user.PasswordHash {
-		return models.User{}, errors.New("Unauthorized")
+	if user.Login == login {
+		return models.User{}, errors.New("Conflict")
 	}
 
 	userOut := models.User{

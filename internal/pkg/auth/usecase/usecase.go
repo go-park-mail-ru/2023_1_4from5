@@ -32,7 +32,7 @@ func (u *AuthUsecase) SignIn(user models.LoginUser) (string, int) {
 }
 
 func (u *AuthUsecase) SignUp(user models.User) (string, int) {
-
+	//TODO: вынести ошибки в utils константами
 	user.PasswordHash = u.encrypter.EncryptPswd(user.PasswordHash)
 	var Unauthorized = errors.New("Unauthorized")
 	_, err := u.repo.CheckUser(user)

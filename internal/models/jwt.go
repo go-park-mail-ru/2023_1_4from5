@@ -9,6 +9,7 @@ import (
 type Token struct {
 	Login string
 	Id    string
+	//TODO: сделать userVersion
 	jwt.StandardClaims
 }
 
