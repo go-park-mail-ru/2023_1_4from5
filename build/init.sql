@@ -132,4 +132,6 @@ create table like_comment
             references "user" (user_id)
 );
 
-INSERT INTO  creator (creator_id, user_id, name, cover_photo, followers_count, description, posts_count) VALUES (gen_random_uuid (), 'dd79ccc4-1d56-459e-a0e5-1d11aacde0cc', 'Stepa', '11111111111111', 100500, 'Cooking blog', 1)
+INSERT INTO  creator (creator_id, user_id, name, cover_photo, followers_count, description, posts_count) VALUES (gen_random_uuid (), 'b184cc4e-78ef-434f-ac88-5084a77ee085', 'Stepa', '11111111111111', 100500, 'Cooking blog', 1);
+INSERT INTO subscription (subscription_id, creator_id, month_cost, title, description) VALUES (gen_random_uuid (), '10b0d1b8-0e67-4e7e-9f08-124b3e32cced', 200, 'second', 'you can all of recipies');
+INSERT INTO post (post_id, creator_id, creation_date, title, post_text, available_subscriptions) VALUES (gen_random_uuid (), '10b0d1b8-0e67-4e7e-9f08-124b3e32cced', '2023-02-28 00:00:00', 'First Cooking lesson', 'Всем привет! Сегодня готовим блины. Причем этот рецепт блинов - чуть ли не самый простой из всех рецептов, которые я знаю. Блинов разных очень много, а пока приготовим самые простые и очень быстрые блины на молоке.', '{df0dd4ee-0772-43e2-919c-9b059e389b9a}');

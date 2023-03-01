@@ -15,7 +15,6 @@ func NewUserUsecase(repo user.UserRepo) *UserUsecase {
 
 func (uc *UserUsecase) GetProfile(details models.AccessDetails) (models.UserProfile, error) {
 	userId := details.Id
-
 	userProfile, err := uc.repo.GetUserProfile(userId)
 	if err != nil {
 		return models.UserProfile{}, err

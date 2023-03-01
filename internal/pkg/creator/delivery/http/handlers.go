@@ -21,17 +21,16 @@ func NewCreatorHandler(uc creator.CreatorUsecase) *CreatorHandler {
 
 func (h *CreatorHandler) GetPage(w http.ResponseWriter, r *http.Request) {
 	var creatorInfo models.Creator
+	//fmt.Println("GetPage Handler")
 	err := easyjson.UnmarshalFromReader(r.Body, &creatorInfo)
 	if err != nil {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
-
 	userInfo, err := middleware.ExtractTokenMetadata(r, middleware.ExtractTokenFromCookie)
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
 	}
-
 	creatorPage, err := h.usecase.GetPage(*userInfo, creatorInfo)
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)

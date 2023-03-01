@@ -40,6 +40,29 @@ func easyjson7c25d2a6DecodeGithubComGoParkMailRu202314from5InternalModels(in *jl
 			(out.CreatorInfo).UnmarshalEasyJSON(in)
 		case "is_my_page":
 			out.IsMyPage = bool(in.Bool())
+		case "posts":
+			if in.IsNull() {
+				in.Skip()
+				out.Posts = nil
+			} else {
+				in.Delim('[')
+				if out.Posts == nil {
+					if !in.IsDelim(']') {
+						out.Posts = make([]Post, 0, 0)
+					} else {
+						out.Posts = []Post{}
+					}
+				} else {
+					out.Posts = (out.Posts)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v1 Post
+					(v1).UnmarshalEasyJSON(in)
+					out.Posts = append(out.Posts, v1)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
 		default:
 			in.SkipRecursive()
 		}
@@ -63,6 +86,22 @@ func easyjson7c25d2a6EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 		const prefix string = ",\"is_my_page\":"
 		out.RawString(prefix)
 		out.Bool(bool(in.IsMyPage))
+	}
+	{
+		const prefix string = ",\"posts\":"
+		out.RawString(prefix)
+		if in.Posts == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
+			out.RawString("null")
+		} else {
+			out.RawByte('[')
+			for v2, v3 := range in.Posts {
+				if v2 > 0 {
+					out.RawByte(',')
+				}
+				(v3).MarshalEasyJSON(out)
+			}
+			out.RawByte(']')
+		}
 	}
 	out.RawByte('}')
 }

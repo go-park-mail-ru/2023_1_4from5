@@ -24,6 +24,7 @@ func NewAuthHandler(uc auth.AuthUsecase) *AuthHandler {
 
 func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 	user := models.LoginUser{}
+	url, _ := os.LookupEnv("URL") //TODO: закинуть отдельно
 	err := easyjson.UnmarshalFromReader(r.Body, &user)
 	if err != nil || !middleware.LoginUserIsValid(user) {
 		utils.Response(w, http.StatusForbidden, nil)
@@ -40,7 +41,7 @@ func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 		Name:     "SSID",
 		Value:    token,
 		Path:     "/",
-		Domain:   "???????????????",
+		Domain:   url,
 		HttpOnly: true,
 		Expires:  time.Now().Add(time.Hour * 24),
 	}
@@ -76,12 +77,12 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, status, nil)
 		return
 	}
-
+	url, _ := os.LookupEnv("URL") //TODO: закинуть отдельно
 	SSCookie := &http.Cookie{
 		Name:     "SSID",
 		Value:    token,
 		Path:     "/",
-		Domain:   "?????????",
+		Domain:   url,
 		HttpOnly: true,
 		Expires:  time.Now().Add(time.Hour * 24),
 	}

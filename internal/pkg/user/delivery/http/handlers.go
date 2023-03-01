@@ -22,7 +22,6 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
 	}
-
 	userProfile, err := h.usecase.GetProfile(*userInfo)
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)

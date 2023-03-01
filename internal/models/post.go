@@ -8,12 +8,13 @@ import (
 )
 
 type Post struct {
-	Id          uuid.UUID `json:"id"`
-	Creator     uuid.UUID `json:"creator"`
-	Creation    time.Time `json:"creation_date"`
-	Title       string    `json:"title"`
-	Text        string    `json:"text"`
-	IsAvailable bool      `json:"is_available"`
+	Id          uuid.UUID   `json:"id"`
+	Creator     uuid.UUID   `json:"creator"`
+	Creation    time.Time   `json:"creation_date"`
+	Title       string      `json:"title"`
+	Text        string      `json:"text"`
+	IsAvailable bool        `json:"is_available"`
+	Attachments []uuid.UUID `json:"attachments,omitempty"`
 }
 
 //После signIn возвращаем на запрос о пользователе

@@ -4,6 +4,7 @@ package models
 
 import (
 	json "encoding/json"
+	uuid "github.com/google/uuid"
 	easyjson "github.com/mailru/easyjson"
 	jlexer "github.com/mailru/easyjson/jlexer"
 	jwriter "github.com/mailru/easyjson/jwriter"
@@ -54,6 +55,31 @@ func easyjson5a72dc82DecodeGithubComGoParkMailRu202314from5InternalModels(in *jl
 			out.Text = string(in.String())
 		case "is_available":
 			out.IsAvailable = bool(in.Bool())
+		case "attachments":
+			if in.IsNull() {
+				in.Skip()
+				out.Attachments = nil
+			} else {
+				in.Delim('[')
+				if out.Attachments == nil {
+					if !in.IsDelim(']') {
+						out.Attachments = make([]uuid.UUID, 0, 4)
+					} else {
+						out.Attachments = []uuid.UUID{}
+					}
+				} else {
+					out.Attachments = (out.Attachments)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v1 uuid.UUID
+					if data := in.UnsafeBytes(); in.Ok() {
+						in.AddError((v1).UnmarshalText(data))
+					}
+					out.Attachments = append(out.Attachments, v1)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
 		default:
 			in.SkipRecursive()
 		}
@@ -97,6 +123,20 @@ func easyjson5a72dc82EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 		const prefix string = ",\"is_available\":"
 		out.RawString(prefix)
 		out.Bool(bool(in.IsAvailable))
+	}
+	if len(in.Attachments) != 0 {
+		const prefix string = ",\"attachments\":"
+		out.RawString(prefix)
+		{
+			out.RawByte('[')
+			for v2, v3 := range in.Attachments {
+				if v2 > 0 {
+					out.RawByte(',')
+				}
+				out.RawText((v3).MarshalText())
+			}
+			out.RawByte(']')
+		}
 	}
 	out.RawByte('}')
 }

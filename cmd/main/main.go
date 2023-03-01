@@ -76,7 +76,7 @@ func run() error {
 
 	creator := r.PathPrefix("/creator").Subrouter()
 	{
-		creator.HandleFunc("/myPage", creatorHandler.GetPage).Methods(http.MethodGet)
+		creator.HandleFunc("/myPage", creatorHandler.GetPage).Methods(http.MethodGet, http.MethodOptions)
 	}
 	http.Handle("/", r)
 	return srv.ListenAndServe()
