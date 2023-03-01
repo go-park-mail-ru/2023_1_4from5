@@ -48,6 +48,7 @@ func (ur *CreatorRepo) GetPage(userId uuid.UUID, creatorId uuid.UUID) (models.Cr
 	for rows.Next() {
 		var post models.Post
 		availableSubscriptions := make([]uuid.UUID, 0)
+		post.Creator = creatorId
 		err = rows.Scan(&post.Id, &post.Creation, &post.Title,
 			&post.Text, pq.Array(&post.Attachments), pq.Array(&availableSubscriptions))
 		if err != nil {
