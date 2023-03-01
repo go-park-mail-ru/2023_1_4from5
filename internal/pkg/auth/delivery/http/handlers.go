@@ -2,6 +2,7 @@ package http
 
 // TODO Add domain
 import (
+	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
@@ -23,6 +24,7 @@ func NewAuthHandler(uc auth.AuthUsecase) *AuthHandler {
 }
 
 func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("HERE")
 	user := models.LoginUser{}
 	url, _ := os.LookupEnv("URL") //TODO: закинуть отдельно
 	err := easyjson.UnmarshalFromReader(r.Body, &user)

@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	godotenv.Load(".env")
+	_ = godotenv.Load(".env")
 }
 
 func GetConnectionString() (string, error) {
