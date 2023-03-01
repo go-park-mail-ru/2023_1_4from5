@@ -1,9 +1,6 @@
 drop table if exists "like_comment";
 drop table if exists "like_post";
-drop table if exists "creator_tag";
 drop table if exists "tag";
-drop table if exists "subscription_post";
-drop table if exists "user_subscription";
 drop table if exists "attachment";
 drop table if exists "attachment_type";
 drop table if exists "comment";
@@ -24,9 +21,9 @@ create table "user"
     display_name      varchar(40)             not null,
     profile_photo     text,
     password_hash     varchar(64)             not null,
-    registration_date timestamp default now() not null
+    registration_date timestamp default now() not null,
+    subscriptions     uuid[]
 );
-
 
 create table creator
 (
@@ -40,8 +37,9 @@ create table creator
     cover_photo     text,
     followers_count integer default 0 not null,
     description     varchar(500),
-    posts_count     integer default 0 not null
-
+    posts_count     integer default 0 not null,
+    subscriptions   uuid[],
+    tags            uuid[]
 );
 
 create table subscription
@@ -59,15 +57,17 @@ create table subscription
 
 create table post
 (
-    post_id       uuid               not null
+    post_id                 uuid               not null
         constraint post_pk
             primary key,
-    creator_id    uuid               not null
+    creator_id              uuid               not null
         constraint post_creator_creator_id_fk
             references creator (creator_id),
-    creation_date date default now() not null,
-    title         varchar(40),
-    post_text     varchar(4000)
+    creation_date           date default now() not null,
+    title                   varchar(40),
+    post_text               varchar(4000),
+    attachments             uuid[],
+    available_subscriptions uuid[]
 );
 
 create table comment
@@ -98,34 +98,10 @@ create table attachment
     attachment_id   uuid not null
         constraint attachment_pk
             primary key,
-    post_id         uuid not null
-        constraint attachment_post_post_id_fk
-            references post (post_id),
     type_id         uuid not null
         constraint attachment_attachment_type_type_id_fk
             references attachment_type (type_id),
     attachment_path text not null
-);
-
-create table user_subscription
-(
-    subscription_id uuid not null
-        constraint user_subscription_subscription_subscription_id_fk
-            references subscription (subscription_id),
-    user_id         uuid not null
-        constraint user_subscription_user_user_id_fk
-            references "user" (user_id),
-    end_date        date not null
-);
-
-create table subscription_post
-(
-    post_id         uuid not null
-        constraint subscription_post_post_post_id_fk
-            references post (post_id),
-    subscription_id uuid not null
-        constraint subscription_post_subscription_subscription_id_fk
-            references subscription (subscription_id)
 );
 
 create table tag
@@ -134,16 +110,6 @@ create table tag
         constraint tag_pk
             primary key,
     title  varchar(40) not null
-);
-
-create table creator_tag
-(
-    creator_id uuid not null
-        constraint creator_tag_creator_creator_id_fk
-            references creator (creator_id),
-    tag_id     uuid not null
-        constraint creator_tag_tag_tag_id_fk
-            references tag (tag_id)
 );
 
 create table like_post
@@ -166,11 +132,4 @@ create table like_comment
             references "user" (user_id)
 );
 
-
-
-
-
-
-
-
-
+INSERT INTO  creator (creator_id, user_id, name, cover_photo, followers_count, description, posts_count) VALUES (gen_random_uuid (), 'dd79ccc4-1d56-459e-a0e5-1d11aacde0cc', 'Stepa', '11111111111111', 100500, 'Cooking blog', 1)

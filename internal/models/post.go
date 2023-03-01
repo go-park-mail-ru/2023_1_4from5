@@ -29,5 +29,6 @@ type Post struct {
 //
 //Отдаём на фронт
 //myPage:true/false (проверяем вдруг автор зашёл на свою страницу)
+//creatorInfo
 //posts
 //subscriptions
