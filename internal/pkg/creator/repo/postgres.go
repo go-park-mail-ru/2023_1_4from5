@@ -3,7 +3,6 @@ package repo
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -25,8 +24,9 @@ const (
 
 func (ur *CreatorRepo) GetPage(userId uuid.UUID, creatorId uuid.UUID) (models.CreatorPage, error) {
 	var creatorPage models.CreatorPage
+	creatorPage.CreatorInfo.Id = creatorId
+
 	userSubscriptions := make([]uuid.UUID, 0)
-	fmt.Println("GET PAGE REPO")
 	row := ur.db.QueryRow(CREATOR_INFO, creatorId)
 	if err := row.Scan(&creatorPage.CreatorInfo.UserId, &creatorPage.CreatorInfo.Name, &creatorPage.CreatorInfo.CoverPhoto, &creatorPage.CreatorInfo.FollowersCount, &creatorPage.CreatorInfo.Description, &creatorPage.CreatorInfo.PostsCount); err != nil {
 		return models.CreatorPage{}, errors.New("InternalError")
@@ -34,12 +34,10 @@ func (ur *CreatorRepo) GetPage(userId uuid.UUID, creatorId uuid.UUID) (models.Cr
 	if creatorPage.CreatorInfo.UserId == userId {
 		creatorPage.IsMyPage = true
 	} else {
-		fmt.Println("Not Author")
 		row := ur.db.QueryRow(USER_SUBSCRIPTION, userId)
 		if err := row.Scan(&userSubscriptions); err != nil {
 			return models.CreatorPage{}, errors.New("InternalError")
 		}
-		fmt.Println(userSubscriptions)
 	}
 
 	rows, err := ur.db.Query(CREATOR_POSTS, creatorId)
@@ -49,26 +47,32 @@ func (ur *CreatorRepo) GetPage(userId uuid.UUID, creatorId uuid.UUID) (models.Cr
 	posts := make([]models.Post, 0)
 	for rows.Next() {
 		var post models.Post
-		AvailableSubscriptions := make([]uuid.UUID, 0)
+		availableSubscriptions := make([]uuid.UUID, 0)
 		err = rows.Scan(&post.Id, &post.Creation, &post.Title,
-			&post.Text, pq.Array(&post.Attachments), pq.Array(&AvailableSubscriptions))
+			&post.Text, pq.Array(&post.Attachments), pq.Array(&availableSubscriptions))
 		if err != nil {
 			return models.CreatorPage{}, errors.New("InternalError")
 		}
 
-		for _, v1 := range AvailableSubscriptions {
+		if creatorPage.IsMyPage {
+			post.IsAvailable = true
+		}
+
+		for _, v1 := range availableSubscriptions {
 			for _, v2 := range userSubscriptions {
 				if v1 == v2 {
 					post.IsAvailable = true
 					break
 				}
 			}
+			if post.IsAvailable {
+				break
+			}
 		}
-		if creatorPage.IsMyPage {
-			post.IsAvailable = true
-		}
+
 		posts = append(posts, post)
 	}
+
 	creatorPage.Posts = make([]models.Post, len(posts))
 	copy(creatorPage.Posts, posts)
 	return creatorPage, nil

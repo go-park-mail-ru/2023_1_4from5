@@ -21,10 +21,12 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	userInfo, err := middleware.ExtractTokenMetadata(r, middleware.ExtractTokenFromCookie)
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
+		return
 	}
 	userProfile, err := h.usecase.GetProfile(*userInfo)
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
+		return
 	}
 
 	utils.Response(w, http.StatusOK, userProfile)

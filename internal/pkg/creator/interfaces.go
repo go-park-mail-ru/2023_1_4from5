@@ -8,7 +8,7 @@ import (
 //go:generate mockgen -source=interfaces.go -destination=./mocks/creator_mock.go -package=mock
 
 type CreatorUsecase interface {
-	GetPage(details models.AccessDetails, creatorInfo models.Creator) (models.CreatorPage, error)
+	GetPage(details models.AccessDetails, creatorUUID string) (models.CreatorPage, error)
 }
 
 type CreatorRepo interface {
