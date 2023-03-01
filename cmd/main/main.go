@@ -41,6 +41,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	//
 
 	db, err := sql.Open("postgres", str)
 	if err != nil {
