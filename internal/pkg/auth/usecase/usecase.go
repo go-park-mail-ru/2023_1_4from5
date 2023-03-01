@@ -21,7 +21,6 @@ func (u *AuthUsecase) SignIn(user models.LoginUser) (string, int) {
 	if user.Login == "" || user.PasswordHash == "" {
 		return "", http.StatusBadRequest
 	}
-
 	user.PasswordHash = u.encrypter.EncryptPswd(user.PasswordHash)
 	DBUser, status := u.repo.CheckUser(models.User{Login: user.Login, PasswordHash: user.PasswordHash})
 	token := u.tokenator.GetToken(DBUser)

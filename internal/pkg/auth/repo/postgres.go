@@ -46,12 +46,13 @@ func (r *AuthRepo) CheckUser(user models.User) (models.User, error) {
 		login string
 		id    uuid.UUID
 	)
+
 	row := r.db.QueryRow(CHECK_USER, user.Login)
 	if err := row.Scan(&id, &login); err != nil {
 		return models.User{}, errors.New("InternalError")
 	}
 
-	if user.Login == login {
+	if user.Login != login { //TODO: TROUBLE
 		return models.User{}, errors.New("Conflict")
 	}
 
