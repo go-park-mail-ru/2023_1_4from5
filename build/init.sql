@@ -131,3 +131,5 @@ create table like_comment
         constraint like_comment_user_user_id_fk
             references "user" (user_id)
 );
+
+--SELECT post_id, creator_id, creation_date, title, post_text, attachments, available_subscriptions FROM public.post WHERE UNNEST(available_subscriptions) IN (SELECT subscriptions FROM public.user WHERE user_id =

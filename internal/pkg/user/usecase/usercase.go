@@ -22,3 +22,13 @@ func (uc *UserUsecase) GetProfile(details models.AccessDetails) (models.UserProf
 
 	return userProfile, nil
 }
+
+func (uc *UserUsecase) GetHomePage(details models.AccessDetails) (models.UserHomePage, error) {
+	userId := details.Id
+	homePage, err := uc.repo.GetHomePage(userId)
+	if err != nil {
+		return models.UserHomePage{}, err
+	}
+
+	return homePage, nil
+}

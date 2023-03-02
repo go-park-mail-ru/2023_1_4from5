@@ -9,8 +9,10 @@ import (
 
 type UserUsecase interface {
 	GetProfile(details models.AccessDetails) (models.UserProfile, error)
+	GetHomePage(details models.AccessDetails) (models.UserHomePage, error)
 }
 
 type UserRepo interface {
 	GetUserProfile(id uuid.UUID) (models.UserProfile, error)
+	GetHomePage(id uuid.UUID) (models.UserHomePage, error)
 }

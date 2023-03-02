@@ -17,7 +17,224 @@ var (
 	_ easyjson.Marshaler
 )
 
-func easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels(in *jlexer.Lexer, out *User) {
+func easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels(in *jlexer.Lexer, out *UserProfile) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "login":
+			out.Login = string(in.String())
+		case "name":
+			out.Name = string(in.String())
+		case "profile_photo":
+			out.ProfilePhoto = string(in.String())
+		case "registration":
+			if data := in.Raw(); in.Ok() {
+				in.AddError((out.Registration).UnmarshalJSON(data))
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels(out *jwriter.Writer, in UserProfile) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	{
+		const prefix string = ",\"login\":"
+		out.RawString(prefix[1:])
+		out.String(string(in.Login))
+	}
+	{
+		const prefix string = ",\"name\":"
+		out.RawString(prefix)
+		out.String(string(in.Name))
+	}
+	{
+		const prefix string = ",\"profile_photo\":"
+		out.RawString(prefix)
+		out.String(string(in.ProfilePhoto))
+	}
+	{
+		const prefix string = ",\"registration\":"
+		out.RawString(prefix)
+		out.Raw((in.Registration).MarshalJSON())
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v UserProfile) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v UserProfile) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *UserProfile) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *UserProfile) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels(l, v)
+}
+func easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels1(in *jlexer.Lexer, out *UserHomePage) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "name":
+			out.Name = string(in.String())
+		case "profile_photo":
+			out.ProfilePhoto = string(in.String())
+		case "posts":
+			if in.IsNull() {
+				in.Skip()
+				out.Posts = nil
+			} else {
+				in.Delim('[')
+				if out.Posts == nil {
+					if !in.IsDelim(']') {
+						out.Posts = make([]Post, 0, 0)
+					} else {
+						out.Posts = []Post{}
+					}
+				} else {
+					out.Posts = (out.Posts)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v1 Post
+					(v1).UnmarshalEasyJSON(in)
+					out.Posts = append(out.Posts, v1)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
+		case "is_creator":
+			out.IsCreator = bool(in.Bool())
+		case "creator_id":
+			if data := in.UnsafeBytes(); in.Ok() {
+				in.AddError((out.CreatorId).UnmarshalText(data))
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels1(out *jwriter.Writer, in UserHomePage) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	{
+		const prefix string = ",\"name\":"
+		out.RawString(prefix[1:])
+		out.String(string(in.Name))
+	}
+	{
+		const prefix string = ",\"profile_photo\":"
+		out.RawString(prefix)
+		out.String(string(in.ProfilePhoto))
+	}
+	{
+		const prefix string = ",\"posts\":"
+		out.RawString(prefix)
+		if in.Posts == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
+			out.RawString("null")
+		} else {
+			out.RawByte('[')
+			for v2, v3 := range in.Posts {
+				if v2 > 0 {
+					out.RawByte(',')
+				}
+				(v3).MarshalEasyJSON(out)
+			}
+			out.RawByte(']')
+		}
+	}
+	{
+		const prefix string = ",\"is_creator\":"
+		out.RawString(prefix)
+		out.Bool(bool(in.IsCreator))
+	}
+	{
+		const prefix string = ",\"creator_id\":"
+		out.RawString(prefix)
+		out.RawText((in.CreatorId).MarshalText())
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v UserHomePage) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels1(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v UserHomePage) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels1(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *UserHomePage) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels1(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *UserHomePage) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels1(l, v)
+}
+func easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels2(in *jlexer.Lexer, out *User) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -62,7 +279,7 @@ func easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels(in *jl
 		in.Consumed()
 	}
 }
-func easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels(out *jwriter.Writer, in User) {
+func easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels2(out *jwriter.Writer, in User) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -102,27 +319,27 @@ func easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 // MarshalJSON supports json.Marshaler interface
 func (v User) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels(&w, v)
+	easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels2(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v User) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels(w, v)
+	easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels2(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *User) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels(&r, v)
+	easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels2(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *User) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels(l, v)
+	easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels2(l, v)
 }
-func easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels1(in *jlexer.Lexer, out *LoginUser) {
+func easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels3(in *jlexer.Lexer, out *LoginUser) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -155,7 +372,7 @@ func easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels1(in *j
 		in.Consumed()
 	}
 }
-func easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels1(out *jwriter.Writer, in LoginUser) {
+func easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels3(out *jwriter.Writer, in LoginUser) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -175,23 +392,23 @@ func easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels1(out *
 // MarshalJSON supports json.Marshaler interface
 func (v LoginUser) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels1(&w, v)
+	easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels3(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v LoginUser) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels1(w, v)
+	easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels3(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *LoginUser) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels1(&r, v)
+	easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels3(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *LoginUser) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels1(l, v)
+	easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels3(l, v)
 }

@@ -73,6 +73,7 @@ func run() error {
 	user := r.PathPrefix("/user").Subrouter()
 	{
 		user.HandleFunc("/profile", userHandler.GetProfile).Methods(http.MethodGet)
+		user.HandleFunc("/homePage", userHandler.GetHomePage).Methods(http.MethodGet)
 	}
 
 	creator := r.PathPrefix("/creator").Subrouter()

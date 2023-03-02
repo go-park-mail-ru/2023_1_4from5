@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// easyjson -all ./internal/models/usercase.go
+// easyjson -all ./internal/models/user.go
 
 type User struct {
 	Id           uuid.UUID `json:"id"`
@@ -27,4 +27,12 @@ type UserProfile struct {
 	Name         string    `json:"name" example:"Danila Polyakov"`
 	ProfilePhoto string    `json:"profile_photo"`
 	Registration time.Time `json:"registration"`
+}
+
+type UserHomePage struct {
+	Name         string    `json:"name" example:"Danila Polyakov"`
+	ProfilePhoto string    `json:"profile_photo"`
+	Posts        []Post    `json:"posts"`
+	IsCreator    bool      `json:"is_creator"`
+	CreatorId    uuid.UUID `json:"creator_id"`
 }
