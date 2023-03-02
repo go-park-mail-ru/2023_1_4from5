@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
 	"net/http"
@@ -23,6 +24,7 @@ func (u *AuthUsecase) SignIn(user models.LoginUser) (string, int) {
 	}
 	user.PasswordHash = u.encrypter.EncryptPswd(user.PasswordHash)
 	DBUser, status := u.repo.CheckUser(models.User{Login: user.Login, PasswordHash: user.PasswordHash})
+	fmt.Println("Usecase  ", status)
 	token := u.tokenator.GetToken(DBUser)
 	if status == nil && token != "" {
 		return token, http.StatusOK

@@ -3,6 +3,7 @@ package repo
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"time"
@@ -51,7 +52,7 @@ func (r *AuthRepo) CheckUser(user models.User) (models.User, error) {
 	if err := row.Scan(&id, &passwordHash); err != nil {
 		return models.User{}, errors.New("InternalError")
 	}
-
+	fmt.Println(id, passwordHash)
 	if passwordHash == user.PasswordHash { // совпал логин и пародь
 		userOut := models.User{
 			Id:           id,
