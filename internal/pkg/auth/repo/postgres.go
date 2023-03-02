@@ -10,7 +10,7 @@ import (
 
 const (
 	//SElECT_USER = "SELECT id, email, login, encrypted_password, created_at FROM public.user;"
-	CHECK_USER  = "SELECT user_id, password_hach FROM public.user WHERE login=$1;"
+	CHECK_USER  = "SELECT user_id, password_hash FROM public.user WHERE login=$1;"
 	CREATE_USER = "INSERT INTO public.user(user_id, login, display_name, profile_photo, password_hash, registration_date) VALUES($1, $2, $3, $4, $5, $6) RETURNING user_id;"
 )
 
@@ -43,16 +43,16 @@ func (r *AuthRepo) CreateUser(user models.User) (models.User, error) {
 
 func (r *AuthRepo) CheckUser(user models.User) (models.User, error) {
 	var (
-		password_hash string
-		id            uuid.UUID
+		passwordHash string
+		id           uuid.UUID
 	)
 
 	row := r.db.QueryRow(CHECK_USER, user.Login) // Ищем пользователя с таким логином и берем его пароль и id
-	if err := row.Scan(&id, &password_hash); err != nil {
+	if err := row.Scan(&id, &passwordHash); err != nil {
 		return models.User{}, errors.New("InternalError")
 	}
 
-	if password_hash == user.PasswordHash { // совпал логин и пародь
+	if passwordHash == user.PasswordHash { // совпал логин и пародь
 		userOut := models.User{
 			Id:           id,
 			Login:        user.Login,
@@ -62,7 +62,7 @@ func (r *AuthRepo) CheckUser(user models.User) (models.User, error) {
 		return userOut, nil
 	}
 	// запрос ничего не вернул, т.е. нет пользователя с таким логином
-	if password_hash == "" {
+	if passwordHash == "" {
 		return models.User{}, errors.New("NotFound")
 	}
 	// совпал логин, но не совпал пароль
