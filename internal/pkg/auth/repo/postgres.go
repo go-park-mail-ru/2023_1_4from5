@@ -52,7 +52,7 @@ func (r *AuthRepo) CheckUser(user models.User) (models.User, error) {
 		return models.User{}, errors.New("InternalError")
 	}
 
-	if user.Login != login { //TODO: TROUBLE
+	if user.Login == login { //TODO: TROUBLE
 		return models.User{}, errors.New("Conflict")
 	}
 
