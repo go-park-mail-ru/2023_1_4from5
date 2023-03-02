@@ -44,8 +44,9 @@ func (ur *UserRepo) GetHomePage(id uuid.UUID) (models.UserHomePage, error) {
 	}
 
 	row = ur.db.QueryRow(CHECK_CREATOR, id)
-	if err := row.Scan(&page.CreatorId); err != nil {
+	if err := row.Scan(&page.CreatorId); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		return models.UserHomePage{}, errors.New("InternalError")
 	}
+
 	return page, nil
 }
