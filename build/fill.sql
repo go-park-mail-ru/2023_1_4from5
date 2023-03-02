@@ -15,10 +15,10 @@ INSERT INTO "user"(user_id, login, display_name, profile_photo, password_hash, r
 VALUES ('b184cc4e-78ef-434f-ac88-5084a77ee087', 'Dasha2003!', 'Дарья Такташова', '1111',
         '781be5ea6620295cbdb249154b840fbe2327d87c666d8e76b29f45f70fcf7d6d', '2023-02-27 19:10', '{}');
 
-INSERT INTO creator (creator_id, user_id, name, cover_photo, followers_count, description, posts_count)
-VALUES ('10b0d1b8-0e67-4e7e-9f08-124b3e32cce4', 'b184cc4e-78ef-434f-ac88-5084a77ee087', 'FOOD BLOGGER', '1111', 15,
+INSERT INTO creator (creator_id, user_id, name, cover_photo, followers_count, description, posts_count, subscriptions)
+VALUES ('10b0d1b8-0e67-4e7e-9f08-124b3e32cce4', 'b184cc4e-78ef-434f-ac88-5084a77ee087', 'FOOD BLOGGER', '1111', 2,
         'Кулинарный блог обычной девочки из Москвы',
-        1);
+        1, '{df0dd4ee-0772-43e2-919c-9b059e389b9a,1b70e133-36ba-44ec-9d9a-2476442b154b}');
 
 --------------------------------------ПОДПИСКИ-----------------------------------------------------------------------
 INSERT INTO subscription (subscription_id, creator_id, month_cost, title, description)
@@ -61,8 +61,8 @@ VALUES ('c3d5be1f-64ba-49d1-bb1d-06516c64bcba', 'navi2003', 'Ivan Stukalov', '11
 ------------------------------------Подписчик без доступа--------------------------------------------------------------
 ---LOGIN Bashmak PASSWORD Bashmak1!
 INSERT INTO "user"(user_id, login, display_name, profile_photo, password_hash, registration_date, subscriptions)
-VALUES ('0b5ce9bf-ba11-415a-ac49-941ec9f0076f', 'Bashmakq1', 'Даня Поляков', '1111',
-        '276b3120433f7fe5513f99dc5409b12d87771a95c578cc5bc5f3784fed2a83b2', '2023-02-24 08:40',
+VALUES ('0b5ce9bf-ba11-415a-ac49-941ec9f0076f', 'Bashmakq', 'Даня Поляков', '1111',
+        'b1dc543073c224c94d5c9f247a05896774e9d78eb6a542f405c68e33d49d4149', '2023-02-24 08:40',
         '{}');
 --------------------------------------------------------------------------------------------------------------
 
