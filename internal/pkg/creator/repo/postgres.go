@@ -35,7 +35,7 @@ func (ur *CreatorRepo) GetPage(userId uuid.UUID, creatorId uuid.UUID) (models.Cr
 		creatorPage.IsMyPage = true
 	} else {
 		row := ur.db.QueryRow(USER_SUBSCRIPTION, userId)
-		if err := row.Scan(&userSubscriptions); err != nil {
+		if err := row.Scan(pq.Array(&userSubscriptions)); err != nil {
 			return models.CreatorPage{}, errors.New("InternalError")
 		}
 	}
