@@ -27,18 +27,18 @@ func (u *AuthUsecase) SignIn(user models.LoginUser) (string, int) {
 	if status == nil && token != "" {
 		return token, http.StatusOK
 	}
-	return "", http.StatusInternalServerError
+	return "", http.StatusUnauthorized
 }
 
 func (u *AuthUsecase) SignUp(user models.User) (string, int) {
 	//TODO: вынести ошибки в utils константами
 	user.PasswordHash = u.encrypter.EncryptPswd(user.PasswordHash)
-	var Unauthorized = errors.New("Unauthorized")
+	var Unauthorized = errors.New("WrongPassword")
+
 	_, err := u.repo.CheckUser(user)
 	if err == nil || errors.Is(err, Unauthorized) {
 		return "", http.StatusConflict
 	}
-
 	NewUser, err := u.repo.CreateUser(user)
 	token := u.tokenator.GetToken(NewUser)
 	if err == nil && token != "" {
