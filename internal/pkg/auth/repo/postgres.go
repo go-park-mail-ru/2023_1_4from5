@@ -50,6 +50,7 @@ func (r *AuthRepo) CheckUser(user models.User) (models.User, error) {
 
 	row := r.db.QueryRow(CHECK_USER, user.Login) // Ищем пользователя с таким логином и берем его пароль и id
 	if err := row.Scan(&id, &passwordHash); err != nil {
+		fmt.Println(err)
 		return models.User{}, errors.New("InternalError")
 	}
 	fmt.Println(id, passwordHash)
