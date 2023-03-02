@@ -1,13 +1,13 @@
-drop table if exists "like_comment";
-drop table if exists "like_post";
-drop table if exists "tag";
-drop table if exists "attachment";
-drop table if exists "attachment_type";
-drop table if exists "comment";
-drop table if exists "post";
-drop table if exists "subscription";
-drop table if exists "creator";
-drop table if exists "user";
+drop table if exists "like_comment" CASCADE;
+drop table if exists "like_post" CASCADE;
+drop table if exists "attachment" CASCADE;
+drop table if exists "attachment_type" CASCADE;
+drop table if exists "comment" CASCADE;
+drop table if exists "creator" CASCADE;
+drop table if exists "user" CASCADE;
+drop table if exists "post" CASCADE;
+drop table if exists "subscription" CASCADE;
+drop table if exists "tag" CASCADE;
 
 
 create table "user"
