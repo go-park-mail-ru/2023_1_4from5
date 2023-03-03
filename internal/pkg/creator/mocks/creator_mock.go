@@ -36,18 +36,18 @@ func (m *MockCreatorUsecase) EXPECT() *MockCreatorUsecaseMockRecorder {
 }
 
 // GetPage mocks base method.
-func (m *MockCreatorUsecase) GetPage(details models.AccessDetails, creatorInfo models.Creator) (models.CreatorPage, error) {
+func (m *MockCreatorUsecase) GetPage(details models.AccessDetails, creatorUUID string) (models.CreatorPage, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPage", details, creatorInfo)
+	ret := m.ctrl.Call(m, "GetPage", details, creatorUUID)
 	ret0, _ := ret[0].(models.CreatorPage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPage indicates an expected call of GetPage.
-func (mr *MockCreatorUsecaseMockRecorder) GetPage(details, creatorInfo interface{}) *gomock.Call {
+func (mr *MockCreatorUsecaseMockRecorder) GetPage(details, creatorUUID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPage", reflect.TypeOf((*MockCreatorUsecase)(nil).GetPage), details, creatorInfo)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPage", reflect.TypeOf((*MockCreatorUsecase)(nil).GetPage), details, creatorUUID)
 }
 
 // MockCreatorRepo is a mock of CreatorRepo interface.

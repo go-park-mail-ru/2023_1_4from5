@@ -1,8 +1,6 @@
 package http
 
-// TODO Add domain
 import (
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
@@ -24,19 +22,15 @@ func NewAuthHandler(uc auth.AuthUsecase) *AuthHandler {
 }
 
 func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("SignIn handler")
 	user := models.LoginUser{}
 	url, _ := os.LookupEnv("URL")
-	fmt.Println(url)
 	err := easyjson.UnmarshalFromReader(r.Body, &user)
-	fmt.Println(user)
 	if err != nil || !middleware.LoginUserIsValid(user) {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
 
 	token, status := h.usecase.SignIn(user)
-	fmt.Println(token)
 	if status != http.StatusOK {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
@@ -54,6 +48,11 @@ func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	_, err := middleware.ExtractTokenMetadata(r, middleware.ExtractTokenFromCookie)
+	if err != nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
 	url, _ := os.LookupEnv("URL") //TODO: закинуть отдельно
 	SSCookie := &http.Cookie{
 		Name:     "SSID",
