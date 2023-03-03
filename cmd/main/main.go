@@ -20,7 +20,7 @@ import (
 	"os"
 )
 
-//linter + tests + TODOхи
+//tests + TODOхи
 
 func main() {
 	if err := run(); err != nil {

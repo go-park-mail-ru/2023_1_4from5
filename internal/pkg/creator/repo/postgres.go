@@ -41,6 +41,7 @@ func (ur *CreatorRepo) GetPage(userId uuid.UUID, creatorId uuid.UUID) (models.Cr
 	}
 
 	rows, err := ur.db.Query(CREATOR_POSTS, creatorId)
+	defer rows.Close()
 	if err != nil {
 		return models.CreatorPage{}, errors.New("InternalError")
 	}

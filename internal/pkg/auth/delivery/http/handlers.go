@@ -53,7 +53,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	url, _ := os.LookupEnv("URL") //TODO: закинуть отдельно
+	url, _ := os.LookupEnv("URL")
 	SSCookie := &http.Cookie{
 		Name:     "SSID",
 		Value:    "",
@@ -80,7 +80,7 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, status, nil)
 		return
 	}
-	url, _ := os.LookupEnv("URL") //TODO: закинуть отдельно
+	url, _ := os.LookupEnv("URL")
 	SSCookie := &http.Cookie{
 		Name:     "SSID",
 		Value:    token,
