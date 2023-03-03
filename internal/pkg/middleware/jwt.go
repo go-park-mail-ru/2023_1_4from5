@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
@@ -22,6 +21,7 @@ const (
 
 type Extractor func(r *http.Request) string
 
+/*
 func ExtractToken(r *http.Request) string {
 	token := models.TokenView{}
 	err := json.NewDecoder(r.Body).Decode(&token)
@@ -34,7 +34,7 @@ func ExtractToken(r *http.Request) string {
 		return strArr[1]
 	}
 	return strArr[0]
-}
+}*/
 
 func ExtractTokenFromCookie(r *http.Request) string {
 	tokenCookie, err := r.Cookie("SSID")
@@ -79,6 +79,8 @@ func ExtractTokenMetadata(r *http.Request, extractor Extractor) (*models.AccessD
 	}
 	exp := token.ExpiresAt
 	now := time.Now().Unix()
+	fmt.Println("now", now)
+	fmt.Println("got", exp)
 	if exp < now {
 		return nil, errors.New(errExpiredToken)
 	}

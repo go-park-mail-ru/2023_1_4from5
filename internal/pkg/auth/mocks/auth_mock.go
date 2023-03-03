@@ -87,12 +87,27 @@ func (m *MockAuthRepo) EXPECT() *MockAuthRepoMockRecorder {
 	return m.recorder
 }
 
+// CheckUser mocks base method.
+func (m *MockAuthRepo) CheckUser(user models.User) (models.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckUser", user)
+	ret0, _ := ret[0].(models.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckUser indicates an expected call of CheckUser.
+func (mr *MockAuthRepoMockRecorder) CheckUser(user interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUser", reflect.TypeOf((*MockAuthRepo)(nil).CheckUser), user)
+}
+
 // CreateUser mocks base method.
-func (m *MockAuthRepo) CreateUser(user models.User) (models.User, int) {
+func (m *MockAuthRepo) CreateUser(user models.User) (models.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateUser", user)
 	ret0, _ := ret[0].(models.User)
-	ret1, _ := ret[1].(int)
+	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
@@ -100,4 +115,78 @@ func (m *MockAuthRepo) CreateUser(user models.User) (models.User, int) {
 func (mr *MockAuthRepoMockRecorder) CreateUser(user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockAuthRepo)(nil).CreateUser), user)
+}
+
+// MockTokenGenerator is a mock of TokenGenerator interface.
+type MockTokenGenerator struct {
+	ctrl     *gomock.Controller
+	recorder *MockTokenGeneratorMockRecorder
+}
+
+// MockTokenGeneratorMockRecorder is the mock recorder for MockTokenGenerator.
+type MockTokenGeneratorMockRecorder struct {
+	mock *MockTokenGenerator
+}
+
+// NewMockTokenGenerator creates a new mock instance.
+func NewMockTokenGenerator(ctrl *gomock.Controller) *MockTokenGenerator {
+	mock := &MockTokenGenerator{ctrl: ctrl}
+	mock.recorder = &MockTokenGeneratorMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockTokenGenerator) EXPECT() *MockTokenGeneratorMockRecorder {
+	return m.recorder
+}
+
+// GetToken mocks base method.
+func (m *MockTokenGenerator) GetToken(user models.User) string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetToken", user)
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetToken indicates an expected call of GetToken.
+func (mr *MockTokenGeneratorMockRecorder) GetToken(user interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetToken", reflect.TypeOf((*MockTokenGenerator)(nil).GetToken), user)
+}
+
+// MockEncrypter is a mock of Encrypter interface.
+type MockEncrypter struct {
+	ctrl     *gomock.Controller
+	recorder *MockEncrypterMockRecorder
+}
+
+// MockEncrypterMockRecorder is the mock recorder for MockEncrypter.
+type MockEncrypterMockRecorder struct {
+	mock *MockEncrypter
+}
+
+// NewMockEncrypter creates a new mock instance.
+func NewMockEncrypter(ctrl *gomock.Controller) *MockEncrypter {
+	mock := &MockEncrypter{ctrl: ctrl}
+	mock.recorder = &MockEncrypterMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockEncrypter) EXPECT() *MockEncrypterMockRecorder {
+	return m.recorder
+}
+
+// EncryptPswd mocks base method.
+func (m *MockEncrypter) EncryptPswd(pswd string) string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EncryptPswd", pswd)
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// EncryptPswd indicates an expected call of EncryptPswd.
+func (mr *MockEncrypterMockRecorder) EncryptPswd(pswd interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EncryptPswd", reflect.TypeOf((*MockEncrypter)(nil).EncryptPswd), pswd)
 }
