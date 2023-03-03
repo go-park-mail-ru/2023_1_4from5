@@ -37,22 +37,22 @@ type args struct {
 }
 
 var testUsers []models.User = []models.User{
-	models.User{
+	{
 		Login:        "Dasha2003!",
 		PasswordHash: "Dasha2003!",
 		Name:         "Дарья Такташова",
 	},
-	models.User{
+	{
 		Login:        "Donald123",
 		PasswordHash: "Donald123!",
 		Name:         "Donald Brown",
 	},
-	models.User{
+	{
 		Login:        "Alligator19",
 		PasswordHash: "Password123!",
 		Name:         "Alligator",
 	},
-	models.User{
+	{
 		Login:        "Bad",
 		PasswordHash: "User",
 		Name:         "KKK",
