@@ -7,9 +7,9 @@ import (
 
 // easyjson:skip
 type Token struct {
-	Login string
-	Id    string
-	//TODO: сделать userVersion
+	Login       string
+	Id          string
+	UserVersion int
 	jwt.StandardClaims
 }
 

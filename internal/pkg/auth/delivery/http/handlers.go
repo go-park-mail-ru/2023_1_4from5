@@ -48,9 +48,13 @@ func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
-	_, err := middleware.ExtractTokenMetadata(r, middleware.ExtractTokenFromCookie)
+	userData, err := middleware.ExtractTokenMetadata(r, middleware.ExtractTokenFromCookie)
 	if err != nil {
 		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	if _, err := h.usecase.Logout(*userData); err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 	url, _ := os.LookupEnv("URL")

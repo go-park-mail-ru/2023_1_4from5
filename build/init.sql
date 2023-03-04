@@ -12,16 +12,17 @@ drop table if exists "tag" CASCADE;
 
 create table "user"
 (
-    user_id           uuid                    not null
+    user_id           uuid        not null
         constraint user_pk
             primary key,
-    login             text                    not null
+    user_version      integer     not null default 0,
+    login             text        not null
         constraint login_pk
             unique,
-    display_name      varchar(40)             not null,
+    display_name      varchar(40) not null,
     profile_photo     text,
-    password_hash     varchar(64)             not null,
-    registration_date timestamp default now() not null,
+    password_hash     varchar(64) not null,
+    registration_date timestamp            default now() not null,
     subscriptions     uuid[]
 );
 

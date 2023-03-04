@@ -51,3 +51,7 @@ func (u *AuthUsecase) SignUp(user models.User) (string, int) {
 func (u *AuthUsecase) CheckUser(user models.User) (models.User, error) {
 	return u.repo.CheckUser(user)
 }
+
+func (u *AuthUsecase) Logout(details models.AccessDetails) (int, error) {
+	return u.repo.IncUserVersion(details.Id)
+}
