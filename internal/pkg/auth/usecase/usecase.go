@@ -35,10 +35,9 @@ func (u *AuthUsecase) SignIn(user models.LoginUser) (string, int) {
 func (u *AuthUsecase) SignUp(user models.User) (string, int) {
 	//TODO: вынести ошибки в utils константами
 	user.PasswordHash = u.encrypter.EncryptPswd(user.PasswordHash)
-	var Unauthorized = errors.New("WrongPassword")
 
-	_, err := u.repo.CheckUser(user)
-	if err == nil || errors.Is(err, Unauthorized) {
+	_, err := u.CheckUser(user)
+	if err == nil || errors.Is(err, models.WrongPassword) {
 		return "", http.StatusConflict
 	}
 	NewUser, err := u.repo.CreateUser(user)

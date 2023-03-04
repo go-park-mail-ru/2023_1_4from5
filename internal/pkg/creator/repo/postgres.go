@@ -2,7 +2,6 @@ package repo
 
 import (
 	"database/sql"
-	"errors"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -29,21 +28,21 @@ func (ur *CreatorRepo) GetPage(userId uuid.UUID, creatorId uuid.UUID) (models.Cr
 	userSubscriptions := make([]uuid.UUID, 0)
 	row := ur.db.QueryRow(CREATOR_INFO, creatorId)
 	if err := row.Scan(&creatorPage.CreatorInfo.UserId, &creatorPage.CreatorInfo.Name, &creatorPage.CreatorInfo.CoverPhoto, &creatorPage.CreatorInfo.FollowersCount, &creatorPage.CreatorInfo.Description, &creatorPage.CreatorInfo.PostsCount); err != nil {
-		return models.CreatorPage{}, errors.New("InternalError")
+		return models.CreatorPage{}, models.InternalError
 	}
 	if creatorPage.CreatorInfo.UserId == userId {
 		creatorPage.IsMyPage = true
 	} else {
 		row := ur.db.QueryRow(USER_SUBSCRIPTION, userId)
 		if err := row.Scan(pq.Array(&userSubscriptions)); err != nil {
-			return models.CreatorPage{}, errors.New("InternalError")
+			return models.CreatorPage{}, models.InternalError
 		}
 	}
 
 	rows, err := ur.db.Query(CREATOR_POSTS, creatorId)
 	defer rows.Close()
 	if err != nil {
-		return models.CreatorPage{}, errors.New("InternalError")
+		return models.CreatorPage{}, models.InternalError
 	}
 	posts := make([]models.Post, 0)
 	for rows.Next() {
@@ -53,7 +52,7 @@ func (ur *CreatorRepo) GetPage(userId uuid.UUID, creatorId uuid.UUID) (models.Cr
 		err = rows.Scan(&post.Id, &post.Creation, &post.Title,
 			&post.Text, pq.Array(&post.Attachments), pq.Array(&availableSubscriptions))
 		if err != nil {
-			return models.CreatorPage{}, errors.New("InternalError")
+			return models.CreatorPage{}, models.InternalError
 		}
 
 		if creatorPage.IsMyPage {

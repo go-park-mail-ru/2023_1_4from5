@@ -29,7 +29,7 @@ func (ur *UserRepo) GetUserProfile(id uuid.UUID) (models.UserProfile, error) {
 
 	row := ur.db.QueryRow(GET_PROFILE, id)
 	if err := row.Scan(&profile.Login, &profile.Name, &profile.ProfilePhoto, &profile.Registration); err != nil {
-		return models.UserProfile{}, errors.New("InternalError")
+		return models.UserProfile{}, models.InternalError
 	}
 
 	return profile, nil
@@ -40,12 +40,12 @@ func (ur *UserRepo) GetHomePage(id uuid.UUID) (models.UserHomePage, error) {
 
 	row := ur.db.QueryRow(GET_NAME_PHOTO, id)
 	if err := row.Scan(&page.Name, &page.ProfilePhoto); err != nil {
-		return models.UserHomePage{}, errors.New("InternalError")
+		return models.UserHomePage{}, models.InternalError
 	}
 
 	row = ur.db.QueryRow(CHECK_CREATOR, id)
 	if err := row.Scan(&page.CreatorId); err != nil && !errors.Is(sql.ErrNoRows, err) {
-		return models.UserHomePage{}, errors.New("InternalError")
+		return models.UserHomePage{}, models.InternalError
 	} else {
 		if err == nil {
 			page.IsCreator = true
