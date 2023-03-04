@@ -26,7 +26,7 @@ func NewAuthRepo(db *sql.DB) *AuthRepo {
 func (r *AuthRepo) CreateUser(user models.User) (models.User, error) {
 	var id uuid.UUID
 	user.Id = uuid.New()
-	row := r.db.QueryRow(CREATE_USER, user.Id, user.Login, user.Name, user.ProfilePhoto, user.PasswordHash, time.Now())
+	row := r.db.QueryRow(CREATE_USER, user.Id, user.Login, user.Name, user.ProfilePhoto, user.PasswordHash, time.Now().UTC())
 
 	err := row.Scan(&id)
 	if err != nil {
