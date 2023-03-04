@@ -18,12 +18,21 @@ import (
 	"time"
 )
 
-var testUsers []models.User = []models.User{
-	models.User{
-		Login:        "Dasha2003!",
-		PasswordHash: "Dasha2003!",
-		Name:         "Дарья Такташова",
-	},
+var testUser = models.User{
+	Login:        "Dasha2003!",
+	PasswordHash: "Dasha2003!",
+	Name:         "Дарья Такташова",
+}
+
+func TestNewCreatorHandler(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	mockUsecase := mock.NewMockCreatorUsecase(ctl)
+	testHandler := NewCreatorHandler(mockUsecase)
+	if testHandler.usecase != mockUsecase {
+		t.Error("bad constructor")
+	}
 }
 
 func TestGetPage(t *testing.T) {
@@ -32,7 +41,7 @@ func TestGetPage(t *testing.T) {
 
 	os.Setenv("SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
-	bdy := tkn.GetToken(models.User{Login: testUsers[0].Login, Id: uuid.New()})
+	bdy := tkn.GetToken(models.User{Login: testUser.Login, Id: uuid.New()})
 
 	usecaseMock := mock.NewMockCreatorUsecase(ctl)
 
