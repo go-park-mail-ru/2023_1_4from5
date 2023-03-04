@@ -2,8 +2,18 @@ version: "3.3"
 
 services:
   main:
+    depends_on:
+      - postgres
     build:
       context: .
       dockerfile: build/Dockerfile
     ports:
       - "8000:8000"
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: "subme"
+      POSTGRES_USER: "submeuser"
+      POSTGRES_PASSWORD: "submepassword"
+    ports:
+      - "5432:5432"
