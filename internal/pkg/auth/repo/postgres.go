@@ -2,8 +2,6 @@ package repo
 
 import (
 	"database/sql"
-	"errors"
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"time"
@@ -28,9 +26,8 @@ func (r *AuthRepo) CreateUser(user models.User) (models.User, error) {
 	user.Id = uuid.New()
 	row := r.db.QueryRow(CREATE_USER, user.Id, user.Login, user.Name, user.ProfilePhoto, user.PasswordHash, time.Now().UTC())
 
-	err := row.Scan(&id)
-	if err != nil {
-		return models.User{}, err
+	if err := row.Scan(&id); err != nil {
+		return models.User{}, models.InternalError
 	}
 
 	userOut := models.User{
@@ -50,10 +47,9 @@ func (r *AuthRepo) CheckUser(user models.User) (models.User, error) {
 
 	row := r.db.QueryRow(CHECK_USER, user.Login) // Ищем пользователя с таким логином и берем его пароль и id
 	if err := row.Scan(&id, &passwordHash); err != nil {
-		//fmt.Println(err, "err")
-		return models.User{}, errors.New("InternalError")
+		return models.User{}, models.InternalError
 	}
-	fmt.Println(id, passwordHash)
+
 	if passwordHash == user.PasswordHash { // совпал логин и пародь
 		userOut := models.User{
 			Id:           id,
@@ -65,8 +61,8 @@ func (r *AuthRepo) CheckUser(user models.User) (models.User, error) {
 	}
 	// запрос ничего не вернул, т.е. нет пользователя с таким логином
 	if passwordHash == "" {
-		return models.User{}, errors.New("NotFound")
+		return models.User{}, models.NotFound
 	}
 	// совпал логин, но не совпал пароль
-	return models.User{}, errors.New("WrongPassword")
+	return models.User{}, models.WrongPassword
 }
