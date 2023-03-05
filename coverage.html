@@ -57,7 +57,7 @@
 				
 				<option value="file0">github.com/go-park-mail-ru/2023_1_4from5/cmd/main/main.go (0.0%)</option>
 				
-				<option value="file1">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/http/handlers.go (100.0%)</option>
+				<option value="file1">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/http/handlers.go (94.7%)</option>
 				
 				<option value="file2">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/repo/postgres.go (0.0%)</option>
 				
@@ -65,7 +65,7 @@
 				
 				<option value="file4">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase/tokenator.go (70.0%)</option>
 				
-				<option value="file5">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase/usecase.go (0.0%)</option>
+				<option value="file5">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase/usecase.go (100.0%)</option>
 				
 				<option value="file6">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/http/handlers.go (100.0%)</option>
 				
@@ -83,7 +83,7 @@
 				
 				<option value="file13">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/repo/postgres.go (0.0%)</option>
 				
-				<option value="file14">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/usecase/usercase.go (0.0%)</option>
+				<option value="file14">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/usecase/usecase.go (100.0%)</option>
 				
 				<option value="file15">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils/dbconnector.go (20.0%)</option>
 				
@@ -215,13 +215,13 @@ func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) <span class
         user := models.LoginUser{}
         url, _ := os.LookupEnv("URL")
         err := easyjson.UnmarshalFromReader(r.Body, &amp;user)
-        if err != nil || !middleware.LoginUserIsValid(user) </span><span class="cov8" title="1">{
-                utils.Response(w, http.StatusForbidden, nil)
+        if err != nil || !middleware.UserIsValid(models.User{Login: user.Login, PasswordHash: user.PasswordHash}) </span><span class="cov8" title="1">{
+                utils.Response(w, http.StatusBadRequest, nil)
                 return
         }</span>
 
         <span class="cov8" title="1">token, status := h.usecase.SignIn(user)
-        if status != http.StatusOK </span><span class="cov8" title="1">{
+        if status != nil </span><span class="cov8" title="1">{
                 utils.Response(w, http.StatusUnauthorized, nil)
                 return
         }</span>
@@ -234,7 +234,7 @@ func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) <span class
                 Expires:  time.Now().Add(time.Hour * 24),
         }
         http.SetCookie(w, SSCookie)
-        utils.Response(w, status, nil)</span>
+        utils.Response(w, http.StatusOK, nil)</span>
 }
 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
@@ -265,11 +265,14 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) <span class
         }</span>
 
         <span class="cov8" title="1">token, status := h.usecase.SignUp(user)
-
         if token == "" || token == "no secret key" </span><span class="cov8" title="1">{ //TODO в константу
-                utils.Response(w, status, nil)
-                return
-        }</span>
+                if status == models.ConflictData </span><span class="cov8" title="1">{
+                        utils.Response(w, http.StatusConflict, nil)
+                        return
+                }</span>
+                <span class="cov0" title="0">utils.Response(w, http.StatusInternalServerError, nil)
+                return</span>
+        }
         <span class="cov8" title="1">url, _ := os.LookupEnv("URL")
         SSCookie := &amp;http.Cookie{
                 Name:     "SSID",
@@ -289,8 +292,6 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) <span class
 
 import (
         "database/sql"
-        "errors"
-        "fmt"
         "github.com/go-park-mail-ru/2023_1_4from5/internal/models"
         "github.com/google/uuid"
         "time"
@@ -313,11 +314,10 @@ func NewAuthRepo(db *sql.DB) *AuthRepo <span class="cov0" title="0">{
 func (r *AuthRepo) CreateUser(user models.User) (models.User, error) <span class="cov0" title="0">{
         var id uuid.UUID
         user.Id = uuid.New()
-        row := r.db.QueryRow(CREATE_USER, user.Id, user.Login, user.Name, user.ProfilePhoto, user.PasswordHash, time.Now())
+        row := r.db.QueryRow(CREATE_USER, user.Id, user.Login, user.Name, user.ProfilePhoto, user.PasswordHash, time.Now().UTC())
 
-        err := row.Scan(&amp;id)
-        if err != nil </span><span class="cov0" title="0">{
-                return models.User{}, err
+        if err := row.Scan(&amp;id); err != nil </span><span class="cov0" title="0">{
+                return models.User{}, models.InternalError
         }</span>
 
         <span class="cov0" title="0">userOut := models.User{
@@ -337,11 +337,10 @@ func (r *AuthRepo) CheckUser(user models.User) (models.User, error) <span class=
 
         row := r.db.QueryRow(CHECK_USER, user.Login) // Ищем пользователя с таким логином и берем его пароль и id
         if err := row.Scan(&amp;id, &amp;passwordHash); err != nil </span><span class="cov0" title="0">{
-                //fmt.Println(err, "err")
-                return models.User{}, errors.New("InternalError")
+                return models.User{}, models.InternalError
         }</span>
-        <span class="cov0" title="0">fmt.Println(id, passwordHash)
-        if passwordHash == user.PasswordHash </span><span class="cov0" title="0">{ // совпал логин и пародь
+
+        <span class="cov0" title="0">if passwordHash == user.PasswordHash </span><span class="cov0" title="0">{ // совпал логин и пародь
                 userOut := models.User{
                         Id:           id,
                         Login:        user.Login,
@@ -352,10 +351,10 @@ func (r *AuthRepo) CheckUser(user models.User) (models.User, error) <span class=
         }</span>
         // запрос ничего не вернул, т.е. нет пользователя с таким логином
         <span class="cov0" title="0">if passwordHash == "" </span><span class="cov0" title="0">{
-                return models.User{}, errors.New("NotFound")
+                return models.User{}, models.NotFound
         }</span>
         // совпал логин, но не совпал пароль
-        <span class="cov0" title="0">return models.User{}, errors.New("WrongPassword")</span>
+        <span class="cov0" title="0">return models.User{}, models.WrongPassword</span>
 }
 </pre>
 		
@@ -414,7 +413,6 @@ func (t *Tokenator) GetToken(user models.User) string <span class="cov8" title="
                         ExpiresAt: time.Now().Add(time.Hour * 5).Unix(),
                 },
         }
-        //храним в переменной окружения SECRET
         SecretKey, flag := os.LookupEnv("SECRET")
         if !flag </span><span class="cov0" title="0">{
                 return "no secret key"
@@ -433,10 +431,8 @@ func (t *Tokenator) GetToken(user models.User) string <span class="cov8" title="
 
 import (
         "errors"
-        "fmt"
         "github.com/go-park-mail-ru/2023_1_4from5/internal/models"
         "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
-        "net/http"
 )
 
 type AuthUsecase struct {
@@ -445,44 +441,34 @@ type AuthUsecase struct {
         encrypter auth.Encrypter
 }
 
-func NewAuthUsecase(repo auth.AuthRepo, tokenator auth.TokenGenerator, encrypter auth.Encrypter) *AuthUsecase <span class="cov0" title="0">{
+func NewAuthUsecase(repo auth.AuthRepo, tokenator auth.TokenGenerator, encrypter auth.Encrypter) *AuthUsecase <span class="cov8" title="1">{
         return &amp;AuthUsecase{repo: repo, tokenator: tokenator, encrypter: encrypter}
 }</span>
 
-func (u *AuthUsecase) SignIn(user models.LoginUser) (string, int) <span class="cov0" title="0">{
-        if user.Login == "" || user.PasswordHash == "" </span><span class="cov0" title="0">{
-                return "", http.StatusBadRequest
-        }</span>
-        <span class="cov0" title="0">user.PasswordHash = u.encrypter.EncryptPswd(user.PasswordHash)
+func (u *AuthUsecase) SignIn(user models.LoginUser) (string, error) <span class="cov8" title="1">{
+        user.PasswordHash = u.encrypter.EncryptPswd(user.PasswordHash)
         DBUser, status := u.repo.CheckUser(models.User{Login: user.Login, PasswordHash: user.PasswordHash})
-        fmt.Println("Usecase  ", status)
         token := u.tokenator.GetToken(DBUser)
-        if status == nil &amp;&amp; token != "" </span><span class="cov0" title="0">{
-                return token, http.StatusOK
+        if status == nil &amp;&amp; token != "" </span><span class="cov8" title="1">{
+                return token, nil
         }</span>
-        <span class="cov0" title="0">return "", http.StatusUnauthorized</span>
+        <span class="cov8" title="1">return "", models.NotFound</span>
 }
 
-func (u *AuthUsecase) SignUp(user models.User) (string, int) <span class="cov0" title="0">{
-        //TODO: вынести ошибки в utils константами
+func (u *AuthUsecase) SignUp(user models.User) (string, error) <span class="cov8" title="1">{
         user.PasswordHash = u.encrypter.EncryptPswd(user.PasswordHash)
-        var Unauthorized = errors.New("WrongPassword")
 
         _, err := u.repo.CheckUser(user)
-        if err == nil || errors.Is(err, Unauthorized) </span><span class="cov0" title="0">{
-                return "", http.StatusConflict
+        if err == nil || errors.Is(err, models.WrongPassword) </span><span class="cov8" title="1">{
+                return "", models.ConflictData
         }</span>
-        <span class="cov0" title="0">NewUser, err := u.repo.CreateUser(user)
+        <span class="cov8" title="1">NewUser, err := u.repo.CreateUser(user)
         token := u.tokenator.GetToken(NewUser)
-        if err == nil &amp;&amp; token != "" </span><span class="cov0" title="0">{
-                return token, http.StatusOK
+        if err == nil &amp;&amp; token != "" </span><span class="cov8" title="1">{
+                return token, nil
         }</span>
-        <span class="cov0" title="0">return "", http.StatusInternalServerError</span>
+        <span class="cov8" title="1">return "", models.InternalError</span>
 }
-
-func (u *AuthUsecase) CheckUser(user models.User) (models.User, error) <span class="cov0" title="0">{
-        return u.repo.CheckUser(user)
-}</span>
 </pre>
 		
 		<pre class="file" id="file6" style="display: none">package http
@@ -531,7 +517,6 @@ func (h *CreatorHandler) GetPage(w http.ResponseWriter, r *http.Request) <span c
 
 import (
         "database/sql"
-        "errors"
         "github.com/go-park-mail-ru/2023_1_4from5/internal/models"
         "github.com/google/uuid"
         "github.com/lib/pq"
@@ -558,21 +543,21 @@ func (ur *CreatorRepo) GetPage(userId uuid.UUID, creatorId uuid.UUID) (models.Cr
         userSubscriptions := make([]uuid.UUID, 0)
         row := ur.db.QueryRow(CREATOR_INFO, creatorId)
         if err := row.Scan(&amp;creatorPage.CreatorInfo.UserId, &amp;creatorPage.CreatorInfo.Name, &amp;creatorPage.CreatorInfo.CoverPhoto, &amp;creatorPage.CreatorInfo.FollowersCount, &amp;creatorPage.CreatorInfo.Description, &amp;creatorPage.CreatorInfo.PostsCount); err != nil </span><span class="cov0" title="0">{
-                return models.CreatorPage{}, errors.New("InternalError")
+                return models.CreatorPage{}, models.InternalError
         }</span>
         <span class="cov0" title="0">if creatorPage.CreatorInfo.UserId == userId </span><span class="cov0" title="0">{
                 creatorPage.IsMyPage = true
         }</span> else<span class="cov0" title="0"> {
                 row := ur.db.QueryRow(USER_SUBSCRIPTION, userId)
                 if err := row.Scan(pq.Array(&amp;userSubscriptions)); err != nil </span><span class="cov0" title="0">{
-                        return models.CreatorPage{}, errors.New("InternalError")
+                        return models.CreatorPage{}, models.InternalError
                 }</span>
         }
 
         <span class="cov0" title="0">rows, err := ur.db.Query(CREATOR_POSTS, creatorId)
         defer rows.Close()
         if err != nil </span><span class="cov0" title="0">{
-                return models.CreatorPage{}, errors.New("InternalError")
+                return models.CreatorPage{}, models.InternalError
         }</span>
         <span class="cov0" title="0">posts := make([]models.Post, 0)
         for rows.Next() </span><span class="cov0" title="0">{
@@ -582,7 +567,7 @@ func (ur *CreatorRepo) GetPage(userId uuid.UUID, creatorId uuid.UUID) (models.Cr
                 err = rows.Scan(&amp;post.Id, &amp;post.Creation, &amp;post.Title,
                         &amp;post.Text, pq.Array(&amp;post.Attachments), pq.Array(&amp;availableSubscriptions))
                 if err != nil </span><span class="cov0" title="0">{
-                        return models.CreatorPage{}, errors.New("InternalError")
+                        return models.CreatorPage{}, models.InternalError
                 }</span>
 
                 <span class="cov0" title="0">if creatorPage.IsMyPage </span><span class="cov0" title="0">{
@@ -662,7 +647,6 @@ func CORSMiddleware(next http.Handler) http.Handler <span class="cov0" title="0"
 		<pre class="file" id="file10" style="display: none">package middleware
 
 import (
-        "errors"
         "fmt"
         "github.com/go-park-mail-ru/2023_1_4from5/internal/models"
         "github.com/golang-jwt/jwt"
@@ -671,13 +655,6 @@ import (
         "os"
         "strings"
         "time"
-)
-
-const (
-        errExpiredToken = "expired token"
-        errNoToken      = "no token"
-        errNoAuthToken  = "no auth data"
-        errInvalidToken = "invalid token"
 )
 
 type Extractor func(r *http.Request) string
@@ -713,7 +690,7 @@ func ExtractTokenFromCookie(r *http.Request) string <span class="cov8" title="1"
 func VerifyToken(r *http.Request, extractor Extractor) (*models.Token, error) <span class="cov8" title="1">{
         tokenStr := extractor(r)
         if tokenStr == "" </span><span class="cov8" title="1">{
-                return nil, errors.New(errNoToken)
+                return nil, models.NoToken
         }</span>
 
         <span class="cov8" title="1">token, err := jwt.ParseWithClaims(tokenStr, &amp;models.Token{}, func(token *jwt.Token) (interface{}, error) </span><span class="cov8" title="1">{
@@ -730,7 +707,7 @@ func VerifyToken(r *http.Request, extractor Extractor) (*models.Token, error) <s
         if ok &amp;&amp; token.Valid </span><span class="cov8" title="1">{
                 return claims, nil
         }</span>
-        <span class="cov0" title="0">return nil, errors.New(errNoAuthToken)</span>
+        <span class="cov0" title="0">return nil, models.NoAuthData</span>
 }
 
 func ExtractTokenMetadata(r *http.Request, extractor Extractor) (*models.AccessDetails, error) <span class="cov8" title="1">{
@@ -741,7 +718,7 @@ func ExtractTokenMetadata(r *http.Request, extractor Extractor) (*models.AccessD
         <span class="cov8" title="1">exp := token.ExpiresAt
         now := time.Now().Unix()
         if exp &lt; now </span><span class="cov0" title="0">{
-                return nil, errors.New(errExpiredToken)
+                return nil, models.ExpiredToken
         }</span>
         <span class="cov8" title="1">uid, err := uuid.Parse(token.Id)
         if err != nil </span><span class="cov0" title="0">{
@@ -749,7 +726,7 @@ func ExtractTokenMetadata(r *http.Request, extractor Extractor) (*models.AccessD
         }</span>
         <span class="cov8" title="1">data := &amp;models.AccessDetails{Login: token.Login, Id: uid}
         if data.Login == "" || data.Id.String() == "" </span><span class="cov0" title="0">{
-                return nil, errors.New(errInvalidToken)
+                return nil, models.InvalidToken
         }</span>
 
         <span class="cov8" title="1">return data, err</span>
@@ -790,10 +767,6 @@ func isValid(s string) bool <span class="cov8" title="1">{
 }
 
 func UserIsValid(user models.User) bool <span class="cov8" title="1">{
-        return len(user.Login) &gt; 7 &amp;&amp; len(user.Login) &lt; 20 &amp;&amp; isValid(user.PasswordHash)
-}</span>
-
-func LoginUserIsValid(user models.LoginUser) bool <span class="cov8" title="1">{
         return len(user.Login) &gt; 7 &amp;&amp; len(user.Login) &lt; 20 &amp;&amp; isValid(user.PasswordHash)
 }</span>
 </pre>
@@ -879,7 +852,7 @@ func (ur *UserRepo) GetUserProfile(id uuid.UUID) (models.UserProfile, error) <sp
 
         row := ur.db.QueryRow(GET_PROFILE, id)
         if err := row.Scan(&amp;profile.Login, &amp;profile.Name, &amp;profile.ProfilePhoto, &amp;profile.Registration); err != nil </span><span class="cov0" title="0">{
-                return models.UserProfile{}, errors.New("InternalError")
+                return models.UserProfile{}, models.InternalError
         }</span>
 
         <span class="cov0" title="0">return profile, nil</span>
@@ -890,12 +863,12 @@ func (ur *UserRepo) GetHomePage(id uuid.UUID) (models.UserHomePage, error) <span
 
         row := ur.db.QueryRow(GET_NAME_PHOTO, id)
         if err := row.Scan(&amp;page.Name, &amp;page.ProfilePhoto); err != nil </span><span class="cov0" title="0">{
-                return models.UserHomePage{}, errors.New("InternalError")
+                return models.UserHomePage{}, models.InternalError
         }</span>
 
         <span class="cov0" title="0">row = ur.db.QueryRow(CHECK_CREATOR, id)
         if err := row.Scan(&amp;page.CreatorId); err != nil &amp;&amp; !errors.Is(sql.ErrNoRows, err) </span><span class="cov0" title="0">{
-                return models.UserHomePage{}, errors.New("InternalError")
+                return models.UserHomePage{}, models.InternalError
         }</span> else<span class="cov0" title="0"> {
                 if err == nil </span><span class="cov0" title="0">{
                         page.IsCreator = true
@@ -917,28 +890,28 @@ type UserUsecase struct {
         repo user.UserRepo
 }
 
-func NewUserUsecase(repo user.UserRepo) *UserUsecase <span class="cov0" title="0">{
+func NewUserUsecase(repo user.UserRepo) *UserUsecase <span class="cov8" title="1">{
         return &amp;UserUsecase{repo: repo}
 }</span>
 
-func (uc *UserUsecase) GetProfile(details models.AccessDetails) (models.UserProfile, error) <span class="cov0" title="0">{
+func (uc *UserUsecase) GetProfile(details models.AccessDetails) (models.UserProfile, error) <span class="cov8" title="1">{
         userId := details.Id
         userProfile, err := uc.repo.GetUserProfile(userId)
-        if err != nil </span><span class="cov0" title="0">{
-                return models.UserProfile{}, err
+        if err != nil </span><span class="cov8" title="1">{
+                return models.UserProfile{}, models.InternalError
         }</span>
 
-        <span class="cov0" title="0">return userProfile, nil</span>
+        <span class="cov8" title="1">return userProfile, nil</span>
 }
 
-func (uc *UserUsecase) GetHomePage(details models.AccessDetails) (models.UserHomePage, error) <span class="cov0" title="0">{
+func (uc *UserUsecase) GetHomePage(details models.AccessDetails) (models.UserHomePage, error) <span class="cov8" title="1">{
         userId := details.Id
         homePage, err := uc.repo.GetHomePage(userId)
-        if err != nil </span><span class="cov0" title="0">{
-                return models.UserHomePage{}, err
+        if err != nil </span><span class="cov8" title="1">{
+                return models.UserHomePage{}, models.InternalError
         }</span>
 
-        <span class="cov0" title="0">return homePage, nil</span>
+        <span class="cov8" title="1">return homePage, nil</span>
 }
 </pre>
 		

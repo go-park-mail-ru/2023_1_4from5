@@ -25,13 +25,13 @@ func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 	user := models.LoginUser{}
 	url, _ := os.LookupEnv("URL")
 	err := easyjson.UnmarshalFromReader(r.Body, &user)
-	if err != nil || !middleware.LoginUserIsValid(user) {
-		utils.Response(w, http.StatusForbidden, nil)
+	if err != nil || !middleware.UserIsValid(models.User{Login: user.Login, PasswordHash: user.PasswordHash}) {
+		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
 
 	token, status := h.usecase.SignIn(user)
-	if status != http.StatusOK {
+	if status != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
@@ -44,7 +44,7 @@ func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now().Add(time.Hour * 24),
 	}
 	http.SetCookie(w, SSCookie)
-	utils.Response(w, status, nil)
+	utils.Response(w, http.StatusOK, nil)
 }
 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
@@ -75,9 +75,12 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	token, status := h.usecase.SignUp(user)
-
 	if token == "" || token == "no secret key" { //TODO в константу
-		utils.Response(w, status, nil)
+		if status == models.ConflictData {
+			utils.Response(w, http.StatusConflict, nil)
+			return
+		}
+		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 	url, _ := os.LookupEnv("URL")

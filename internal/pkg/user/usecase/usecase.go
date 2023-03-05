@@ -17,7 +17,7 @@ func (uc *UserUsecase) GetProfile(details models.AccessDetails) (models.UserProf
 	userId := details.Id
 	userProfile, err := uc.repo.GetUserProfile(userId)
 	if err != nil {
-		return models.UserProfile{}, err
+		return models.UserProfile{}, models.InternalError
 	}
 
 	return userProfile, nil
@@ -27,7 +27,7 @@ func (uc *UserUsecase) GetHomePage(details models.AccessDetails) (models.UserHom
 	userId := details.Id
 	homePage, err := uc.repo.GetHomePage(userId)
 	if err != nil {
-		return models.UserHomePage{}, err
+		return models.UserHomePage{}, models.InternalError
 	}
 
 	return homePage, nil

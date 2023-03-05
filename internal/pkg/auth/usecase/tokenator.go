@@ -22,7 +22,6 @@ func (t *Tokenator) GetToken(user models.User) string {
 			ExpiresAt: time.Now().Add(time.Hour * 5).Unix(),
 		},
 	}
-	//храним в переменной окружения SECRET
 	SecretKey, flag := os.LookupEnv("SECRET")
 	if !flag {
 		return "no secret key"

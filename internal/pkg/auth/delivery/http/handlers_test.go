@@ -33,7 +33,7 @@ type fields struct {
 type args struct {
 	r                  *http.Request
 	expectedResponse   http.Response
-	expectedStatusCode int
+	expectedStatusCode error
 }
 
 var testUsers []models.User = []models.User{
@@ -89,7 +89,7 @@ func TestAuthHandler_SignIn(t *testing.T) {
 			args: args{
 				r: httptest.NewRequest("POST", "/signIn",
 					bytes.NewReader(bodyPrepare(testUsers[0]))),
-				expectedStatusCode: http.StatusOK,
+				expectedStatusCode: nil,
 				expectedResponse:   http.Response{StatusCode: http.StatusOK},
 			},
 		},
@@ -100,26 +100,26 @@ func TestAuthHandler_SignIn(t *testing.T) {
 			args: args{
 				r: httptest.NewRequest("POST", "/signIn",
 					bytes.NewReader(bodyPrepare(testUsers[1]))),
-				expectedStatusCode: http.StatusUnauthorized,
+				expectedStatusCode: models.NotFound,
 				expectedResponse:   http.Response{StatusCode: http.StatusUnauthorized},
 			},
 		},
 		{
-			name:   "Forbidden",
+			name:   "BadRequest",
 			Login:  testUsers[2].Login,
 			fields: fields{Usecase: mockUsecase},
 			args: args{
 				r: httptest.NewRequest("POST", "//signIn",
 					bytes.NewReader([]byte("Trying to signIN"))),
-				expectedStatusCode: http.StatusForbidden,
-				expectedResponse:   http.Response{StatusCode: http.StatusForbidden},
+				expectedStatusCode: models.NoAuthData,
+				expectedResponse:   http.Response{StatusCode: http.StatusBadRequest},
 			},
 		},
 	}
 
 	for i := 0; i < len(tests); i++ {
 		LoginUserCopy := models.LoginUser{Login: testUsers[i].Login, PasswordHash: testUsers[i].PasswordHash}
-		if tests[i].args.expectedStatusCode != http.StatusForbidden {
+		if tests[i].args.expectedStatusCode != models.NoAuthData {
 			mockUsecase.EXPECT().
 				SignIn(LoginUserCopy).
 				Return("", tests[i].args.expectedStatusCode)
@@ -159,7 +159,7 @@ func TestAuthHandler_SignUp(t *testing.T) {
 			args: args{
 				r: httptest.NewRequest("POST", "/signUp",
 					bytes.NewReader(bodyPrepare(testUsers[0]))),
-				expectedStatusCode: http.StatusOK,
+				expectedStatusCode: nil,
 				expectedResponse:   http.Response{StatusCode: http.StatusOK},
 			},
 		},
@@ -170,7 +170,7 @@ func TestAuthHandler_SignUp(t *testing.T) {
 			args: args{
 				r: httptest.NewRequest("POST", "/signUp",
 					bytes.NewReader(bodyPrepare(testUsers[1]))),
-				expectedStatusCode: http.StatusConflict,
+				expectedStatusCode: models.ConflictData,
 				expectedResponse:   http.Response{StatusCode: http.StatusConflict},
 			},
 		},
@@ -181,7 +181,7 @@ func TestAuthHandler_SignUp(t *testing.T) {
 			args: args{
 				r: httptest.NewRequest("POST", "/signUp",
 					bytes.NewReader([]byte("ppppp"))),
-				expectedStatusCode: http.StatusBadRequest,
+				expectedStatusCode: models.NoAuthData,
 				expectedResponse:   http.Response{StatusCode: http.StatusBadRequest},
 			},
 		},
@@ -192,17 +192,17 @@ func TestAuthHandler_SignUp(t *testing.T) {
 			args: args{
 				r: httptest.NewRequest("POST", "/signUp",
 					bytes.NewReader(bodyPrepare(testUsers[3]))),
-				expectedStatusCode: http.StatusBadRequest,
+				expectedStatusCode: models.NoAuthData,
 				expectedResponse:   http.Response{StatusCode: http.StatusBadRequest},
 			},
 		},
 	}
 
 	for i := 0; i < len(tests); i++ {
-		if tests[i].args.expectedStatusCode == http.StatusBadRequest {
+		if tests[i].args.expectedStatusCode == models.NoAuthData {
 			continue
 		}
-		if tests[i].args.expectedStatusCode == http.StatusOK {
+		if tests[i].args.expectedStatusCode == nil {
 			mockUsecase.EXPECT().SignUp(testUsers[i]).Return("token", tests[i].args.expectedStatusCode)
 			continue
 		}
@@ -225,6 +225,12 @@ func TestAuthHandler_SignUp(t *testing.T) {
 	}
 }
 
+type argsLogout struct {
+	r                  *http.Request
+	expectedResponse   http.Response
+	expectedStatusCode int
+}
+
 func TestAuthHandler_Logout(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
@@ -237,12 +243,12 @@ func TestAuthHandler_Logout(t *testing.T) {
 		name  string
 		Login string
 		body  []byte
-		args  args
+		args  argsLogout
 	}{
 		{
 			name:  "BadRequest wrong value for token",
 			Login: testUsers[0].Login,
-			args: args{
+			args: argsLogout{
 				r:                  httptest.NewRequest("POST", "/logout", nil),
 				expectedStatusCode: http.StatusBadRequest,
 				expectedResponse:   http.Response{StatusCode: http.StatusBadRequest},
@@ -251,7 +257,7 @@ func TestAuthHandler_Logout(t *testing.T) {
 		{
 			name:  "OK",
 			Login: testUsers[1].Login,
-			args: args{
+			args: argsLogout{
 				r:                  httptest.NewRequest("POST", "/logout", nil),
 				expectedStatusCode: http.StatusOK,
 				expectedResponse:   http.Response{StatusCode: http.StatusOK},
@@ -260,7 +266,7 @@ func TestAuthHandler_Logout(t *testing.T) {
 		{
 			name:  "BadRequest wrong Cookie name",
 			Login: testUsers[2].Login,
-			args: args{
+			args: argsLogout{
 				r:                  httptest.NewRequest("POST", "/logout", nil),
 				expectedStatusCode: http.StatusBadRequest,
 				expectedResponse:   http.Response{StatusCode: http.StatusBadRequest},

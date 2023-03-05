@@ -51,12 +51,12 @@ func TestGetPage(t *testing.T) {
 	for i := 0; i < 4; i++ {
 		value := bdy
 		r = httptest.NewRequest("GET", "/creator/page", strings.NewReader(fmt.Sprint()))
+		r = mux.SetURLVars(r, map[string]string{
+			"creator-uuid": uuid.NewString(),
+		})
 		switch i {
 		case 0:
 			usecaseMock.EXPECT().GetPage(gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, nil)
-			r = mux.SetURLVars(r, map[string]string{
-				"creator-uuid": uuid.NewString(),
-			})
 			status = http.StatusOK
 		case 1:
 			r = mux.SetURLVars(r, map[string]string{
@@ -65,15 +65,9 @@ func TestGetPage(t *testing.T) {
 			status = http.StatusBadRequest
 		case 2:
 			value = "body"
-			r = mux.SetURLVars(r, map[string]string{
-				"creator-uuid": uuid.NewString(),
-			})
 			status = http.StatusUnauthorized
 		case 3:
 			usecaseMock.EXPECT().GetPage(gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, errors.New("test"))
-			r = mux.SetURLVars(r, map[string]string{
-				"creator-uuid": uuid.NewString(),
-			})
 			status = http.StatusInternalServerError
 		}
 		r.AddCookie(&http.Cookie{

@@ -10,4 +10,5 @@ var (
 	NoToken       = errors.New("NoToken")
 	NoAuthData    = errors.New("NoAuthData")
 	InvalidToken  = errors.New("InvalidToken")
+	ConflictData  = errors.New("ConflictData")
 )

@@ -7,8 +7,8 @@ import (
 //go:generate mockgen -source=interfaces.go -destination=./mocks/auth_mock.go -package=mock
 
 type AuthUsecase interface {
-	SignIn(user models.LoginUser) (string, int)
-	SignUp(user models.User) (string, int)
+	SignIn(user models.LoginUser) (string, error)
+	SignUp(user models.User) (string, error)
 }
 
 type AuthRepo interface {
