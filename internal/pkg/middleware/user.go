@@ -8,8 +8,6 @@ import (
 func isValid(s string) bool {
 	var (
 		hasMinLen  = false
-		hasUpper   = false
-		hasLower   = false
 		hasNumber  = false
 		hasSpecial = false
 	)
@@ -18,17 +16,13 @@ func isValid(s string) bool {
 	}
 	for _, char := range s {
 		switch {
-		case unicode.IsUpper(char):
-			hasUpper = true
-		case unicode.IsLower(char):
-			hasLower = true
 		case unicode.IsNumber(char):
 			hasNumber = true
 		case unicode.IsPunct(char) || unicode.IsSymbol(char):
 			hasSpecial = true
 		}
 	}
-	return hasMinLen && hasUpper && hasLower && hasNumber && hasSpecial
+	return hasMinLen && hasNumber && hasSpecial
 }
 
 func UserIsValid(user models.User) bool {
