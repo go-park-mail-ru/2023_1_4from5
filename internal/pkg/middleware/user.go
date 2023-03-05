@@ -7,22 +7,18 @@ import (
 
 func isValid(s string) bool {
 	var (
-		hasMinLen  = false
-		hasNumber  = false
-		hasSpecial = false
+		hasMinLen = false
+		hasNumber = false
 	)
 	if len(s) >= 7 {
 		hasMinLen = true
 	}
 	for _, char := range s {
-		switch {
-		case unicode.IsNumber(char):
+		if unicode.IsNumber(char) {
 			hasNumber = true
-		case unicode.IsPunct(char) || unicode.IsSymbol(char):
-			hasSpecial = true
 		}
 	}
-	return hasMinLen && hasNumber && hasSpecial
+	return hasMinLen && hasNumber
 }
 
 func UserIsValid(user models.User) bool {
