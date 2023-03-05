@@ -71,8 +71,6 @@ func ExtractTokenMetadata(r *http.Request, extractor Extractor) (*models.AccessD
 	}
 	exp := token.ExpiresAt
 	now := time.Now().Unix()
-	fmt.Println("now", now)
-	fmt.Println("got", exp)
 	if exp < now {
 		return nil, models.ExpiredToken
 	}
