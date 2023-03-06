@@ -17,7 +17,7 @@ func NewCreatorRepo(db *sql.DB) *CreatorRepo {
 
 const (
 	CREATOR_INFO      = "SELECT user_id, name, cover_photo, followers_count, description, posts_count FROM public.creator WHERE creator_id=$1;"
-	CREATOR_POSTS     = "SELECT post_id, creation_date, title, post_text, attachments, available_subscriptions  FROM public.post WHERE creator_id=$1;"
+	CREATOR_POSTS     = "SELECT post_id, creation_date, title, post_text, attachments, available_subscriptions  FROM public.post WHERE creator_id=$1 ORDER BY creation_date DESC;"
 	USER_SUBSCRIPTION = "SELECT subscriptions FROM public.user WHERE user_id=$1;"
 )
 
