@@ -22,5 +22,5 @@ func isValid(s string) bool {
 }
 
 func UserIsValid(user models.User) bool {
-	return len(user.Login) > 7 && len(user.Login) < 20 && isValid(user.PasswordHash)
+	return len(user.Login) >= 7 && len(user.Login) < 20 && isValid(user.PasswordHash)
 }
