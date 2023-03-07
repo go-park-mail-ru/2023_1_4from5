@@ -141,11 +141,12 @@ func (m *MockTokenGenerator) EXPECT() *MockTokenGeneratorMockRecorder {
 }
 
 // GetToken mocks base method.
-func (m *MockTokenGenerator) GetToken(user models.User) string {
+func (m *MockTokenGenerator) GetToken(user models.User) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetToken", user)
 	ret0, _ := ret[0].(string)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetToken indicates an expected call of GetToken.

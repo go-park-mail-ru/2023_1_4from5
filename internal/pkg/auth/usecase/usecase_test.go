@@ -11,10 +11,17 @@ import (
 	"testing"
 )
 
-type fields struct {
+type testUsecase struct {
 	AuthRepo  auth.AuthRepo
 	TokenGen  auth.TokenGenerator
 	encrypter auth.Encrypter
+}
+
+func newTestUsecase(ctl *gomock.Controller) *testUsecase {
+	mockAuthRepo := mock.NewMockAuthRepo(ctl)
+	mockTokenGen := mock.NewMockTokenGenerator(ctl)
+	mockEncrypter := mock.NewMockEncrypter(ctl)
+	return &testUsecase{mockAuthRepo, mockTokenGen, mockEncrypter}
 }
 
 var testUsers []models.User = []models.User{
@@ -65,17 +72,17 @@ func TestAuthUsecase_SignIn(t *testing.T) {
 
 	tests := []struct {
 		name               string
-		fields             fields
+		fields             testUsecase
 		expectedStatusCode error
 	}{
 		{
 			name:               "OK",
-			fields:             fields{mockAuthRepo, mockTokenGen, mockEncrypter},
+			fields:             testUsecase{mockAuthRepo, mockTokenGen, mockEncrypter},
 			expectedStatusCode: nil,
 		},
 		{
 			name:               "Unauthorized",
-			fields:             fields{mockAuthRepo, mockTokenGen, mockEncrypter},
+			fields:             testUsecase{mockAuthRepo, mockTokenGen, mockEncrypter},
 			expectedStatusCode: models.NotFound,
 		},
 	}
@@ -87,7 +94,7 @@ func TestAuthUsecase_SignIn(t *testing.T) {
 			mockAuthRepo.EXPECT().CheckUser(gomock.Any()).Return(models.User{}, models.WrongPassword)
 		}
 		mockEncrypter.EXPECT().EncryptPswd(gomock.Any()).Return("test")
-		mockTokenGen.EXPECT().GetToken(gomock.Any()).Return("TEST TOKEN")
+		mockTokenGen.EXPECT().GetToken(gomock.Any()).Return("TEST TOKEN", nil)
 	}
 
 	for i, test := range tests {
@@ -115,22 +122,22 @@ func TestAuthUsecase_SignUp(t *testing.T) {
 
 	tests := []struct {
 		name               string
-		fields             fields
+		fields             testUsecase
 		expectedStatusCode error
 	}{
 		{
 			name:               "Conflict, user with that login already exists",
-			fields:             fields{mockAuthRepo, mockTokenGen, mockEncrypter},
+			fields:             testUsecase{mockAuthRepo, mockTokenGen, mockEncrypter},
 			expectedStatusCode: models.ConflictData,
 		},
 		{
 			name:               "OK",
-			fields:             fields{mockAuthRepo, mockTokenGen, mockEncrypter},
+			fields:             testUsecase{mockAuthRepo, mockTokenGen, mockEncrypter},
 			expectedStatusCode: nil,
 		},
 		{
 			name:               "ServerError",
-			fields:             fields{mockAuthRepo, mockTokenGen, mockEncrypter},
+			fields:             testUsecase{mockAuthRepo, mockTokenGen, mockEncrypter},
 			expectedStatusCode: models.InternalError,
 		},
 	}
@@ -148,7 +155,7 @@ func TestAuthUsecase_SignUp(t *testing.T) {
 			mockAuthRepo.EXPECT().CheckUser(gomock.Any()).Return(models.User{}, models.NotFound)
 			mockAuthRepo.EXPECT().CreateUser(gomock.Any()).Return(models.User{}, models.InternalError)
 		}
-		mockTokenGen.EXPECT().GetToken(gomock.Any()).Return("TEST TOKEN")
+		mockTokenGen.EXPECT().GetToken(gomock.Any()).Return("TEST TOKEN", nil)
 	}
 
 	for i, test := range tests {

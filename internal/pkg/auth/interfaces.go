@@ -17,7 +17,7 @@ type AuthRepo interface {
 }
 
 type TokenGenerator interface {
-	GetToken(user models.User) string
+	GetToken(user models.User) (string, error)
 }
 
 type Encrypter interface {

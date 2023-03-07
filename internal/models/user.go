@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/google/uuid"
 	"time"
 )
@@ -15,6 +16,10 @@ type User struct {
 	PasswordHash string    `json:"password_hash" example:"1cbedcfebd7efb060916156dafe1dc4b7007db6b7e2312aeb5eed4a43f54e8f767e7d823b54119771723f87aa0bb05df34806fc598cd889042e4da9a609571c3"`
 	Registration time.Time `json:"registration"`
 	//TODO: UserVersion  int       `json:"-"`
+}
+
+func (user User) UserIsValid() bool {
+	return len(user.Login) >= 7 && len(user.Login) < 20 && utils.IsValid(user.PasswordHash)
 }
 
 type LoginUser struct {

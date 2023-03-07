@@ -8,7 +8,6 @@ import (
 	"github.com/mailru/easyjson"
 	"net/http"
 	"os"
-	"time"
 )
 
 type AuthHandler struct {
@@ -23,27 +22,22 @@ func NewAuthHandler(uc auth.AuthUsecase) *AuthHandler {
 
 func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 	user := models.LoginUser{}
-	url, _ := os.LookupEnv("URL")
+	url, flag := os.LookupEnv("URL")
+	if !flag {
+		//TODO
+	}
 	err := easyjson.UnmarshalFromReader(r.Body, &user)
-	if err != nil || !middleware.UserIsValid(models.User{Login: user.Login, PasswordHash: user.PasswordHash}) {
+	if err != nil || !(models.User{Login: user.Login, PasswordHash: user.PasswordHash}).UserIsValid() {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
 
-	token, status := h.usecase.SignIn(user)
-	if status != nil {
+	token, err := h.usecase.SignIn(user)
+	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
-	SSCookie := &http.Cookie{
-		Name:     "SSID",
-		Value:    token,
-		Path:     "/",
-		Domain:   url,
-		HttpOnly: true,
-		Expires:  time.Now().Add(time.Hour * 24),
-	}
-	http.SetCookie(w, SSCookie)
+	utils.Cookie(w, url, token)
 	utils.Response(w, http.StatusOK, nil)
 }
 
@@ -54,29 +48,21 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	url, _ := os.LookupEnv("URL")
-	SSCookie := &http.Cookie{
-		Name:     "SSID",
-		Value:    "",
-		Path:     "/",
-		Domain:   url,
-		HttpOnly: true,
-		Expires:  time.Now(),
-	}
-	http.SetCookie(w, SSCookie)
+	utils.Cookie(w, url, "")
 	utils.Response(w, http.StatusOK, nil)
 }
 
 func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	err := easyjson.UnmarshalFromReader(r.Body, &user)
-	if err != nil || !middleware.UserIsValid(user) {
+	if err != nil || !user.UserIsValid() {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
 
-	token, status := h.usecase.SignUp(user)
+	token, err := h.usecase.SignUp(user)
 	if token == "" || token == "no secret key" { //TODO в константу
-		if status == models.ConflictData {
+		if err == models.ConflictData {
 			utils.Response(w, http.StatusConflict, nil)
 			return
 		}
@@ -84,15 +70,7 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	url, _ := os.LookupEnv("URL")
-	SSCookie := &http.Cookie{
-		Name:     "SSID",
-		Value:    token,
-		Path:     "/",
-		Domain:   url,
-		HttpOnly: true,
-		Expires:  time.Now().Add(time.Hour * 24),
-	}
 
-	http.SetCookie(w, SSCookie)
-	w.WriteHeader(http.StatusOK)
+	utils.Cookie(w, url, token)
+	utils.Response(w, http.StatusOK, nil)
 }

@@ -18,9 +18,9 @@ func NewAuthUsecase(repo auth.AuthRepo, tokenator auth.TokenGenerator, encrypter
 
 func (u *AuthUsecase) SignIn(user models.LoginUser) (string, error) {
 	user.PasswordHash = u.encrypter.EncryptPswd(user.PasswordHash)
-	DBUser, status := u.repo.CheckUser(models.User{Login: user.Login, PasswordHash: user.PasswordHash})
-	token := u.tokenator.GetToken(DBUser)
-	if status == nil && token != "" {
+	DBUser, dbErr := u.repo.CheckUser(models.User{Login: user.Login, PasswordHash: user.PasswordHash})
+	token, err := u.tokenator.GetToken(DBUser)
+	if dbErr == nil && err == nil {
 		return token, nil
 	}
 	return "", models.NotFound
@@ -33,9 +33,9 @@ func (u *AuthUsecase) SignUp(user models.User) (string, error) {
 	if err == nil || errors.Is(err, models.WrongPassword) {
 		return "", models.ConflictData
 	}
-	NewUser, err := u.repo.CreateUser(user)
-	token := u.tokenator.GetToken(NewUser)
-	if err == nil && token != "" {
+	NewUser, dbErr := u.repo.CreateUser(user)
+	token, tokenErr := u.tokenator.GetToken(NewUser)
+	if dbErr == nil && tokenErr == nil {
 		return token, nil
 	}
 	return "", models.InternalError

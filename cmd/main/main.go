@@ -31,12 +31,6 @@ func main() {
 }
 
 func run() error {
-	r := mux.NewRouter().PathPrefix("/api").Subrouter()
-
-	r.Use(middleware.CORSMiddleware)
-
-	srv := http.Server{Handler: r, Addr: ":8000"}
-
 	str, err := utils.GetConnectionString()
 	if err != nil {
 		return err
@@ -63,6 +57,8 @@ func run() error {
 	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo)
 	creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse)
 
+	r := mux.NewRouter().PathPrefix("/api").Subrouter()
+	r.Use(middleware.CORSMiddleware)
 	auth := r.PathPrefix("/auth").Subrouter()
 	{
 		auth.HandleFunc("/signUp", authHandler.SignUp).Methods(http.MethodPost, http.MethodOptions)
@@ -81,5 +77,6 @@ func run() error {
 		creator.HandleFunc("/page/{creator-uuid}", creatorHandler.GetPage).Methods(http.MethodGet, http.MethodOptions)
 	}
 	http.Handle("/", r)
+	srv := http.Server{Handler: r, Addr: ":8000"}
 	return srv.ListenAndServe()
 }
