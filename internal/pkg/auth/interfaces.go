@@ -11,18 +11,20 @@ type AuthUsecase interface {
 	SignIn(user models.LoginUser) (string, int)
 	SignUp(user models.User) (string, int)
 	Logout(details models.AccessDetails) (int, error)
+	CheckUserVersion(details models.AccessDetails) (int, error)
 }
 
 type AuthRepo interface {
 	CreateUser(user models.User) (models.User, error)
 	CheckUser(user models.User) (models.User, error)
 	IncUserVersion(userId uuid.UUID) (int, error)
+	CheckUserVersion(details models.AccessDetails) (int, error)
 }
 
 type TokenGenerator interface {
 	GetToken(user models.User) string
 }
 
-type Encrypter interface {
-	EncryptPswd(pswd string) string
+type Encryptor interface {
+	EncryptPwd(pwd string) string
 }

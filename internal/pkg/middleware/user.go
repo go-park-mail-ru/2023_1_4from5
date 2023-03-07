@@ -38,8 +38,3 @@ func UserIsValid(user models.User) bool {
 func LoginUserIsValid(user models.LoginUser) bool {
 	return len(user.Login) > 7 && len(user.Login) < 20 && isValid(user.PasswordHash)
 }
-
-//TODO: userVersionCheck here
-//Can middleware work with repo+usecase?
-// Another endpoint for it?
-// don't know how to realize

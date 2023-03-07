@@ -18,7 +18,7 @@ type TokenView struct {
 }
 
 type AccessDetails struct {
-	Login string
-	Id    uuid.UUID
-	//TODO: insert userversion
+	Login       string
+	Id          uuid.UUID
+	UserVersion int
 }
