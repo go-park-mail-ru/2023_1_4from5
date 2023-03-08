@@ -20,14 +20,11 @@ import (
 	"os"
 )
 
-//tests + TODOхи
-
 func main() {
 	if err := run(); err != nil {
 		log.Print(err)
 		os.Exit(1)
 	}
-	//TODO: Postman в git
 }
 
 func run() error {

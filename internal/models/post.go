@@ -16,20 +16,3 @@ type Post struct {
 	IsAvailable bool        `json:"is_available"`
 	Attachments []uuid.UUID `json:"attachments,omitempty"`
 }
-
-//После signIn возвращаем на запрос о пользователе
-//user_name
-//ленту
-//is_creator:true/false
-//if is_creator:true, то creator_id
-//
-//Страница автора
-//Получаем на бэк
-//user_id
-//creator_id
-//
-//Отдаём на фронт
-//myPage:true/false (проверяем вдруг автор зашёл на свою страницу)
-//creatorInfo
-//posts
-//subscriptions
