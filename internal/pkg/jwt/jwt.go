@@ -1,4 +1,4 @@
-package middleware
+package jwt
 
 import (
 	"fmt"
@@ -12,21 +12,6 @@ import (
 )
 
 type Extractor func(r *http.Request) string
-
-/*
-func ExtractToken(r *http.Request) string {
-	token := models.TokenView{}
-	err := json.NewDecoder(r.Body).Decode(&token)
-	if err != nil {
-		return ""
-	}
-
-	strArr := strings.Split(token.Token, " ")
-	if len(strArr) == 2 {
-		return strArr[1]
-	}
-	return strArr[0]
-}*/
 
 func ExtractTokenFromCookie(r *http.Request) string {
 	tokenCookie, err := r.Cookie("SSID")
@@ -46,12 +31,11 @@ func VerifyToken(r *http.Request, extractor Extractor) (*models.Token, error) {
 	if tokenStr == "" {
 		return nil, models.NoToken
 	}
-
 	token, err := jwt.ParseWithClaims(tokenStr, &models.Token{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(os.Getenv("SECRET")), nil
+		return []byte(os.Getenv("TOKEN_SECRET")), nil
 	})
 	if err != nil {
 		return nil, err
@@ -70,8 +54,7 @@ func ExtractTokenMetadata(r *http.Request, extractor Extractor) (*models.AccessD
 		return nil, err
 	}
 	exp := token.ExpiresAt
-	now := time.Now().Unix()
-	if exp < now {
+	if exp < time.Now().UTC().Unix() {
 		return nil, models.ExpiredToken
 	}
 	uid, err := uuid.Parse(token.Id)

@@ -5,14 +5,14 @@ import (
 	"time"
 )
 
-func Cookie(w http.ResponseWriter, url string, token string) {
+func Cookie(w http.ResponseWriter, token string) {
 	SSCookie := &http.Cookie{
 		Name:     "SSID",
 		Value:    token,
 		Path:     "/",
-		Domain:   url,
+		Domain:   "sub-me.ru",
 		HttpOnly: true,
-		Expires:  time.Now(),
+		Expires:  time.Now().UTC().Add(time.Hour * 24),
 	}
 	http.SetCookie(w, SSCookie)
 }

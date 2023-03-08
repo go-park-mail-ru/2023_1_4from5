@@ -23,13 +23,13 @@ func (t *Tokenator) GetToken(user models.User) (string, error) {
 			ExpiresAt: time.Now().Add(time.Hour * 5).Unix(),
 		},
 	}
-	SecretKey, flag := os.LookupEnv("SECRET")
+	secretKey, flag := os.LookupEnv("TOKEN_SECRET")
 	if !flag {
 		return "", errors.New("NoSecretKey")
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, tokenModel)
 
-	jwtCookie, err := token.SignedString([]byte(SecretKey))
+	jwtCookie, err := token.SignedString([]byte(secretKey))
 	if err != nil {
 		return "", errors.New("NoSecretKey")
 	}

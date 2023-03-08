@@ -36,7 +36,7 @@ func (m *MockCreatorUsecase) EXPECT() *MockCreatorUsecaseMockRecorder {
 }
 
 // GetPage mocks base method.
-func (m *MockCreatorUsecase) GetPage(details models.AccessDetails, creatorUUID string) (models.CreatorPage, error) {
+func (m *MockCreatorUsecase) GetPage(details *models.AccessDetails, creatorUUID string) (models.CreatorPage, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPage", details, creatorUUID)
 	ret0, _ := ret[0].(models.CreatorPage)

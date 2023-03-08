@@ -36,7 +36,7 @@ type args struct {
 	expectedStatusCode error
 }
 
-var testUsers []models.User = []models.User{
+var testUsers = []models.User{
 	{
 		Login:        "Dasha2003!",
 		PasswordHash: "Dasha2003!",
@@ -109,8 +109,8 @@ func TestAuthHandler_SignIn(t *testing.T) {
 			Login:  testUsers[2].Login,
 			fields: fields{Usecase: mockUsecase},
 			args: args{
-				r: httptest.NewRequest("POST", "//signIn",
-					bytes.NewReader([]byte("Trying to signIN"))),
+				r: httptest.NewRequest("POST", "/signIn",
+					bytes.NewReader([]byte("Trying to signIn"))),
 				expectedStatusCode: models.NoAuthData,
 				expectedResponse:   http.Response{StatusCode: http.StatusBadRequest},
 			},
@@ -170,7 +170,7 @@ func TestAuthHandler_SignUp(t *testing.T) {
 			args: args{
 				r: httptest.NewRequest("POST", "/signUp",
 					bytes.NewReader(bodyPrepare(testUsers[1]))),
-				expectedStatusCode: models.ConflictData,
+				expectedStatusCode: models.WrongData,
 				expectedResponse:   http.Response{StatusCode: http.StatusConflict},
 			},
 		},
@@ -187,7 +187,7 @@ func TestAuthHandler_SignUp(t *testing.T) {
 		},
 		{
 			name:   "BadRequest because user is not valid",
-			Login:  testUsers[2].Login,
+			Login:  testUsers[3].Login,
 			fields: fields{Usecase: mockUsecase},
 			args: args{
 				r: httptest.NewRequest("POST", "/signUp",
@@ -196,14 +196,29 @@ func TestAuthHandler_SignUp(t *testing.T) {
 				expectedResponse:   http.Response{StatusCode: http.StatusBadRequest},
 			},
 		},
+		{
+			name:   "InternalError",
+			Login:  testUsers[2].Login,
+			fields: fields{Usecase: mockUsecase},
+			args: args{
+				r: httptest.NewRequest("POST", "/signUp",
+					bytes.NewReader(bodyPrepare(testUsers[2]))),
+				expectedStatusCode: models.InternalError,
+				expectedResponse:   http.Response{StatusCode: http.StatusInternalServerError},
+			},
+		},
 	}
 
 	for i := 0; i < len(tests); i++ {
 		if tests[i].args.expectedStatusCode == models.NoAuthData {
 			continue
 		}
+		if tests[i].args.expectedStatusCode == models.InternalError {
+			mockUsecase.EXPECT().SignUp(gomock.Any()).Return("", tests[i].args.expectedStatusCode)
+			continue
+		}
 		if tests[i].args.expectedStatusCode == nil {
-			mockUsecase.EXPECT().SignUp(testUsers[i]).Return("token", tests[i].args.expectedStatusCode)
+			mockUsecase.EXPECT().SignUp(gomock.Any()).Return("token", tests[i].args.expectedStatusCode)
 			continue
 		}
 		mockUsecase.EXPECT().
@@ -235,7 +250,7 @@ func TestAuthHandler_Logout(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
 
-	os.Setenv("SECRET", "TEST")
+	os.Setenv("TOKEN_SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
 	bdy, _ := tkn.GetToken(models.User{Login: testUsers[1].Login, Id: uuid.New()})
 
@@ -276,7 +291,7 @@ func TestAuthHandler_Logout(t *testing.T) {
 
 	for i := 0; i < len(tests); i++ {
 		name := "SSID"
-		expires := time.Now().Add(time.Hour)
+		expires := time.Now().UTC().Add(time.Hour)
 		value := bdy
 		if tests[i].args.expectedStatusCode == http.StatusBadRequest {
 			switch i {
@@ -285,7 +300,6 @@ func TestAuthHandler_Logout(t *testing.T) {
 			case 2:
 				name = "ssss"
 			}
-			fmt.Println(expires.Unix())
 			tests[i].args.r.AddCookie(&http.Cookie{
 				Name:     name,
 				Value:    value,
@@ -302,14 +316,14 @@ func TestAuthHandler_Logout(t *testing.T) {
 		})
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.Login, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.Login, func(t *testing.T) {
 			h := &AuthHandler{}
 
 			w := httptest.NewRecorder()
-			h.Logout(w, tt.args.r)
-			require.Equal(t, tt.args.expectedResponse.StatusCode, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
-				" for login:%s", tt.name, tt.args.expectedResponse.StatusCode, w.Code, tt.Login))
+			h.Logout(w, test.args.r)
+			require.Equal(t, test.args.expectedResponse.StatusCode, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
+				" for login:%s", test.name, test.args.expectedResponse.StatusCode, w.Code, test.Login))
 		})
 	}
 }

@@ -17,14 +17,7 @@ type testUsecase struct {
 	encrypter auth.Encrypter
 }
 
-func newTestUsecase(ctl *gomock.Controller) *testUsecase {
-	mockAuthRepo := mock.NewMockAuthRepo(ctl)
-	mockTokenGen := mock.NewMockTokenGenerator(ctl)
-	mockEncrypter := mock.NewMockEncrypter(ctl)
-	return &testUsecase{mockAuthRepo, mockTokenGen, mockEncrypter}
-}
-
-var testUsers []models.User = []models.User{
+var testUsers = []models.User{
 	{
 		Login:        "Alligator19",
 		PasswordHash: "Password123!",
@@ -128,7 +121,7 @@ func TestAuthUsecase_SignUp(t *testing.T) {
 		{
 			name:               "Conflict, user with that login already exists",
 			fields:             testUsecase{mockAuthRepo, mockTokenGen, mockEncrypter},
-			expectedStatusCode: models.ConflictData,
+			expectedStatusCode: models.WrongData,
 		},
 		{
 			name:               "OK",
@@ -145,7 +138,7 @@ func TestAuthUsecase_SignUp(t *testing.T) {
 	for i := 0; i < len(tests); i++ {
 		mockEncrypter.EXPECT().EncryptPswd(gomock.Any()).Return("test")
 		switch tests[i].expectedStatusCode {
-		case models.ConflictData:
+		case models.WrongData:
 			mockAuthRepo.EXPECT().CheckUser(gomock.Any()).Return(models.User{}, models.WrongPassword)
 			continue
 		case nil:

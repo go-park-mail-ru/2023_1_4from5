@@ -2,15 +2,15 @@ package repo
 
 import (
 	"database/sql"
+	"errors"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"time"
 )
 
 const (
-	//SElECT_USER = "SELECT id, email, login, encrypted_password, created_at FROM public.user;"
-	CHECK_USER  = "SELECT user_id, password_hash FROM public.user WHERE login=$1;"
-	CREATE_USER = "INSERT INTO public.user(user_id, login, display_name, profile_photo, password_hash, registration_date) VALUES($1, $2, $3, $4, $5, $6) RETURNING user_id;"
+	UserAccessDetails = "SELECT user_id, password_hash FROM public.user WHERE login=$1;"
+	AddUser           = "INSERT INTO public.user(user_id, login, display_name, profile_photo, password_hash, registration_date) VALUES($1, $2, $3, $4, $5, $6) RETURNING user_id;"
 )
 
 type AuthRepo struct {
@@ -24,7 +24,7 @@ func NewAuthRepo(db *sql.DB) *AuthRepo {
 func (r *AuthRepo) CreateUser(user models.User) (models.User, error) {
 	var id uuid.UUID
 	user.Id = uuid.New()
-	row := r.db.QueryRow(CREATE_USER, user.Id, user.Login, user.Name, user.ProfilePhoto, user.PasswordHash, time.Now().UTC())
+	row := r.db.QueryRow(AddUser, user.Id, user.Login, user.Name, user.ProfilePhoto, user.PasswordHash, time.Now().UTC())
 
 	if err := row.Scan(&id); err != nil {
 		return models.User{}, models.InternalError
@@ -45,8 +45,8 @@ func (r *AuthRepo) CheckUser(user models.User) (models.User, error) {
 		id           uuid.UUID
 	)
 
-	row := r.db.QueryRow(CHECK_USER, user.Login) // Ищем пользователя с таким логином и берем его пароль и id
-	if err := row.Scan(&id, &passwordHash); err != nil {
+	row := r.db.QueryRow(UserAccessDetails, user.Login) // Ищем пользователя с таким логином и берем его пароль и id
+	if err := row.Scan(&id, &passwordHash); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		return models.User{}, models.InternalError
 	}
 

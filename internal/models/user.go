@@ -15,7 +15,6 @@ type User struct {
 	ProfilePhoto string    `json:"profile_photo"`
 	PasswordHash string    `json:"password_hash" example:"1cbedcfebd7efb060916156dafe1dc4b7007db6b7e2312aeb5eed4a43f54e8f767e7d823b54119771723f87aa0bb05df34806fc598cd889042e4da9a609571c3"`
 	Registration time.Time `json:"registration"`
-	//TODO: UserVersion  int       `json:"-"`
 }
 
 func (user User) UserIsValid() bool {

@@ -57,27 +57,27 @@
 				
 				<option value="file0">github.com/go-park-mail-ru/2023_1_4from5/cmd/main/main.go (0.0%)</option>
 				
-				<option value="file1">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/http/handlers.go (94.7%)</option>
+				<option value="file1">github.com/go-park-mail-ru/2023_1_4from5/internal/models/user.go (100.0%)</option>
 				
-				<option value="file2">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/repo/postgres.go (0.0%)</option>
+				<option value="file2">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/http/handlers.go (100.0%)</option>
 				
-				<option value="file3">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase/encrypter.go (0.0%)</option>
+				<option value="file3">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/repo/postgres.go (0.0%)</option>
 				
-				<option value="file4">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase/tokenator.go (70.0%)</option>
+				<option value="file4">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase/encrypter.go (0.0%)</option>
 				
-				<option value="file5">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase/usecase.go (100.0%)</option>
+				<option value="file5">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase/tokenator.go (70.0%)</option>
 				
-				<option value="file6">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/http/handlers.go (100.0%)</option>
+				<option value="file6">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase/usecase.go (100.0%)</option>
 				
-				<option value="file7">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/repo/postgres.go (0.0%)</option>
+				<option value="file7">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/http/handlers.go (100.0%)</option>
 				
-				<option value="file8">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/usecase/usecase.go (0.0%)</option>
+				<option value="file8">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/repo/postgres.go (0.0%)</option>
 				
-				<option value="file9">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware/cors.go (0.0%)</option>
+				<option value="file9">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/usecase/usecase.go (100.0%)</option>
 				
-				<option value="file10">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware/jwt.go (83.3%)</option>
+				<option value="file10">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/jwt/jwt.go (82.9%)</option>
 				
-				<option value="file11">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware/user.go (100.0%)</option>
+				<option value="file11">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware/cors.go (0.0%)</option>
 				
 				<option value="file12">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/http/handlers.go (100.0%)</option>
 				
@@ -85,9 +85,13 @@
 				
 				<option value="file14">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/usecase/usecase.go (100.0%)</option>
 				
-				<option value="file15">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils/dbconnector.go (20.0%)</option>
+				<option value="file15">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils/cookie.go (100.0%)</option>
 				
-				<option value="file16">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils/response.go (87.5%)</option>
+				<option value="file16">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils/dbconnector.go (20.0%)</option>
+				
+				<option value="file17">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils/response.go (87.5%)</option>
+				
+				<option value="file18">github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils/validation.go (100.0%)</option>
 				
 				</select>
 			</div>
@@ -134,12 +138,6 @@ func main() <span class="cov0" title="0">{
 }
 
 func run() error <span class="cov0" title="0">{
-        r := mux.NewRouter().PathPrefix("/api").Subrouter()
-
-        r.Use(middleware.CORSMiddleware)
-
-        srv := http.Server{Handler: r, Addr: ":8000"}
-
         str, err := utils.GetConnectionString()
         if err != nil </span><span class="cov0" title="0">{
                 return err
@@ -152,9 +150,12 @@ func run() error <span class="cov0" title="0">{
         <span class="cov0" title="0">defer db.Close()
 
         tokenGenerator := authUsecase.NewTokenator()
-        encryptor := authUsecase.NewEncryptor()
+        encryptor, err := authUsecase.NewEncryptor()
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
 
-        authRepo := authRepository.NewAuthRepo(db)
+        <span class="cov0" title="0">authRepo := authRepository.NewAuthRepo(db)
         authUse := authUsecase.NewAuthUsecase(authRepo, tokenGenerator, encryptor)
         authHandler := authDelivery.NewAuthHandler(authUse)
 
@@ -166,6 +167,8 @@ func run() error <span class="cov0" title="0">{
         creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo)
         creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse)
 
+        r := mux.NewRouter().PathPrefix("/api").Subrouter()
+        r.Use(middleware.CORSMiddleware)
         auth := r.PathPrefix("/auth").Subrouter()
         </span><span class="cov0" title="0">{
                 auth.HandleFunc("/signUp", authHandler.SignUp).Methods(http.MethodPost, http.MethodOptions)
@@ -184,21 +187,64 @@ func run() error <span class="cov0" title="0">{
                 creator.HandleFunc("/page/{creator-uuid}", creatorHandler.GetPage).Methods(http.MethodGet, http.MethodOptions)
         }</span>
         <span class="cov0" title="0">http.Handle("/", r)
+        srv := http.Server{Handler: r, Addr: ":8000"}
         return srv.ListenAndServe()</span>
 }
 </pre>
 		
-		<pre class="file" id="file1" style="display: none">package http
+		<pre class="file" id="file1" style="display: none">package models
+
+import (
+        "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
+        "github.com/google/uuid"
+        "time"
+)
+
+// easyjson -all ./internal/models/user.go
+
+type User struct {
+        Id           uuid.UUID `json:"id"`
+        Login        string    `json:"login"    example:"Hacker2003"`
+        Name         string    `json:"name" example:"Danila Polyakov"`
+        ProfilePhoto string    `json:"profile_photo"`
+        PasswordHash string    `json:"password_hash" example:"1cbedcfebd7efb060916156dafe1dc4b7007db6b7e2312aeb5eed4a43f54e8f767e7d823b54119771723f87aa0bb05df34806fc598cd889042e4da9a609571c3"`
+        Registration time.Time `json:"registration"`
+}
+
+func (user User) UserIsValid() bool <span class="cov8" title="1">{
+        return len(user.Login) &gt;= 7 &amp;&amp; len(user.Login) &lt; 20 &amp;&amp; utils.IsValid(user.PasswordHash)
+}</span>
+
+type LoginUser struct {
+        Login        string `json:"login"    example:"Hacker2003"`
+        PasswordHash string `json:"password_hash" example:"1cbedcfebd7efb060916156dafe1dc4b7007db6b7e2312aeb5eed4a43f54e8f767e7d823b54119771723f87aa0bb05df34806fc598cd889042e4da9a609571c3"`
+}
+
+type UserProfile struct {
+        Login        string    `json:"login"    example:"Hacker2003"`
+        Name         string    `json:"name" example:"Danila Polyakov"`
+        ProfilePhoto string    `json:"profile_photo"`
+        Registration time.Time `json:"registration"`
+}
+
+type UserHomePage struct {
+        Name         string    `json:"name" example:"Danila Polyakov"`
+        ProfilePhoto string    `json:"profile_photo"`
+        Posts        []Post    `json:"posts"`
+        IsCreator    bool      `json:"is_creator"`
+        CreatorId    uuid.UUID `json:"creator_id"`
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package http
 
 import (
         "github.com/go-park-mail-ru/2023_1_4from5/internal/models"
         "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
-        "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
+        "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/jwt"
         "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
         "github.com/mailru/easyjson"
         "net/http"
-        "os"
-        "time"
 )
 
 type AuthHandler struct {
@@ -213,94 +259,67 @@ func NewAuthHandler(uc auth.AuthUsecase) *AuthHandler <span class="cov8" title="
 
 func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
         user := models.LoginUser{}
-        url, _ := os.LookupEnv("URL")
         err := easyjson.UnmarshalFromReader(r.Body, &amp;user)
-        if err != nil || !middleware.UserIsValid(models.User{Login: user.Login, PasswordHash: user.PasswordHash}) </span><span class="cov8" title="1">{
+        if err != nil || !(models.User{Login: user.Login, PasswordHash: user.PasswordHash}).UserIsValid() </span><span class="cov8" title="1">{
                 utils.Response(w, http.StatusBadRequest, nil)
                 return
         }</span>
 
-        <span class="cov8" title="1">token, status := h.usecase.SignIn(user)
-        if status != nil </span><span class="cov8" title="1">{
+        <span class="cov8" title="1">token, err := h.usecase.SignIn(user)
+        if err != nil </span><span class="cov8" title="1">{
                 utils.Response(w, http.StatusUnauthorized, nil)
                 return
         }</span>
-        <span class="cov8" title="1">SSCookie := &amp;http.Cookie{
-                Name:     "SSID",
-                Value:    token,
-                Path:     "/",
-                Domain:   url,
-                HttpOnly: true,
-                Expires:  time.Now().Add(time.Hour * 24),
-        }
-        http.SetCookie(w, SSCookie)
+        <span class="cov8" title="1">utils.Cookie(w, token)
         utils.Response(w, http.StatusOK, nil)</span>
 }
 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
-        _, err := middleware.ExtractTokenMetadata(r, middleware.ExtractTokenFromCookie)
+        _, err := jwt.ExtractTokenMetadata(r, jwt.ExtractTokenFromCookie)
         if err != nil </span><span class="cov8" title="1">{
                 utils.Response(w, http.StatusBadRequest, nil)
                 return
         }</span>
-        <span class="cov8" title="1">url, _ := os.LookupEnv("URL")
-        SSCookie := &amp;http.Cookie{
-                Name:     "SSID",
-                Value:    "",
-                Path:     "/",
-                Domain:   url,
-                HttpOnly: true,
-                Expires:  time.Now(),
-        }
-        http.SetCookie(w, SSCookie)
+        <span class="cov8" title="1">utils.Cookie(w, "")
         utils.Response(w, http.StatusOK, nil)</span>
 }
 
 func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
         var user models.User
         err := easyjson.UnmarshalFromReader(r.Body, &amp;user)
-        if err != nil || !middleware.UserIsValid(user) </span><span class="cov8" title="1">{
+        if err != nil || !user.UserIsValid() </span><span class="cov8" title="1">{
                 utils.Response(w, http.StatusBadRequest, nil)
                 return
         }</span>
 
-        <span class="cov8" title="1">token, status := h.usecase.SignUp(user)
-        if token == "" || token == "no secret key" </span><span class="cov8" title="1">{ //TODO в константу
-                if status == models.ConflictData </span><span class="cov8" title="1">{
+        <span class="cov8" title="1">token, err := h.usecase.SignUp(user)
+        if token == "" </span><span class="cov8" title="1">{
+                if err == models.WrongData </span><span class="cov8" title="1">{
                         utils.Response(w, http.StatusConflict, nil)
                         return
                 }</span>
-                <span class="cov0" title="0">utils.Response(w, http.StatusInternalServerError, nil)
+                <span class="cov8" title="1">utils.Response(w, http.StatusInternalServerError, nil)
                 return</span>
         }
-        <span class="cov8" title="1">url, _ := os.LookupEnv("URL")
-        SSCookie := &amp;http.Cookie{
-                Name:     "SSID",
-                Value:    token,
-                Path:     "/",
-                Domain:   url,
-                HttpOnly: true,
-                Expires:  time.Now().Add(time.Hour * 24),
-        }
 
-        http.SetCookie(w, SSCookie)
-        w.WriteHeader(http.StatusOK)</span>
+        <span class="cov8" title="1">utils.Cookie(w, token)
+        utils.Response(w, http.StatusOK, nil)</span>
 }
 </pre>
 		
-		<pre class="file" id="file2" style="display: none">package repo
+		<pre class="file" id="file3" style="display: none">package repo
 
 import (
         "database/sql"
+        "errors"
         "github.com/go-park-mail-ru/2023_1_4from5/internal/models"
         "github.com/google/uuid"
         "time"
 )
 
 const (
-        //SElECT_USER = "SELECT id, email, login, encrypted_password, created_at FROM public.user;"
-        CHECK_USER  = "SELECT user_id, password_hash FROM public.user WHERE login=$1;"
-        CREATE_USER = "INSERT INTO public.user(user_id, login, display_name, profile_photo, password_hash, registration_date) VALUES($1, $2, $3, $4, $5, $6) RETURNING user_id;"
+        UserAccessDetails = "SELECT user_id, password_hash FROM public.user WHERE login=$1;"
+        AddUser           = "INSERT INTO public.user(user_id, login, display_name, profile_photo, password_hash, registration_date) VALUES($1, $2, $3, $4, $5, $6) RETURNING user_id;"
 )
 
 type AuthRepo struct {
@@ -314,7 +333,7 @@ func NewAuthRepo(db *sql.DB) *AuthRepo <span class="cov0" title="0">{
 func (r *AuthRepo) CreateUser(user models.User) (models.User, error) <span class="cov0" title="0">{
         var id uuid.UUID
         user.Id = uuid.New()
-        row := r.db.QueryRow(CREATE_USER, user.Id, user.Login, user.Name, user.ProfilePhoto, user.PasswordHash, time.Now().UTC())
+        row := r.db.QueryRow(AddUser, user.Id, user.Login, user.Name, user.ProfilePhoto, user.PasswordHash, time.Now().UTC())
 
         if err := row.Scan(&amp;id); err != nil </span><span class="cov0" title="0">{
                 return models.User{}, models.InternalError
@@ -335,8 +354,8 @@ func (r *AuthRepo) CheckUser(user models.User) (models.User, error) <span class=
                 id           uuid.UUID
         )
 
-        row := r.db.QueryRow(CHECK_USER, user.Login) // Ищем пользователя с таким логином и берем его пароль и id
-        if err := row.Scan(&amp;id, &amp;passwordHash); err != nil </span><span class="cov0" title="0">{
+        row := r.db.QueryRow(UserAccessDetails, user.Login) // Ищем пользователя с таким логином и берем его пароль и id
+        if err := row.Scan(&amp;id, &amp;passwordHash); err != nil &amp;&amp; !errors.Is(sql.ErrNoRows, err) </span><span class="cov0" title="0">{
                 return models.User{}, models.InternalError
         }</span>
 
@@ -358,10 +377,11 @@ func (r *AuthRepo) CheckUser(user models.User) (models.User, error) <span class=
 }
 </pre>
 		
-		<pre class="file" id="file3" style="display: none">package usecase
+		<pre class="file" id="file4" style="display: none">package usecase
 
 import (
         "crypto/sha256"
+        "errors"
         "fmt"
         "os"
 )
@@ -370,28 +390,32 @@ type Encrypter struct {
         salt string
 }
 
-func NewEncryptor() *Encrypter <span class="cov0" title="0">{
-        salt := os.Getenv("SECRET")
-        return &amp;Encrypter{salt: salt}
-}</span>
+func NewEncryptor() (*Encrypter, error) <span class="cov0" title="0">{
+        salt, flag := os.LookupEnv("ENCRYPTER_SECRET")
+        if !flag </span><span class="cov0" title="0">{
+                return &amp;Encrypter{}, errors.New("NoSecretKey")
+        }</span>
+        <span class="cov0" title="0">return &amp;Encrypter{salt: salt}, nil</span>
+}
 
 func (ec *Encrypter) EncryptPswd(pswd string) string <span class="cov0" title="0">{
-        Encryptedpswd := sha256.New()
-        _, err := Encryptedpswd.Write([]byte(pswd))
+        encryptedPswd := sha256.New()
+        _, err := encryptedPswd.Write([]byte(pswd))
         if err != nil </span><span class="cov0" title="0">{
                 return ""
         }</span>
-        <span class="cov0" title="0">_, err = Encryptedpswd.Write([]byte(ec.salt))
+        <span class="cov0" title="0">_, err = encryptedPswd.Write([]byte(ec.salt))
         if err != nil </span><span class="cov0" title="0">{
                 return ""
         }</span>
-        <span class="cov0" title="0">return fmt.Sprintf("%x", Encryptedpswd.Sum(nil))</span>
+        <span class="cov0" title="0">return fmt.Sprintf("%x", encryptedPswd.Sum(nil))</span>
 }
 </pre>
 		
-		<pre class="file" id="file4" style="display: none">package usecase
+		<pre class="file" id="file5" style="display: none">package usecase
 
 import (
+        "errors"
         "github.com/go-park-mail-ru/2023_1_4from5/internal/models"
         "github.com/golang-jwt/jwt"
         "os"
@@ -405,7 +429,7 @@ func NewTokenator() *Tokenator <span class="cov0" title="0">{
         return &amp;Tokenator{}
 }</span>
 
-func (t *Tokenator) GetToken(user models.User) string <span class="cov8" title="1">{
+func (t *Tokenator) GetToken(user models.User) (string, error) <span class="cov8" title="1">{
         tokenModel := models.Token{
                 Login: user.Login,
                 Id:    user.Id.String(),
@@ -413,21 +437,21 @@ func (t *Tokenator) GetToken(user models.User) string <span class="cov8" title="
                         ExpiresAt: time.Now().Add(time.Hour * 5).Unix(),
                 },
         }
-        SecretKey, flag := os.LookupEnv("SECRET")
+        secretKey, flag := os.LookupEnv("TOKEN_SECRET")
         if !flag </span><span class="cov0" title="0">{
-                return "no secret key"
+                return "", errors.New("NoSecretKey")
         }</span>
         <span class="cov8" title="1">token := jwt.NewWithClaims(jwt.SigningMethodHS256, tokenModel)
 
-        jwtCookie, err := token.SignedString([]byte(SecretKey))
+        jwtCookie, err := token.SignedString([]byte(secretKey))
         if err != nil </span><span class="cov0" title="0">{
-                return "no secret key"
+                return "", errors.New("NoSecretKey")
         }</span>
-        <span class="cov8" title="1">return jwtCookie</span>
+        <span class="cov8" title="1">return jwtCookie, nil</span>
 }
 </pre>
 		
-		<pre class="file" id="file5" style="display: none">package usecase
+		<pre class="file" id="file6" style="display: none">package usecase
 
 import (
         "errors"
@@ -447,9 +471,9 @@ func NewAuthUsecase(repo auth.AuthRepo, tokenator auth.TokenGenerator, encrypter
 
 func (u *AuthUsecase) SignIn(user models.LoginUser) (string, error) <span class="cov8" title="1">{
         user.PasswordHash = u.encrypter.EncryptPswd(user.PasswordHash)
-        DBUser, status := u.repo.CheckUser(models.User{Login: user.Login, PasswordHash: user.PasswordHash})
-        token := u.tokenator.GetToken(DBUser)
-        if status == nil &amp;&amp; token != "" </span><span class="cov8" title="1">{
+        dbUser, dbErr := u.repo.CheckUser(models.User{Login: user.Login, PasswordHash: user.PasswordHash})
+        token, err := u.tokenator.GetToken(dbUser)
+        if dbErr == nil &amp;&amp; err == nil </span><span class="cov8" title="1">{
                 return token, nil
         }</span>
         <span class="cov8" title="1">return "", models.NotFound</span>
@@ -460,22 +484,23 @@ func (u *AuthUsecase) SignUp(user models.User) (string, error) <span class="cov8
 
         _, err := u.repo.CheckUser(user)
         if err == nil || errors.Is(err, models.WrongPassword) </span><span class="cov8" title="1">{
-                return "", models.ConflictData
+                return "", models.WrongData
         }</span>
-        <span class="cov8" title="1">NewUser, err := u.repo.CreateUser(user)
-        token := u.tokenator.GetToken(NewUser)
-        if err == nil &amp;&amp; token != "" </span><span class="cov8" title="1">{
+        <span class="cov8" title="1">newUser, dbErr := u.repo.CreateUser(user)
+        token, tokenErr := u.tokenator.GetToken(newUser)
+        if dbErr == nil &amp;&amp; tokenErr == nil </span><span class="cov8" title="1">{
                 return token, nil
         }</span>
         <span class="cov8" title="1">return "", models.InternalError</span>
 }
 </pre>
 		
-		<pre class="file" id="file6" style="display: none">package http
+		<pre class="file" id="file7" style="display: none">package http
 
 import (
+        "github.com/go-park-mail-ru/2023_1_4from5/internal/models"
         "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator"
-        "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
+        "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/jwt"
         "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
         "github.com/gorilla/mux"
         "net/http"
@@ -498,28 +523,38 @@ func (h *CreatorHandler) GetPage(w http.ResponseWriter, r *http.Request) <span c
                 utils.Response(w, http.StatusBadRequest, nil)
                 return
         }</span>
-        <span class="cov8" title="1">userInfo, err := middleware.ExtractTokenMetadata(r, middleware.ExtractTokenFromCookie)
+        <span class="cov8" title="1">userInfo, err := jwt.ExtractTokenMetadata(r, jwt.ExtractTokenFromCookie)
         if err != nil </span><span class="cov8" title="1">{
                 utils.Response(w, http.StatusUnauthorized, nil)
                 return
         }</span>
-        <span class="cov8" title="1">creatorPage, err := h.usecase.GetPage(*userInfo, creatorUUID)
-        if err != nil </span><span class="cov8" title="1">{
+        <span class="cov8" title="1">creatorPage, err := h.usecase.GetPage(userInfo, creatorUUID)
+        if err == models.InternalError </span><span class="cov8" title="1">{
                 utils.Response(w, http.StatusInternalServerError, nil)
                 return
         }</span>
-
+        <span class="cov8" title="1">if err == models.WrongData </span><span class="cov8" title="1">{
+                utils.Response(w, http.StatusBadRequest, nil)
+                return
+        }</span>
         <span class="cov8" title="1">utils.Response(w, http.StatusOK, creatorPage)</span>
 }
 </pre>
 		
-		<pre class="file" id="file7" style="display: none">package repo
+		<pre class="file" id="file8" style="display: none">package repo
 
 import (
         "database/sql"
+        "errors"
         "github.com/go-park-mail-ru/2023_1_4from5/internal/models"
         "github.com/google/uuid"
         "github.com/lib/pq"
+)
+
+const (
+        CreatorInfo       = "SELECT user_id, name, cover_photo, followers_count, description, posts_count FROM public.creator WHERE creator_id=$1;"
+        CreatorPosts      = "SELECT post_id, creation_date, title, post_text, attachments, available_subscriptions  FROM public.post WHERE creator_id=$1 ORDER BY creation_date DESC;"
+        UserSubscriptions = "SELECT subscriptions FROM public.user WHERE user_id=$1;"
 )
 
 type CreatorRepo struct {
@@ -530,72 +565,68 @@ func NewCreatorRepo(db *sql.DB) *CreatorRepo <span class="cov0" title="0">{
         return &amp;CreatorRepo{db: db}
 }</span>
 
-const (
-        CREATOR_INFO      = "SELECT user_id, name, cover_photo, followers_count, description, posts_count FROM public.creator WHERE creator_id=$1;"
-        CREATOR_POSTS     = "SELECT post_id, creation_date, title, post_text, attachments, available_subscriptions  FROM public.post WHERE creator_id=$1;"
-        USER_SUBSCRIPTION = "SELECT subscriptions FROM public.user WHERE user_id=$1;"
-)
-
 func (ur *CreatorRepo) GetPage(userId uuid.UUID, creatorId uuid.UUID) (models.CreatorPage, error) <span class="cov0" title="0">{
         var creatorPage models.CreatorPage
         creatorPage.CreatorInfo.Id = creatorId
+        creatorPage.Posts = make([]models.Post, 0)
 
         userSubscriptions := make([]uuid.UUID, 0)
-        row := ur.db.QueryRow(CREATOR_INFO, creatorId)
-        if err := row.Scan(&amp;creatorPage.CreatorInfo.UserId, &amp;creatorPage.CreatorInfo.Name, &amp;creatorPage.CreatorInfo.CoverPhoto, &amp;creatorPage.CreatorInfo.FollowersCount, &amp;creatorPage.CreatorInfo.Description, &amp;creatorPage.CreatorInfo.PostsCount); err != nil </span><span class="cov0" title="0">{
+        row := ur.db.QueryRow(CreatorInfo, creatorId)
+
+        if err := row.Scan(&amp;creatorPage.CreatorInfo.UserId, &amp;creatorPage.CreatorInfo.Name, &amp;creatorPage.CreatorInfo.CoverPhoto,
+                &amp;creatorPage.CreatorInfo.FollowersCount, &amp;creatorPage.CreatorInfo.Description, &amp;creatorPage.CreatorInfo.PostsCount); err != nil &amp;&amp; !errors.Is(sql.ErrNoRows, err) </span><span class="cov0" title="0">{
                 return models.CreatorPage{}, models.InternalError
-        }</span>
-        <span class="cov0" title="0">if creatorPage.CreatorInfo.UserId == userId </span><span class="cov0" title="0">{
-                creatorPage.IsMyPage = true
-        }</span> else<span class="cov0" title="0"> {
-                row := ur.db.QueryRow(USER_SUBSCRIPTION, userId)
-                if err := row.Scan(pq.Array(&amp;userSubscriptions)); err != nil </span><span class="cov0" title="0">{
+        }</span> else<span class="cov0" title="0"> if err == nil </span><span class="cov0" title="0">{ //нашёл такого автора
+                if creatorPage.CreatorInfo.UserId == userId </span><span class="cov0" title="0">{ // страница автора принадлежит пользователю
+                        creatorPage.IsMyPage = true
+                }</span> else<span class="cov0" title="0"> { // находим подписки пользователя
+                        row := ur.db.QueryRow(UserSubscriptions, userId)
+                        if err := row.Scan(pq.Array(&amp;userSubscriptions)); err != nil &amp;&amp; !errors.Is(sql.ErrNoRows, err) </span><span class="cov0" title="0">{
+                                return models.CreatorPage{}, models.InternalError
+                        }</span>
+                }
+                // смотрим, какие посты доступны пользователю, исходя из его уровня подписки
+                <span class="cov0" title="0">rows, err := ur.db.Query(CreatorPosts, creatorId)
+                if err != nil &amp;&amp; !errors.Is(sql.ErrNoRows, err) </span><span class="cov0" title="0">{
                         return models.CreatorPage{}, models.InternalError
                 }</span>
-        }
+                <span class="cov0" title="0">defer rows.Close()
+                for rows.Next() </span><span class="cov0" title="0">{
+                        var post models.Post
+                        availableSubscriptions := make([]uuid.UUID, 0)
+                        post.Creator = creatorId
+                        err = rows.Scan(&amp;post.Id, &amp;post.Creation, &amp;post.Title,
+                                &amp;post.Text, pq.Array(&amp;post.Attachments), pq.Array(&amp;availableSubscriptions)) //подписки, при которыз пост доступен
+                        if err != nil </span><span class="cov0" title="0">{
+                                return models.CreatorPage{}, models.InternalError
+                        }</span>
 
-        <span class="cov0" title="0">rows, err := ur.db.Query(CREATOR_POSTS, creatorId)
-        defer rows.Close()
-        if err != nil </span><span class="cov0" title="0">{
-                return models.CreatorPage{}, models.InternalError
-        }</span>
-        <span class="cov0" title="0">posts := make([]models.Post, 0)
-        for rows.Next() </span><span class="cov0" title="0">{
-                var post models.Post
-                availableSubscriptions := make([]uuid.UUID, 0)
-                post.Creator = creatorId
-                err = rows.Scan(&amp;post.Id, &amp;post.Creation, &amp;post.Title,
-                        &amp;post.Text, pq.Array(&amp;post.Attachments), pq.Array(&amp;availableSubscriptions))
-                if err != nil </span><span class="cov0" title="0">{
-                        return models.CreatorPage{}, models.InternalError
-                }</span>
+                        <span class="cov0" title="0">if creatorPage.IsMyPage </span><span class="cov0" title="0">{
+                                post.IsAvailable = true
+                        }</span>
 
-                <span class="cov0" title="0">if creatorPage.IsMyPage </span><span class="cov0" title="0">{
-                        post.IsAvailable = true
-                }</span>
-
-                <span class="cov0" title="0">for _, v1 := range availableSubscriptions </span><span class="cov0" title="0">{
-                        for _, v2 := range userSubscriptions </span><span class="cov0" title="0">{
-                                if v1 == v2 </span><span class="cov0" title="0">{
-                                        post.IsAvailable = true
+                        <span class="cov0" title="0">for _, availableSubscription := range availableSubscriptions </span><span class="cov0" title="0">{
+                                for _, userSubscription := range userSubscriptions </span><span class="cov0" title="0">{
+                                        if availableSubscription == userSubscription </span><span class="cov0" title="0">{
+                                                post.IsAvailable = true
+                                                break</span>
+                                        }
+                                }
+                                <span class="cov0" title="0">if post.IsAvailable </span><span class="cov0" title="0">{
                                         break</span>
                                 }
                         }
-                        <span class="cov0" title="0">if post.IsAvailable </span><span class="cov0" title="0">{
-                                break</span>
-                        }
+
+                        <span class="cov0" title="0">creatorPage.Posts = append(creatorPage.Posts, post)</span>
                 }
 
-                <span class="cov0" title="0">posts = append(posts, post)</span>
+                <span class="cov0" title="0">return creatorPage, nil</span>
         }
-
-        <span class="cov0" title="0">creatorPage.Posts = make([]models.Post, len(posts))
-        copy(creatorPage.Posts, posts)
-        return creatorPage, nil</span>
+        <span class="cov0" title="0">return models.CreatorPage{}, models.WrongData</span> // такого автора нет
 }
 </pre>
 		
-		<pre class="file" id="file8" style="display: none">package usecase
+		<pre class="file" id="file9" style="display: none">package usecase
 
 import (
         "github.com/go-park-mail-ru/2023_1_4from5/internal/models"
@@ -607,44 +638,26 @@ type CreatorUsecase struct {
         repo creator.CreatorRepo
 }
 
-func NewCreatorUsecase(repo creator.CreatorRepo) *CreatorUsecase <span class="cov0" title="0">{
+func NewCreatorUsecase(repo creator.CreatorRepo) *CreatorUsecase <span class="cov8" title="1">{
         return &amp;CreatorUsecase{repo: repo}
 }</span>
 
-func (uc *CreatorUsecase) GetPage(details models.AccessDetails, creatorUUID string) (models.CreatorPage, error) <span class="cov0" title="0">{
+func (uc *CreatorUsecase) GetPage(details *models.AccessDetails, creatorUUID string) (models.CreatorPage, error) <span class="cov8" title="1">{
         userId := details.Id
         creatorId, err := uuid.Parse(creatorUUID)
-        if err != nil </span><span class="cov0" title="0">{
-                return models.CreatorPage{}, err
+        if err != nil </span><span class="cov8" title="1">{
+                return models.CreatorPage{}, models.WrongData
         }</span>
-        <span class="cov0" title="0">creatorPage, err := uc.repo.GetPage(userId, creatorId)
-        if err != nil </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">creatorPage, err := uc.repo.GetPage(userId, creatorId)
+        if err != nil </span><span class="cov8" title="1">{
                 return models.CreatorPage{}, err
         }</span>
 
-        <span class="cov0" title="0">return creatorPage, nil</span>
+        <span class="cov8" title="1">return creatorPage, nil</span>
 }
 </pre>
 		
-		<pre class="file" id="file9" style="display: none">package middleware
-
-import "net/http"
-
-func CORSMiddleware(next http.Handler) http.Handler <span class="cov0" title="0">{
-        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
-                w.Header().Set("Access-Control-Allow-Methods", "POST,PUT,DELETE,GET")
-                w.Header().Set("Access-Control-Allow-Headers", "Content-Type,X-CSRF-Token")
-                w.Header().Set("Access-Control-Allow-Credentials", "true")
-                w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
-                if r.Method == http.MethodOptions </span><span class="cov0" title="0">{
-                        return
-                }</span>
-                <span class="cov0" title="0">next.ServeHTTP(w, r)</span>
-        })
-}
-</pre>
-		
-		<pre class="file" id="file10" style="display: none">package middleware
+		<pre class="file" id="file10" style="display: none">package jwt
 
 import (
         "fmt"
@@ -658,21 +671,6 @@ import (
 )
 
 type Extractor func(r *http.Request) string
-
-/*
-func ExtractToken(r *http.Request) string {
-        token := models.TokenView{}
-        err := json.NewDecoder(r.Body).Decode(&amp;token)
-        if err != nil {
-                return ""
-        }
-
-        strArr := strings.Split(token.Token, " ")
-        if len(strArr) == 2 {
-                return strArr[1]
-        }
-        return strArr[0]
-}*/
 
 func ExtractTokenFromCookie(r *http.Request) string <span class="cov8" title="1">{
         tokenCookie, err := r.Cookie("SSID")
@@ -692,12 +690,11 @@ func VerifyToken(r *http.Request, extractor Extractor) (*models.Token, error) <s
         if tokenStr == "" </span><span class="cov8" title="1">{
                 return nil, models.NoToken
         }</span>
-
         <span class="cov8" title="1">token, err := jwt.ParseWithClaims(tokenStr, &amp;models.Token{}, func(token *jwt.Token) (interface{}, error) </span><span class="cov8" title="1">{
                 if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok </span><span class="cov0" title="0">{
                         return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
                 }</span>
-                <span class="cov8" title="1">return []byte(os.Getenv("SECRET")), nil</span>
+                <span class="cov8" title="1">return []byte(os.Getenv("TOKEN_SECRET")), nil</span>
         })
         <span class="cov8" title="1">if err != nil </span><span class="cov8" title="1">{
                 return nil, err
@@ -716,8 +713,7 @@ func ExtractTokenMetadata(r *http.Request, extractor Extractor) (*models.AccessD
                 return nil, err
         }</span>
         <span class="cov8" title="1">exp := token.ExpiresAt
-        now := time.Now().Unix()
-        if exp &lt; now </span><span class="cov0" title="0">{
+        if exp &lt; time.Now().UTC().Unix() </span><span class="cov0" title="0">{
                 return nil, models.ExpiredToken
         }</span>
         <span class="cov8" title="1">uid, err := uuid.Parse(token.Id)
@@ -735,46 +731,27 @@ func ExtractTokenMetadata(r *http.Request, extractor Extractor) (*models.AccessD
 		
 		<pre class="file" id="file11" style="display: none">package middleware
 
-import (
-        "github.com/go-park-mail-ru/2023_1_4from5/internal/models"
-        "unicode"
-)
+import "net/http"
 
-func isValid(s string) bool <span class="cov8" title="1">{
-        var (
-                hasMinLen  = false
-                hasUpper   = false
-                hasLower   = false
-                hasNumber  = false
-                hasSpecial = false
-        )
-        if len(s) &gt;= 7 </span><span class="cov8" title="1">{
-                hasMinLen = true
-        }</span>
-        <span class="cov8" title="1">for _, char := range s </span><span class="cov8" title="1">{
-                switch </span>{
-                case unicode.IsUpper(char):<span class="cov8" title="1">
-                        hasUpper = true</span>
-                case unicode.IsLower(char):<span class="cov8" title="1">
-                        hasLower = true</span>
-                case unicode.IsNumber(char):<span class="cov8" title="1">
-                        hasNumber = true</span>
-                case unicode.IsPunct(char) || unicode.IsSymbol(char):<span class="cov8" title="1">
-                        hasSpecial = true</span>
-                }
-        }
-        <span class="cov8" title="1">return hasMinLen &amp;&amp; hasUpper &amp;&amp; hasLower &amp;&amp; hasNumber &amp;&amp; hasSpecial</span>
+func CORSMiddleware(next http.Handler) http.Handler <span class="cov0" title="0">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                w.Header().Set("Access-Control-Allow-Methods", "POST,PUT,DELETE,GET")
+                w.Header().Set("Access-Control-Allow-Headers", "Content-Type,X-CSRF-Token")
+                w.Header().Set("Access-Control-Allow-Credentials", "true")
+                w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+                if r.Method == http.MethodOptions </span><span class="cov0" title="0">{
+                        return
+                }</span>
+                <span class="cov0" title="0">next.ServeHTTP(w, r)</span>
+        })
 }
-
-func UserIsValid(user models.User) bool <span class="cov8" title="1">{
-        return len(user.Login) &gt; 7 &amp;&amp; len(user.Login) &lt; 20 &amp;&amp; isValid(user.PasswordHash)
-}</span>
 </pre>
 		
 		<pre class="file" id="file12" style="display: none">package http
 
 import (
-        "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
+        "github.com/go-park-mail-ru/2023_1_4from5/internal/models"
+        "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/jwt"
         "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user"
         "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
         "net/http"
@@ -791,14 +768,18 @@ func NewUserHandler(uc user.UserUsecase) *UserHandler <span class="cov8" title="
 }</span>
 
 func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
-        userInfo, err := middleware.ExtractTokenMetadata(r, middleware.ExtractTokenFromCookie)
+        userInfo, err := jwt.ExtractTokenMetadata(r, jwt.ExtractTokenFromCookie)
         if err != nil </span><span class="cov8" title="1">{
                 utils.Response(w, http.StatusUnauthorized, nil)
                 return
         }</span>
         <span class="cov8" title="1">userProfile, err := h.usecase.GetProfile(*userInfo)
-        if err != nil </span><span class="cov8" title="1">{
+        if err == models.InternalError </span><span class="cov8" title="1">{
                 utils.Response(w, http.StatusInternalServerError, nil)
+                return
+        }</span>
+        <span class="cov8" title="1">if err == models.NotFound </span><span class="cov8" title="1">{
+                utils.Response(w, http.StatusBadRequest, nil)
                 return
         }</span>
 
@@ -806,14 +787,18 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) <span c
 }
 
 func (h *UserHandler) GetHomePage(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
-        userInfo, err := middleware.ExtractTokenMetadata(r, middleware.ExtractTokenFromCookie)
+        userInfo, err := jwt.ExtractTokenMetadata(r, jwt.ExtractTokenFromCookie)
         if err != nil </span><span class="cov8" title="1">{
                 utils.Response(w, http.StatusUnauthorized, nil)
                 return
         }</span>
         <span class="cov8" title="1">homePage, err := h.usecase.GetHomePage(*userInfo)
-        if err != nil </span><span class="cov8" title="1">{
+        if err == models.InternalError </span><span class="cov8" title="1">{
                 utils.Response(w, http.StatusInternalServerError, nil)
+                return
+        }</span>
+        <span class="cov8" title="1">if err == models.NotFound </span><span class="cov8" title="1">{
+                utils.Response(w, http.StatusBadRequest, nil)
                 return
         }</span>
 
@@ -831,12 +816,11 @@ import (
 )
 
 const (
-        GET_PROFILE    = "SELECT login, display_name, profile_photo, registration_date FROM public.user WHERE user_id=$1;"
-        GET_NAME_PHOTO = "SELECT display_name, profile_photo FROM public.user WHERE user_id=$1;"
-        CHECK_CREATOR  = "SELECT creator_id FROM public.creator WHERE user_id=$1;"
+        UserProfile    = "SELECT login, display_name, profile_photo, registration_date FROM public.user WHERE user_id=$1;"
+        UserNamePhoto  = "SELECT display_name, profile_photo FROM public.user WHERE user_id=$1;"
+        CheckIfCreator = "SELECT creator_id FROM public.creator WHERE user_id=$1;"
         //GET_USER_POSTS = "SELECT post_id, creator_id, creation_date, title, post_text, attachments, available_subscriptions FROM public.post WHERE UNNEST(available_subscriptions) IN (SELECT subscriptions FROM public.user WHERE user_id = $1);"
         //SELECT array_agg(aa.id)::int[] FROM UNNEST(ARRAY[1,2,3,45,67,8,8]) AS aa (id) WHERE aa.id = ANY(ARRAY[1,2,3,4,56,56,56,56]);
-
 )
 
 type UserRepo struct {
@@ -850,31 +834,30 @@ func NewUserRepo(db *sql.DB) *UserRepo <span class="cov0" title="0">{
 func (ur *UserRepo) GetUserProfile(id uuid.UUID) (models.UserProfile, error) <span class="cov0" title="0">{
         var profile models.UserProfile
 
-        row := ur.db.QueryRow(GET_PROFILE, id)
-        if err := row.Scan(&amp;profile.Login, &amp;profile.Name, &amp;profile.ProfilePhoto, &amp;profile.Registration); err != nil </span><span class="cov0" title="0">{
+        row := ur.db.QueryRow(UserProfile, id)
+        if err := row.Scan(&amp;profile.Login, &amp;profile.Name, &amp;profile.ProfilePhoto, &amp;profile.Registration); err != nil &amp;&amp; !errors.Is(sql.ErrNoRows, err) </span><span class="cov0" title="0">{
                 return models.UserProfile{}, models.InternalError
+        }</span> else<span class="cov0" title="0"> if errors.Is(sql.ErrNoRows, err) </span><span class="cov0" title="0">{
+                return models.UserProfile{}, models.NotFound
         }</span>
-
         <span class="cov0" title="0">return profile, nil</span>
 }
 
 func (ur *UserRepo) GetHomePage(id uuid.UUID) (models.UserHomePage, error) <span class="cov0" title="0">{
         var page models.UserHomePage
 
-        row := ur.db.QueryRow(GET_NAME_PHOTO, id)
-        if err := row.Scan(&amp;page.Name, &amp;page.ProfilePhoto); err != nil </span><span class="cov0" title="0">{
+        row := ur.db.QueryRow(UserNamePhoto, id)
+        if err := row.Scan(&amp;page.Name, &amp;page.ProfilePhoto); err != nil &amp;&amp; !errors.Is(sql.ErrNoRows, err) </span><span class="cov0" title="0">{
                 return models.UserHomePage{}, models.InternalError
+        }</span> else<span class="cov0" title="0"> if errors.Is(sql.ErrNoRows, err) </span><span class="cov0" title="0">{
+                return models.UserHomePage{}, models.NotFound
         }</span>
-
-        <span class="cov0" title="0">row = ur.db.QueryRow(CHECK_CREATOR, id)
+        <span class="cov0" title="0">row = ur.db.QueryRow(CheckIfCreator, id)
         if err := row.Scan(&amp;page.CreatorId); err != nil &amp;&amp; !errors.Is(sql.ErrNoRows, err) </span><span class="cov0" title="0">{
                 return models.UserHomePage{}, models.InternalError
-        }</span> else<span class="cov0" title="0"> {
-                if err == nil </span><span class="cov0" title="0">{
-                        page.IsCreator = true
-                }</span>
-        }
-
+        }</span> else<span class="cov0" title="0"> if err == nil </span><span class="cov0" title="0">{
+                page.IsCreator = true
+        }</span>
         <span class="cov0" title="0">return page, nil</span>
 }
 </pre>
@@ -898,7 +881,7 @@ func (uc *UserUsecase) GetProfile(details models.AccessDetails) (models.UserProf
         userId := details.Id
         userProfile, err := uc.repo.GetUserProfile(userId)
         if err != nil </span><span class="cov8" title="1">{
-                return models.UserProfile{}, models.InternalError
+                return models.UserProfile{}, err
         }</span>
 
         <span class="cov8" title="1">return userProfile, nil</span>
@@ -908,7 +891,7 @@ func (uc *UserUsecase) GetHomePage(details models.AccessDetails) (models.UserHom
         userId := details.Id
         homePage, err := uc.repo.GetHomePage(userId)
         if err != nil </span><span class="cov8" title="1">{
-                return models.UserHomePage{}, models.InternalError
+                return models.UserHomePage{}, err
         }</span>
 
         <span class="cov8" title="1">return homePage, nil</span>
@@ -916,6 +899,26 @@ func (uc *UserUsecase) GetHomePage(details models.AccessDetails) (models.UserHom
 </pre>
 		
 		<pre class="file" id="file15" style="display: none">package utils
+
+import (
+        "net/http"
+        "time"
+)
+
+func Cookie(w http.ResponseWriter, token string) <span class="cov8" title="1">{
+        SSCookie := &amp;http.Cookie{
+                Name:     "SSID",
+                Value:    token,
+                Path:     "/",
+                Domain:   "sub-me.ru",
+                HttpOnly: true,
+                Expires:  time.Now().UTC().Add(time.Hour * 24),
+        }
+        http.SetCookie(w, SSCookie)
+}</span>
+</pre>
+		
+		<pre class="file" id="file16" style="display: none">package utils
 
 import (
         "errors"
@@ -936,7 +939,7 @@ func GetConnectionString() (string, error) <span class="cov0" title="0">{
 }
 </pre>
 		
-		<pre class="file" id="file16" style="display: none">package utils
+		<pre class="file" id="file17" style="display: none">package utils
 
 import (
         "encoding/json"
@@ -955,6 +958,29 @@ func Response(w http.ResponseWriter, status int, body interface{}) <span class="
                 }</span>
                 <span class="cov8" title="1">_, _ = w.Write(jsn)</span>
         }
+}
+</pre>
+		
+		<pre class="file" id="file18" style="display: none">package utils
+
+import (
+        "unicode"
+)
+
+func IsValid(s string) bool <span class="cov8" title="1">{
+        var (
+                hasMinLen = false
+                hasNumber = false
+        )
+        if len(s) &gt;= 7 </span><span class="cov8" title="1">{
+                hasMinLen = true
+        }</span>
+        <span class="cov8" title="1">for _, char := range s </span><span class="cov8" title="1">{
+                if unicode.IsNumber(char) </span><span class="cov8" title="1">{
+                        hasNumber = true
+                }</span>
+        }
+        <span class="cov8" title="1">return hasMinLen &amp;&amp; hasNumber</span>
 }
 </pre>
 		

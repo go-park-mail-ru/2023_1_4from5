@@ -43,7 +43,10 @@ func run() error {
 	defer db.Close()
 
 	tokenGenerator := authUsecase.NewTokenator()
-	encryptor := authUsecase.NewEncryptor()
+	encryptor, err := authUsecase.NewEncryptor()
+	if err != nil {
+		return err
+	}
 
 	authRepo := authRepository.NewAuthRepo(db)
 	authUse := authUsecase.NewAuthUsecase(authRepo, tokenGenerator, encryptor)

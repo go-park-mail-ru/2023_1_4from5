@@ -11,6 +11,42 @@ import (
 	"testing"
 )
 
+type test struct {
+	name               string
+	accessDetails      models.AccessDetails
+	mockUserRepo       *mock.MockUserRepo
+	expectedStatusCode error
+}
+
+var testUser models.AccessDetails = models.AccessDetails{Login: "Bashmak1!", Id: uuid.New()}
+
+func userUsecaseTestsSetup(ctl *gomock.Controller) []test {
+	os.Setenv("TOKEN_SECRET", "TESTS")
+	mockUserRepo := mock.NewMockUserRepo(ctl)
+
+	tests := []test{
+		{
+			name:               "OK",
+			accessDetails:      testUser,
+			mockUserRepo:       mockUserRepo,
+			expectedStatusCode: nil,
+		},
+		{
+			name:               "InternalError",
+			accessDetails:      testUser,
+			mockUserRepo:       mockUserRepo,
+			expectedStatusCode: models.InternalError,
+		},
+		{
+			name:               "NotFound",
+			accessDetails:      testUser,
+			mockUserRepo:       mockUserRepo,
+			expectedStatusCode: models.NotFound,
+		},
+	}
+	return tests
+}
+
 func TestNewUserUsecase(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
@@ -21,50 +57,27 @@ func TestNewUserUsecase(t *testing.T) {
 	}
 }
 
-var testUser models.AccessDetails = models.AccessDetails{Login: "Bashmak1!", Id: uuid.New()}
-
 func TestUserUsecase_GetProfile(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
-
-	os.Setenv("SECRET", "TESTS")
-	mockUserRepo := mock.NewMockUserRepo(ctl)
-
-	tests := []struct {
-		name               string
-		accessDetails      models.AccessDetails
-		fields             *mock.MockUserRepo
-		expectedStatusCode error
-	}{
-		{
-			name:               "OK",
-			accessDetails:      testUser,
-			fields:             mockUserRepo,
-			expectedStatusCode: nil,
-		},
-		{
-			name:               "Unauthorized",
-			accessDetails:      testUser,
-			fields:             mockUserRepo,
-			expectedStatusCode: models.InternalError,
-		},
-	}
-
+	tests := userUsecaseTestsSetup(ctl)
 	for i := 0; i < len(tests); i++ {
 		if tests[i].expectedStatusCode == nil {
-			mockUserRepo.EXPECT().GetUserProfile(gomock.Any()).Return(models.UserProfile{}, nil)
+			tests[i].mockUserRepo.EXPECT().GetUserProfile(gomock.Any()).Return(models.UserProfile{}, nil)
+		} else if tests[i].expectedStatusCode == models.InternalError {
+			tests[i].mockUserRepo.EXPECT().GetUserProfile(gomock.Any()).Return(models.UserProfile{}, models.InternalError)
 		} else {
-			mockUserRepo.EXPECT().GetUserProfile(gomock.Any()).Return(models.UserProfile{}, models.InternalError)
+			tests[i].mockUserRepo.EXPECT().GetUserProfile(gomock.Any()).Return(models.UserProfile{}, models.NotFound)
 		}
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			h := &UserUsecase{
-				repo: mockUserRepo,
+			u := &UserUsecase{
+				repo: test.mockUserRepo,
 			}
 
-			_, code := h.GetProfile(test.accessDetails)
+			_, code := u.GetProfile(test.accessDetails)
 			require.Equal(t, test.expectedStatusCode, code, fmt.Errorf("%s :  expected %e, got %e,",
 				test.name, test.expectedStatusCode, code))
 		})
@@ -74,42 +87,22 @@ func TestUserUsecase_GetProfile(t *testing.T) {
 func TestUserUsecase_GetHomePage(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
-
-	os.Setenv("SECRET", "TESTS")
-	mockUserRepo := mock.NewMockUserRepo(ctl)
-
-	tests := []struct {
-		name               string
-		accessDetails      models.AccessDetails
-		fields             *mock.MockUserRepo
-		expectedStatusCode error
-	}{
-		{
-			name:               "OK",
-			accessDetails:      testUser,
-			fields:             mockUserRepo,
-			expectedStatusCode: nil,
-		},
-		{
-			name:               "Unauthorized",
-			accessDetails:      testUser,
-			fields:             mockUserRepo,
-			expectedStatusCode: models.InternalError,
-		},
-	}
+	tests := userUsecaseTestsSetup(ctl)
 
 	for i := 0; i < len(tests); i++ {
 		if tests[i].expectedStatusCode == nil {
-			mockUserRepo.EXPECT().GetHomePage(gomock.Any()).Return(models.UserHomePage{}, nil)
+			tests[i].mockUserRepo.EXPECT().GetHomePage(gomock.Any()).Return(models.UserHomePage{}, nil)
+		} else if tests[i].expectedStatusCode == models.InternalError {
+			tests[i].mockUserRepo.EXPECT().GetHomePage(gomock.Any()).Return(models.UserHomePage{}, models.InternalError)
 		} else {
-			mockUserRepo.EXPECT().GetHomePage(gomock.Any()).Return(models.UserHomePage{}, models.InternalError)
+			tests[i].mockUserRepo.EXPECT().GetHomePage(gomock.Any()).Return(models.UserHomePage{}, models.NotFound)
 		}
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			h := &UserUsecase{
-				repo: mockUserRepo,
+				repo: test.mockUserRepo,
 			}
 
 			_, code := h.GetHomePage(test.accessDetails)

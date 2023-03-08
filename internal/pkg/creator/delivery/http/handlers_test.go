@@ -1,7 +1,6 @@
 package http
 
 import (
-	"errors"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
@@ -39,7 +38,7 @@ func TestGetPage(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
 
-	os.Setenv("SECRET", "TEST")
+	os.Setenv("TOKEN_SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
 	bdy, _ := tkn.GetToken(models.User{Login: testUser.Login, Id: uuid.New()})
 
@@ -48,7 +47,7 @@ func TestGetPage(t *testing.T) {
 	handler := NewCreatorHandler(usecaseMock)
 	var r *http.Request
 	var status int
-	for i := 0; i < 4; i++ {
+	for i := 0; i < 5; i++ {
 		value := bdy
 		r = httptest.NewRequest("GET", "/creator/page", strings.NewReader(fmt.Sprint()))
 		r = mux.SetURLVars(r, map[string]string{
@@ -67,8 +66,11 @@ func TestGetPage(t *testing.T) {
 			value = "body"
 			status = http.StatusUnauthorized
 		case 3:
-			usecaseMock.EXPECT().GetPage(gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, errors.New("test"))
+			usecaseMock.EXPECT().GetPage(gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, models.InternalError)
 			status = http.StatusInternalServerError
+		case 4:
+			usecaseMock.EXPECT().GetPage(gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, models.WrongData)
+			status = http.StatusBadRequest
 		}
 		r.AddCookie(&http.Cookie{
 			Name:     "SSID",
