@@ -13,10 +13,7 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
-<<<<<<< HEAD
 
 *.env
 *.idea
 *.pem
-=======
->>>>>>> 5a17b7d (Initial commit)
