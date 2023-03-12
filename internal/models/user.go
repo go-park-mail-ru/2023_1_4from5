@@ -18,7 +18,7 @@ type User struct {
 }
 
 func (user User) UserIsValid() bool {
-	return len(user.Login) >= 7 && len(user.Login) < 20 && utils.IsValid(user.PasswordHash)
+	return len(user.Login) >= 7 && len(user.Login) < 40 && utils.IsValid(user.PasswordHash) && len(user.Name) >= 7 && len(user.Name) < 40
 }
 
 type LoginUser struct {

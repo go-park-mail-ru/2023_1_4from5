@@ -15,7 +15,7 @@ create table "user"
     user_id           uuid                    not null
         constraint user_pk
             primary key,
-    login             text                    not null
+    login             varchar(40)                    not null
         constraint login_pk
             unique,
     display_name      varchar(40)             not null,
