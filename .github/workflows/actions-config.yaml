@@ -1,0 +1,34 @@
+name: SubMe build
+
+on:
+  push:
+    branches:
+      - rk2
+      - main
+jobs:
+  deploy:
+    name: Deploy SubMe
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull code
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ubuntu
+          key: ${{ secrets.PRIVATE_KEY }}
+          script: cd /home/ubuntu/2023_1_4from5 && git pull
+      - name: Build containers
+        uses: appleboy/ssh-action@master
+        with:
+          timeout: 10m
+          host: ${{ secrets.HOST }}
+          username: ubuntu
+          key: ${{ secrets.PRIVATE_KEY }}
+          script: cd /home/ubuntu/2023_1_4from5 && sudo docker-compose build
+      - name: Restart service
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ubuntu
+          key: ${{ secrets.PRIVATE_KEY }}
+          script: cd /home/ubuntu/2023_1_4from5 && sudo docker-compose down && sudo docker-compose up -d
