@@ -26,5 +26,5 @@ type TokenGenerator interface {
 }
 
 type Encryptor interface {
-	EncryptPwd(pwd string) string
+	EncryptPswd(pwd string) string
 }

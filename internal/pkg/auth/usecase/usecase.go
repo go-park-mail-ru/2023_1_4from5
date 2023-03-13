@@ -22,7 +22,7 @@ func (u *AuthUsecase) SignIn(user models.LoginUser) (string, int) {
 	if user.Login == "" || user.PasswordHash == "" {
 		return "", http.StatusBadRequest
 	}
-	user.PasswordHash = u.encryptor.EncryptPwd(user.PasswordHash)
+	user.PasswordHash = u.encryptor.EncryptPswd(user.PasswordHash)
 	DBUser, status := u.repo.CheckUser(models.User{Login: user.Login, PasswordHash: user.PasswordHash})
 	fmt.Println("Usecase  ", status)
 	token := u.tokenator.GetToken(DBUser)
@@ -33,7 +33,7 @@ func (u *AuthUsecase) SignIn(user models.LoginUser) (string, int) {
 }
 
 func (u *AuthUsecase) SignUp(user models.User) (string, int) {
-	user.PasswordHash = u.encryptor.EncryptPwd(user.PasswordHash)
+	user.PasswordHash = u.encryptor.EncryptPswd(user.PasswordHash)
 
 	_, err := u.CheckUser(user)
 	if err == nil || errors.Is(err, models.WrongPassword) {

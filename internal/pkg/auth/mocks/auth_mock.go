@@ -178,9 +178,9 @@ func (m *MockEncrypter) EXPECT() *MockEncrypterMockRecorder {
 }
 
 // EncryptPswd mocks base method.
-func (m *MockEncrypter) EncryptPwd(pswd string) string {
+func (m *MockEncrypter) EncryptPswd(pswd string) string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EncryptPwd", pswd)
+	ret := m.ctrl.Call(m, "EncryptPswd", pswd)
 	ret0, _ := ret[0].(string)
 	return ret0
 }
@@ -188,5 +188,5 @@ func (m *MockEncrypter) EncryptPwd(pswd string) string {
 // EncryptPswd indicates an expected call of EncryptPswd.
 func (mr *MockEncrypterMockRecorder) EncryptPswd(pswd interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EncryptPwd", reflect.TypeOf((*MockEncrypter)(nil).EncryptPwd), pswd)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EncryptPswd", reflect.TypeOf((*MockEncrypter)(nil).EncryptPswd), pswd)
 }

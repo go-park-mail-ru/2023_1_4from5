@@ -15,7 +15,7 @@ func NewEncryptor() *Encrypter {
 	return &Encrypter{salt: salt}
 }
 
-func (ec *Encrypter) EncryptPwd(pswd string) string {
+func (ec *Encrypter) EncryptPswd(pswd string) string {
 	Encryptedpswd := sha256.New()
 	_, err := Encryptedpswd.Write([]byte(pswd))
 	if err != nil {
