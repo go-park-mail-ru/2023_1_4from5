@@ -14,7 +14,7 @@ func Cookie(w http.ResponseWriter, token string) {
 		Name:     "SSID",
 		Value:    token,
 		Path:     "/",
-		Domain:   domain,
+		Domain:   "sub-me.ru",
 		HttpOnly: true,
 		Expires:  time.Now().UTC().Add(time.Hour * 24),
 	}
