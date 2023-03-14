@@ -16,6 +16,10 @@ func NewAuthUsecase(repo auth.AuthRepo, tokenator auth.TokenGenerator, encrypter
 	return &AuthUsecase{repo: repo, tokenator: tokenator, encrypter: encrypter}
 }
 
+func (u *AuthUsecase) Logout(details models.AccessDetails) (int, error) {
+	return u.repo.IncUserVersion(details.Id)
+}
+
 func (u *AuthUsecase) SignIn(user models.LoginUser) (string, error) {
 	user.PasswordHash = u.encrypter.EncryptPswd(user.PasswordHash)
 	dbUser, dbErr := u.repo.CheckUser(models.User{Login: user.Login, PasswordHash: user.PasswordHash})
@@ -39,4 +43,8 @@ func (u *AuthUsecase) SignUp(user models.User) (string, error) {
 		return token, nil
 	}
 	return "", models.InternalError
+}
+
+func (u *AuthUsecase) CheckUserVersion(details models.AccessDetails) (int, error) {
+	return u.repo.CheckUserVersion(details)
 }

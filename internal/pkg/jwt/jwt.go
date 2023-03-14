@@ -16,6 +16,7 @@ type Extractor func(r *http.Request) string
 func ExtractTokenFromCookie(r *http.Request) string {
 	tokenCookie, err := r.Cookie("SSID")
 	if err != nil {
+		fmt.Println(err)
 		return ""
 	}
 	token := tokenCookie.Value
@@ -61,7 +62,7 @@ func ExtractTokenMetadata(r *http.Request, extractor Extractor) (*models.AccessD
 	if err != nil {
 		return nil, err
 	}
-	data := &models.AccessDetails{Login: token.Login, Id: uid}
+	data := &models.AccessDetails{Login: token.Login, Id: uid, UserVersion: token.UserVersion}
 	if data.Login == "" || data.Id.String() == "" {
 		return nil, models.InvalidToken
 	}

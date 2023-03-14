@@ -22,11 +22,10 @@ func NewAuthHandler(uc auth.AuthUsecase) *AuthHandler {
 func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 	user := models.LoginUser{}
 	err := easyjson.UnmarshalFromReader(r.Body, &user)
-	if err != nil || !(models.User{Login: user.Login, PasswordHash: user.PasswordHash}).UserIsValid() {
+	if err != nil || !(models.User{Login: user.Login, PasswordHash: user.PasswordHash}).UserAuthIsValid() {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-
 	token, err := h.usecase.SignIn(user)
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
@@ -37,9 +36,13 @@ func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
-	_, err := jwt.ExtractTokenMetadata(r, jwt.ExtractTokenFromCookie)
+	userData, err := jwt.ExtractTokenMetadata(r, jwt.ExtractTokenFromCookie)
 	if err != nil {
 		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	if _, err := h.usecase.Logout(*userData); err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 	utils.Cookie(w, "")
