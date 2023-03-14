@@ -11,4 +11,5 @@ var (
 	NoAuthData    = errors.New("NoAuthData")
 	InvalidToken  = errors.New("InvalidToken")
 	WrongData     = errors.New("WrongData")
+	Unauthorized  = errors.New("Unauthorized")
 )
