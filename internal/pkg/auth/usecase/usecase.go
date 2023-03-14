@@ -32,7 +32,6 @@ func (u *AuthUsecase) SignIn(user models.LoginUser) (string, error) {
 
 func (u *AuthUsecase) SignUp(user models.User) (string, error) {
 	user.PasswordHash = u.encrypter.EncryptPswd(user.PasswordHash)
-
 	_, err := u.repo.CheckUser(user)
 	if err == nil || errors.Is(err, models.WrongPassword) {
 		return "", models.WrongData
