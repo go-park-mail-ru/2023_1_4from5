@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -8,6 +9,7 @@ import (
 
 func Cookie(w http.ResponseWriter, token string) {
 	domain, _ := os.LookupEnv("DOMAIN") //TODO: обработать ошибку, ещё есть места где errors.NEw() прокидываются
+	fmt.Println(domain)
 	SSCookie := &http.Cookie{
 		Name:     "SSID",
 		Value:    token,
