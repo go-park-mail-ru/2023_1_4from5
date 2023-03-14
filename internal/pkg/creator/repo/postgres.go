@@ -10,8 +10,8 @@ import (
 
 const (
 	CreatorInfo       = "SELECT user_id, name, cover_photo, followers_count, description, posts_count FROM public.creator WHERE creator_id=$1;"
-	CreatorPosts      = "SELECT post_id, creation_date, title, post_text, attachments, available_subscriptions  FROM public.post WHERE creator_id=$1 ORDER BY creation_date DESC;"
-	UserSubscriptions = "SELECT subscriptions FROM public.user WHERE user_id=$1;"
+	CreatorPosts      = "SELECT post.post_id, creation_date, title, post_text, array_agg(attachment_path), array_agg(subscription_id) FROM public.post LEFT JOIN attachment a on post.post_id = a.post_id JOIN post_subscription ps on post.post_id = ps.post_id WHERE creator_id = $1 GROUP BY post.post_id, creation_date, title, post_text ORDER BY creation_date DESC;"
+	UserSubscriptions = "SELECT subscription_id FROM public.user_subscription WHERE user_id=$1;"
 )
 
 type CreatorRepo struct {
