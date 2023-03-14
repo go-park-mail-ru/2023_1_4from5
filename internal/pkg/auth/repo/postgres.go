@@ -36,6 +36,7 @@ func (r *AuthRepo) CreateUser(user models.User) (models.User, error) {
 		Id:           id,
 		Login:        user.Login,
 		PasswordHash: user.PasswordHash,
+		UserVersion:  user.UserVersion,
 	}
 
 	return userOut, nil
