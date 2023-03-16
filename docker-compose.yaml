@@ -21,3 +21,7 @@ services:
       POSTGRES_PASSWORD: "submepassword"
     ports:
       - "5432:5432"
+    volumes:
+      - type: bind
+        source: /home/ubuntu/db_data
+        target: /var/lib/postgresql/data
