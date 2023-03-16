@@ -5,4 +5,3 @@ linters:
     - goconst
     - gofmt
     - nilerr
-  fast: true

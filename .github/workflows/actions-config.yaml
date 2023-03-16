@@ -18,12 +18,16 @@ jobs:
         uses: golangci/golangci-lint-action@v3
 
   tests:
+    needs: ci_linters
+    if: ${{ job.status == 'success' }}
     name: tests
     runs-on: ubuntu-latest
     steps:
-      - run: go test -v ./...
+      - run: go test ./...
 
   deploy:
+    needs: tests
+    if: ${{ job.status == 'success' }}
     name: Deploy SubMe
     runs-on: ubuntu-latest
     steps:
