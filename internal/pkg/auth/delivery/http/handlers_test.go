@@ -294,9 +294,9 @@ func TestAuthHandler_Logout(t *testing.T) {
 		name := "SSID"
 		expires := time.Now().UTC().Add(time.Hour)
 		value := bdy
-		//if tests[i].args.expectedStatusCode != http.StatusBadRequest {
-		//	mockUsecase.EXPECT().Logout(gomock.Any()).Return(1, nil)
-		//}
+		if tests[i].args.expectedStatusCode != http.StatusBadRequest {
+			mockUsecase.EXPECT().Logout(gomock.Any()).Return(1, nil)
+		}
 
 		if tests[i].args.expectedStatusCode == http.StatusBadRequest {
 			switch i {
