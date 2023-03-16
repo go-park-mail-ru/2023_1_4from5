@@ -6,8 +6,8 @@ on:
       - rk2
       - main
 jobs:
-  golangci:
-    name: golang-ci-linters
+  ci_linters:
+    name: linters
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-go@v3
@@ -16,6 +16,13 @@ jobs:
       - uses: actions/checkout@v3
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
+
+  tests:
+    name: tests
+    runs-on: ubuntu-latest
+    steps:
+      - run: go test -v ./...
+
   deploy:
     name: Deploy SubMe
     runs-on: ubuntu-latest
