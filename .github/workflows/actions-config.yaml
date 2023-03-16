@@ -6,7 +6,7 @@ on:
       - rk2
       - main
 jobs:
-  ci_linters:
+  linters-act:
     name: linters
     runs-on: ubuntu-latest
     steps:
@@ -17,18 +17,18 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
 
-  tests:
-    needs: ci_linters
-    if: ${{ ci_linters.status == 'success' }}
+  tests-act:
     name: tests
+    needs: linters-act
+    if: ${{ job.status == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - run: go test ./...
 
   deploy:
-    needs: tests
-    if: ${{ tests.status == 'success' }}
     name: Deploy SubMe
+    needs: tests-act
+    if: ${{ job.status == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Pull code
