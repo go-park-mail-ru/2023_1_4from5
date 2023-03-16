@@ -19,7 +19,7 @@ jobs:
 
   tests:
     needs: ci_linters
-    if: ${{ job.status == 'success' }}
+    if: ${{ ci_linters.status == 'success' }}
     name: tests
     runs-on: ubuntu-latest
     steps:
@@ -27,7 +27,7 @@ jobs:
 
   deploy:
     needs: tests
-    if: ${{ job.status == 'success' }}
+    if: ${{ tests.status == 'success' }}
     name: Deploy SubMe
     runs-on: ubuntu-latest
     steps:
