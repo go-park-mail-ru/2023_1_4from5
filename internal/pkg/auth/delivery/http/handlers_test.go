@@ -249,6 +249,7 @@ type argsLogout struct {
 func TestAuthHandler_Logout(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
+	mockUsecase := mock.NewMockAuthUsecase(ctl)
 
 	os.Setenv("TOKEN_SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
@@ -293,6 +294,10 @@ func TestAuthHandler_Logout(t *testing.T) {
 		name := "SSID"
 		expires := time.Now().UTC().Add(time.Hour)
 		value := bdy
+		if tests[i].args.expectedStatusCode != http.StatusInternalServerError {
+			mockUsecase.EXPECT().Logout(gomock.Any()).Return(1, nil)
+		}
+
 		if tests[i].args.expectedStatusCode == http.StatusBadRequest {
 			switch i {
 			case 0:
@@ -318,7 +323,7 @@ func TestAuthHandler_Logout(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Login, func(t *testing.T) {
-			h := &AuthHandler{}
+			h := &AuthHandler{usecase: mockUsecase}
 
 			w := httptest.NewRecorder()
 			h.Logout(w, test.args.r)

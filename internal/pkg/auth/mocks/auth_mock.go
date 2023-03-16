@@ -9,6 +9,7 @@ import (
 
 	models "github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	gomock "github.com/golang/mock/gomock"
+	uuid "github.com/google/uuid"
 )
 
 // MockAuthUsecase is a mock of AuthUsecase interface.
@@ -32,6 +33,36 @@ func NewMockAuthUsecase(ctrl *gomock.Controller) *MockAuthUsecase {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockAuthUsecase) EXPECT() *MockAuthUsecaseMockRecorder {
 	return m.recorder
+}
+
+// CheckUserVersion mocks base method.
+func (m *MockAuthUsecase) CheckUserVersion(details models.AccessDetails) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckUserVersion", details)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckUserVersion indicates an expected call of CheckUserVersion.
+func (mr *MockAuthUsecaseMockRecorder) CheckUserVersion(details interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUserVersion", reflect.TypeOf((*MockAuthUsecase)(nil).CheckUserVersion), details)
+}
+
+// Logout mocks base method.
+func (m *MockAuthUsecase) Logout(details models.AccessDetails) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Logout", details)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Logout indicates an expected call of Logout.
+func (mr *MockAuthUsecaseMockRecorder) Logout(details interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Logout", reflect.TypeOf((*MockAuthUsecase)(nil).Logout), details)
 }
 
 // SignIn mocks base method.
@@ -102,6 +133,21 @@ func (mr *MockAuthRepoMockRecorder) CheckUser(user interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUser", reflect.TypeOf((*MockAuthRepo)(nil).CheckUser), user)
 }
 
+// CheckUserVersion mocks base method.
+func (m *MockAuthRepo) CheckUserVersion(details models.AccessDetails) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckUserVersion", details)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckUserVersion indicates an expected call of CheckUserVersion.
+func (mr *MockAuthRepoMockRecorder) CheckUserVersion(details interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUserVersion", reflect.TypeOf((*MockAuthRepo)(nil).CheckUserVersion), details)
+}
+
 // CreateUser mocks base method.
 func (m *MockAuthRepo) CreateUser(user models.User) (models.User, error) {
 	m.ctrl.T.Helper()
@@ -115,6 +161,21 @@ func (m *MockAuthRepo) CreateUser(user models.User) (models.User, error) {
 func (mr *MockAuthRepoMockRecorder) CreateUser(user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockAuthRepo)(nil).CreateUser), user)
+}
+
+// IncUserVersion mocks base method.
+func (m *MockAuthRepo) IncUserVersion(userId uuid.UUID) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncUserVersion", userId)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IncUserVersion indicates an expected call of IncUserVersion.
+func (mr *MockAuthRepoMockRecorder) IncUserVersion(userId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncUserVersion", reflect.TypeOf((*MockAuthRepo)(nil).IncUserVersion), userId)
 }
 
 // MockTokenGenerator is a mock of TokenGenerator interface.
