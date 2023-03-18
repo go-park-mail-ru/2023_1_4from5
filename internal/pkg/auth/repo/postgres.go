@@ -3,16 +3,17 @@ package repo
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"time"
 )
 
 const (
-	UserAccessDetails = "SELECT user_id, password_hash, user_version FROM public.user WHERE login=$1;"
-	AddUser           = "INSERT INTO public.user(user_id, login, display_name, profile_photo, password_hash, registration_date) VALUES($1, $2, $3, $4, $5, $6) RETURNING user_id;"
-	INC_USERVERSION   = "UPDATE public.user SET user_version = user_version + 1 WHERE user_id=$1 RETURNING user_version;"
-	CHECK_USERVERSION = "SELECT user_version FROM public.user WHERE user_id = $1"
+	UserAccessDetails = `SELECT user_id, password_hash, user_version FROM "user" WHERE login=$1;`
+	AddUser           = `INSERT INTO "user"(user_id, login, display_name, profile_photo, password_hash, registration_date) VALUES($1, $2, $3, $4, $5, $6) RETURNING user_id;`
+	IncUserVersion    = `UPDATE "user" SET user_version = user_version + 1 WHERE user_id=$1 RETURNING user_version;`
+	CheckUserVersion  = `SELECT user_version FROM "user" WHERE user_id = $1`
 )
 
 type AuthRepo struct {
@@ -29,6 +30,7 @@ func (r *AuthRepo) CreateUser(user models.User) (models.User, error) {
 	row := r.db.QueryRow(AddUser, user.Id, user.Login, user.Name, user.ProfilePhoto, user.PasswordHash, time.Now().UTC())
 
 	if err := row.Scan(&id); err != nil {
+		fmt.Println(err)
 		return models.User{}, models.InternalError
 	}
 
@@ -51,6 +53,7 @@ func (r *AuthRepo) CheckUser(user models.User) (models.User, error) {
 
 	row := r.db.QueryRow(UserAccessDetails, user.Login) // Ищем пользователя с таким логином и берем его пароль и id и юзерверсию
 	if err := row.Scan(&id, &passwordHash, &userVersion); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		fmt.Println(err)
 		return models.User{}, models.InternalError
 	}
 
@@ -72,7 +75,7 @@ func (r *AuthRepo) CheckUser(user models.User) (models.User, error) {
 }
 
 func (r *AuthRepo) IncUserVersion(userId uuid.UUID) (int, error) {
-	row := r.db.QueryRow(INC_USERVERSION, userId)
+	row := r.db.QueryRow(IncUserVersion, userId)
 	var userVersion int
 
 	if err := row.Scan(&userVersion); err != nil {
@@ -83,7 +86,7 @@ func (r *AuthRepo) IncUserVersion(userId uuid.UUID) (int, error) {
 }
 
 func (r *AuthRepo) CheckUserVersion(details models.AccessDetails) (int, error) {
-	row := r.db.QueryRow(CHECK_USERVERSION, details.Id)
+	row := r.db.QueryRow(CheckUserVersion, details.Id)
 	var userVersion int
 
 	if err := row.Scan(&userVersion); err != nil {
