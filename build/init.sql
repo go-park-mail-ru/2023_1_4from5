@@ -37,7 +37,7 @@ create table creator
         constraint creator_user_user_id_fk
             references "user" (user_id),
     name            varchar(40)       not null,
-    cover_photo     text,
+    cover_photo     uuid,
     followers_count integer default 0 not null,
     description     varchar(500),
     posts_count     integer default 0 not null

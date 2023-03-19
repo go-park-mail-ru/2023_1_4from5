@@ -19,8 +19,8 @@ INSERT INTO "user"(user_id, login, display_name, password_hash, registration_dat
 VALUES ('b184cc4e-78ef-434f-ac88-5084a77ee087', 'Dasha2003!', 'Дарья Такташова',
         '781be5ea6620295cbdb249154b840fbe2327d87c666d8e76b29f45f70fcf7d6d', '2023-02-27 19:10');
 
-INSERT INTO creator (creator_id, user_id, name, cover_photo, followers_count, description, posts_count)
-VALUES ('10b0d1b8-0e67-4e7e-9f08-124b3e32cce4', 'b184cc4e-78ef-434f-ac88-5084a77ee087', 'FOOD BLOGGER', '1111', 2,
+INSERT INTO creator (creator_id, user_id, name,  followers_count, description, posts_count)
+VALUES ('10b0d1b8-0e67-4e7e-9f08-124b3e32cce4', 'b184cc4e-78ef-434f-ac88-5084a77ee087', 'FOOD BLOGGER',  2,
         'Кулинарный блог обычной девочки из Москвы',
         1);
 
@@ -80,8 +80,8 @@ VALUES ('0b5ce9bf-ba11-415a-ac49-941ec9f0076f', 'Bashmakq', 'Даня Поляк
         'b1dc543073c224c94d5c9f247a05896774e9d78eb6a542f405c68e33d49d4149', '2023-02-24 08:40');
 
 ---------------------------------Его автор------------------------------------------------------------------
-INSERT INTO creator (creator_id, user_id, name, cover_photo, followers_count, description, posts_count)
-VALUES ('83b1f4df-a232-400e-b71c-5d45b9111f8d', '0b5ce9bf-ba11-415a-ac49-941ec9f0076f', 'Писатель любитель', '1111', 0,
+INSERT INTO creator (creator_id, user_id, name, followers_count, description, posts_count)
+VALUES ('83b1f4df-a232-400e-b71c-5d45b9111f8d', '0b5ce9bf-ba11-415a-ac49-941ec9f0076f', 'Писатель любитель', 0,
         'Просто пишу свои мысли и надеюсь, что они найдут отклик в головах других. Приветствую на своей странице!',
         1);
 --------------------------------------------------------------------------------------------------------------
