@@ -4,11 +4,16 @@ package post
 
 import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
+	"github.com/google/uuid"
 )
 
 type PostUsecase interface {
 	CreatePost(postData models.PostCreationData) error
+	AddLike(userID uuid.UUID, postID uuid.UUID) (models.Like, error)
+	RemoveLike(userID uuid.UUID, postID uuid.UUID) (models.Like, error)
 }
 type PostRepo interface {
 	CreatePost(postData models.PostCreationData) error
+	AddLike(userID uuid.UUID, postID uuid.UUID) (models.Like, error)
+	RemoveLike(userID uuid.UUID, postID uuid.UUID) (models.Like, error)
 }

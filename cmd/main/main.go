@@ -92,6 +92,8 @@ func run() error {
 	post := r.PathPrefix("/post").Subrouter()
 	{
 		post.HandleFunc("/create", postHandler.CreatePost).Methods(http.MethodPost, http.MethodOptions)
+		post.HandleFunc("/addLike", postHandler.AddLike).Methods(http.MethodPut, http.MethodOptions)
+		post.HandleFunc("/removeLike", postHandler.RemoveLike).Methods(http.MethodPut, http.MethodOptions)
 	}
 
 	http.Handle("/", r)

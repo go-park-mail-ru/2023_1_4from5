@@ -3,6 +3,7 @@ package usecase
 import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post"
+	"github.com/google/uuid"
 )
 
 type PostUsecase struct {
@@ -18,4 +19,20 @@ func (u *PostUsecase) CreatePost(postData models.PostCreationData) error {
 		return models.InternalError
 	}
 	return nil
+}
+
+func (u *PostUsecase) AddLike(userID uuid.UUID, postID uuid.UUID) (models.Like, error) {
+	like, err := u.repo.AddLike(userID, postID)
+	if err != nil {
+		return models.Like{}, err
+	}
+	return like, nil
+}
+
+func (u *PostUsecase) RemoveLike(userID uuid.UUID, postID uuid.UUID) (models.Like, error) {
+	like, err := u.repo.RemoveLike(userID, postID)
+	if err != nil {
+		return models.Like{}, err
+	}
+	return like, nil
 }
