@@ -3,7 +3,6 @@ package repo
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -14,6 +13,7 @@ const (
 	CreatorPosts      = `SELECT "post".post_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE creator_id = $1 GROUP BY "post".post_id, creation_date, title, post_text ORDER BY creation_date DESC;`
 	UserSubscriptions = `SELECT subscription_id FROM "user_subscription" WHERE user_id=$1;`
 	IsLiked           = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2`
+	//IsPostAvailable = `SELECT user_id FROM "user_subscription" INNER JOIN post_subscription p on "user_subscription".subscription_id = p.subscription_id WHERE user_id = $1 AND post_id = $2 AND expire_date < now()`
 )
 
 type CreatorRepo struct {
@@ -47,7 +47,6 @@ func (r *CreatorRepo) CreatorInfo(creatorPage *models.CreatorPage, creatorID uui
 	row := r.db.QueryRow(CreatorInfo, creatorID)
 	if err := row.Scan(&creatorPage.CreatorInfo.UserId, &creatorPage.CreatorInfo.Name, &creatorPage.CreatorInfo.CoverPhoto,
 		&creatorPage.CreatorInfo.FollowersCount, &creatorPage.CreatorInfo.Description, &creatorPage.CreatorInfo.PostsCount); err != nil && !errors.Is(sql.ErrNoRows, err) {
-		fmt.Println(err)
 		return models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
 		return models.NotFound
@@ -62,7 +61,6 @@ func (r *CreatorRepo) GetPage(userId uuid.UUID, creatorId uuid.UUID) (models.Cre
 	userSubscriptions := make([]uuid.UUID, 0)
 
 	if err := r.CreatorInfo(&creatorPage, creatorId); err == models.InternalError {
-		fmt.Println("creatorInfo")
 		return models.CreatorPage{}, models.InternalError
 	} else if err == nil { //нашёл такого автора
 		if creatorPage.CreatorInfo.UserId == userId { // страница автора принадлежит пользователю
@@ -71,15 +69,12 @@ func (r *CreatorRepo) GetPage(userId uuid.UUID, creatorId uuid.UUID) (models.Cre
 			tmp, err := r.GetUserSubscriptions(userId)
 			copy(userSubscriptions, tmp)
 			if err != nil {
-				fmt.Println("userSubs")
 				return models.CreatorPage{}, models.InternalError
 			}
 		}
 		// смотрим, какие посты доступны пользователю, исходя из его уровня подписки
 		rows, err := r.db.Query(CreatorPosts, creatorId)
 		if err != nil && !errors.Is(sql.ErrNoRows, err) {
-			fmt.Println(err)
-			fmt.Println("Posts")
 			return models.CreatorPage{}, models.InternalError
 		}
 		defer rows.Close()
@@ -90,7 +85,6 @@ func (r *CreatorRepo) GetPage(userId uuid.UUID, creatorId uuid.UUID) (models.Cre
 			err = rows.Scan(&post.Id, &post.Creation, &post.Title,
 				&post.Text, pq.Array(&post.Attachments), pq.Array(&availableSubscriptions)) //подписки, при которыз пост доступен
 			if err != nil {
-				fmt.Println("Read Post")
 				return models.CreatorPage{}, models.InternalError
 			}
 
@@ -104,7 +98,6 @@ func (r *CreatorRepo) GetPage(userId uuid.UUID, creatorId uuid.UUID) (models.Cre
 						post.IsAvailable = true
 						//проверяем, лайкнул ли его пользователь
 						if post.IsLiked, err = r.IsLiked(userId, post.Id); err != nil {
-							fmt.Println("IsLiked")
 							return models.CreatorPage{}, models.InternalError
 						}
 						break

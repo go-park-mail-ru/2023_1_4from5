@@ -13,6 +13,7 @@ const (
 	RemoveLike      = `DELETE FROM "like_post" WHERE post_id = $1 AND user_id = $2`
 	UpdateLikeCount = `UPDATE "post" SET likes_count = likes_count + $1 WHERE post_id = $2 RETURNING likes_count;`
 	IsLiked         = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2`
+	IsPostAvailable = `SELECT user_id FROM "user_subscription" INNER JOIN post_subscription p on "user_subscription".subscription_id = p.subscription_id WHERE user_id = $1 AND post_id = $2 AND expire_date > now()`
 )
 
 type PostRepo struct {
@@ -43,6 +44,13 @@ func (r *PostRepo) AddLike(userID uuid.UUID, postID uuid.UUID) (models.Like, err
 	if err := row.Scan(&postUUID, &userUUID); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		return models.Like{}, models.InternalError
 	} else if err == nil { // уже есть запись об этом лайке
+		return models.Like{}, models.WrongData
+	}
+	// проверяем, есть ли доступ к этому посту
+	row = r.db.QueryRow(IsPostAvailable, userID, postID)
+	if err := row.Scan(&userUUID); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		return models.Like{}, models.InternalError
+	} else if errors.Is(sql.ErrNoRows, err) {
 		return models.Like{}, models.WrongData
 	}
 	// обновляем кол-во лайков, заодно смотрим, есть ли вообще такой пост
