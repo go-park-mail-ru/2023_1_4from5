@@ -78,14 +78,12 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 
 	err = r.ParseMultipartForm(4 << 20) // maxMemory
 	if err != nil {
-		fmt.Println(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 
 	file, _, err := r.FormFile("upload")
 	if err != nil {
-		fmt.Println(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -97,12 +95,14 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 
 	f, err := os.Create(fmt.Sprintf("/home/ubuntu/frontend/2023_1_4from5/public/%s.jpg", path.String()))
 	if err != nil {
-		fmt.Println(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 	defer f.Close()
 
-	io.Copy(f, file)
+	if _, err = io.Copy(f, file); err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+	}
+
 	utils.Response(w, http.StatusOK, nil)
 }
