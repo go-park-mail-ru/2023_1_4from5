@@ -23,28 +23,56 @@ func NewCreatorRepo(db *sql.DB) *CreatorRepo {
 	return &CreatorRepo{db: db}
 }
 
-func (ur *CreatorRepo) GetPage(userId uuid.UUID, creatorId uuid.UUID) (models.CreatorPage, error) {
+func (r *CreatorRepo) GetUserSubscriptions(userId uuid.UUID) ([]uuid.UUID, error) {
+	userSubscriptions := make([]uuid.UUID, 0)
+	row := r.db.QueryRow(UserSubscriptions, userId)
+	if err := row.Scan(pq.Array(&userSubscriptions)); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		return nil, models.InternalError
+	}
+	return userSubscriptions, nil
+}
+
+func (r *CreatorRepo) IsLiked(userID uuid.UUID, postID uuid.UUID) (bool, error) {
+	row := r.db.QueryRow(IsLiked, postID, userID)
+	if err := row.Scan(&postID, &userID); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		return false, models.InternalError
+	} else if err == nil {
+		return true, nil
+	}
+	return false, nil
+}
+
+func (r *CreatorRepo) CreatorInfo(creatorPage *models.CreatorPage, creatorID uuid.UUID) error {
+	row := r.db.QueryRow(CreatorInfo, creatorID)
+	if err := row.Scan(creatorPage.CreatorInfo.UserId, creatorPage.CreatorInfo.Name, creatorPage.CreatorInfo.CoverPhoto,
+		creatorPage.CreatorInfo.FollowersCount, creatorPage.CreatorInfo.Description, creatorPage.CreatorInfo.PostsCount); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		return models.InternalError
+	} else if errors.Is(sql.ErrNoRows, err) {
+		return models.NotFound
+	}
+	return nil
+}
+
+func (r *CreatorRepo) GetPage(userId uuid.UUID, creatorId uuid.UUID) (models.CreatorPage, error) {
 	var creatorPage models.CreatorPage
 	creatorPage.CreatorInfo.Id = creatorId
 	creatorPage.Posts = make([]models.Post, 0)
-
 	userSubscriptions := make([]uuid.UUID, 0)
-	row := ur.db.QueryRow(CreatorInfo, creatorId)
 
-	if err := row.Scan(&creatorPage.CreatorInfo.UserId, &creatorPage.CreatorInfo.Name, &creatorPage.CreatorInfo.CoverPhoto,
-		&creatorPage.CreatorInfo.FollowersCount, &creatorPage.CreatorInfo.Description, &creatorPage.CreatorInfo.PostsCount); err != nil && !errors.Is(sql.ErrNoRows, err) {
+	if err := r.CreatorInfo(&creatorPage, creatorId); err == models.InternalError {
 		return models.CreatorPage{}, models.InternalError
 	} else if err == nil { //нашёл такого автора
 		if creatorPage.CreatorInfo.UserId == userId { // страница автора принадлежит пользователю
 			creatorPage.IsMyPage = true
 		} else { // находим подписки пользователя
-			row := ur.db.QueryRow(UserSubscriptions, userId)
-			if err := row.Scan(pq.Array(&userSubscriptions)); err != nil && !errors.Is(sql.ErrNoRows, err) {
+			tmp, err := r.GetUserSubscriptions(userId)
+			copy(userSubscriptions, tmp)
+			if err != nil {
 				return models.CreatorPage{}, models.InternalError
 			}
 		}
 		// смотрим, какие посты доступны пользователю, исходя из его уровня подписки
-		rows, err := ur.db.Query(CreatorPosts, creatorId)
+		rows, err := r.db.Query(CreatorPosts, creatorId)
 		if err != nil && !errors.Is(sql.ErrNoRows, err) {
 			return models.CreatorPage{}, models.InternalError
 		}
@@ -68,11 +96,8 @@ func (ur *CreatorRepo) GetPage(userId uuid.UUID, creatorId uuid.UUID) (models.Cr
 					if availableSubscription == userSubscription {
 						post.IsAvailable = true
 						//проверяем, лайкнул ли его пользователь
-						row := ur.db.QueryRow(IsLiked, post.Id, userId)
-						if err = row.Scan(&post.Id, &userId); err != nil && !errors.Is(sql.ErrNoRows, err) {
+						if post.IsLiked, err = r.IsLiked(userId, post.Id); err != nil {
 							return models.CreatorPage{}, models.InternalError
-						} else if err == nil {
-							post.IsLiked = true
 						}
 						break
 					}

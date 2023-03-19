@@ -89,7 +89,7 @@ func TestPostHandler_AddLike(t *testing.T) {
 			fields: fields{mockPostUsecase, mockAuthUsecase, mockAttachUsecase},
 			args: args{
 				r: httptest.NewRequest("PUT", "/api/post/addLike",
-					bytes.NewReader(bodyPrepare(models.Like{0, uuid.New()}))),
+					bytes.NewReader(bodyPrepare(models.Like{LikesCount: 0, PostID: uuid.New()}))),
 				expectedResponse: http.StatusOK,
 			},
 		},
@@ -98,7 +98,7 @@ func TestPostHandler_AddLike(t *testing.T) {
 			fields: fields{mockPostUsecase, mockAuthUsecase, mockAttachUsecase},
 			args: args{
 				r: httptest.NewRequest("PUT", "/api/post/addLike",
-					bytes.NewReader(bodyPrepare(models.Like{0, uuid.New()}))),
+					bytes.NewReader(bodyPrepare(models.Like{LikesCount: 0, PostID: uuid.New()}))),
 				expectedResponse: http.StatusUnauthorized,
 			},
 		},
@@ -205,7 +205,7 @@ func TestPostHandler_RemoveLike(t *testing.T) {
 			fields: fields{mockPostUsecase, mockAuthUsecase, mockAttachUsecase},
 			args: args{
 				r: httptest.NewRequest("PUT", "/api/post/removeLike",
-					bytes.NewReader(bodyPrepare(models.Like{0, uuid.New()}))),
+					bytes.NewReader(bodyPrepare(models.Like{LikesCount: 0, PostID: uuid.New()}))),
 				expectedResponse: http.StatusOK,
 			},
 		},
@@ -214,7 +214,7 @@ func TestPostHandler_RemoveLike(t *testing.T) {
 			fields: fields{mockPostUsecase, mockAuthUsecase, mockAttachUsecase},
 			args: args{
 				r: httptest.NewRequest("PUT", "/api/post/removeLike",
-					bytes.NewReader(bodyPrepare(models.Like{0, uuid.New()}))),
+					bytes.NewReader(bodyPrepare(models.Like{LikesCount: 0, PostID: uuid.New()}))),
 				expectedResponse: http.StatusUnauthorized,
 			},
 		},
