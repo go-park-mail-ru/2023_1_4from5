@@ -14,6 +14,7 @@ type Post struct {
 	Title       string      `json:"title"`
 	Text        string      `json:"text"`
 	IsAvailable bool        `json:"is_available"`
+	IsLiked     bool        `json:"is_liked"`
 	Attachments []uuid.UUID `json:"attachments,omitempty"`
 }
 

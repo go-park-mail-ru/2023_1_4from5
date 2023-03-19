@@ -192,6 +192,8 @@ func easyjson5a72dc82DecodeGithubComGoParkMailRu202314from5InternalModels1(in *j
 			out.Text = string(in.String())
 		case "is_available":
 			out.IsAvailable = bool(in.Bool())
+		case "is_liked":
+			out.IsLiked = bool(in.Bool())
 		case "attachments":
 			if in.IsNull() {
 				in.Skip()
@@ -260,6 +262,11 @@ func easyjson5a72dc82EncodeGithubComGoParkMailRu202314from5InternalModels1(out *
 		const prefix string = ",\"is_available\":"
 		out.RawString(prefix)
 		out.Bool(bool(in.IsAvailable))
+	}
+	{
+		const prefix string = ",\"is_liked\":"
+		out.RawString(prefix)
+		out.Bool(bool(in.IsLiked))
 	}
 	if len(in.Attachments) != 0 {
 		const prefix string = ",\"attachments\":"

@@ -34,13 +34,13 @@ type LoginUser struct {
 type UserProfile struct {
 	Login        string    `json:"login"    example:"Hacker2003"`
 	Name         string    `json:"name" example:"Danila Polyakov"`
-	ProfilePhoto string    `json:"profile_photo"`
+	ProfilePhoto uuid.UUID `json:"profile_photo"`
 	Registration time.Time `json:"registration"`
 }
 
 type UserHomePage struct {
 	Name         string    `json:"name" example:"Danila Polyakov"`
-	ProfilePhoto string    `json:"profile_photo"`
+	ProfilePhoto uuid.UUID `json:"profile_photo"`
 	Posts        []Post    `json:"posts"`
 	IsCreator    bool      `json:"is_creator"`
 	CreatorId    uuid.UUID `json:"creator_id"`

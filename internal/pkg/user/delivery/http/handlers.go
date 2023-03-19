@@ -62,6 +62,7 @@ func (h *UserHandler) GetHomePage(w http.ResponseWriter, r *http.Request) {
 	utils.Response(w, http.StatusOK, homePage)
 }
 
+// TODO delete file on server if already exists
 func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request) {
 	userData, err := jwt.ExtractTokenMetadata(r, jwt.ExtractTokenFromCookie)
 	if err != nil {
