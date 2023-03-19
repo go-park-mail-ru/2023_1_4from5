@@ -10,9 +10,11 @@ import (
 type UserUsecase interface {
 	GetProfile(details models.AccessDetails) (models.UserProfile, error)
 	GetHomePage(details models.AccessDetails) (models.UserHomePage, error)
+	UpdatePhoto(details models.AccessDetails) (uuid.UUID, error)
 }
 
 type UserRepo interface {
 	GetUserProfile(id uuid.UUID) (models.UserProfile, error)
 	GetHomePage(id uuid.UUID) (models.UserHomePage, error)
+	UpdateProfilePhoto(userID uuid.UUID, path uuid.UUID) error
 }

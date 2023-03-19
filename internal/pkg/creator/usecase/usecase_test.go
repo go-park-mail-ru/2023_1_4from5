@@ -7,7 +7,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
-	"os"
 	"testing"
 )
 
@@ -27,58 +26,57 @@ func TestCreatorUsecase_GetPage(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
 
-	os.Setenv("TOKEN_SECRET", "TESTS")
 	mockCreatorRepo := mock.NewMockCreatorRepo(ctl)
 
 	tests := []struct {
 		name               string
 		accessDetails      models.AccessDetails
 		creatorID          string
-		fields             *mock.MockCreatorRepo
+		repo               *mock.MockCreatorRepo
 		expectedStatusCode error
 	}{
 		{
 			name:               "OK",
 			accessDetails:      testUser,
 			creatorID:          uuid.New().String(),
-			fields:             mockCreatorRepo,
+			repo:               mockCreatorRepo,
 			expectedStatusCode: nil,
 		},
 		{
 			name:               "WrongData: wrong creatorUUId",
 			accessDetails:      testUser,
 			creatorID:          "123",
-			fields:             mockCreatorRepo,
+			repo:               mockCreatorRepo,
 			expectedStatusCode: models.WrongData,
 		},
 		{
 			name:               "InternalError",
 			accessDetails:      testUser,
 			creatorID:          uuid.New().String(),
-			fields:             mockCreatorRepo,
+			repo:               mockCreatorRepo,
 			expectedStatusCode: models.InternalError,
 		},
 		{
 			name:               "WrongData: no such creator",
 			accessDetails:      testUser,
 			creatorID:          uuid.New().String(),
-			fields:             mockCreatorRepo,
+			repo:               mockCreatorRepo,
 			expectedStatusCode: models.InternalError,
 		},
 	}
 
 	for i := 0; i < len(tests); i++ {
 		if tests[i].expectedStatusCode == nil {
-			mockCreatorRepo.EXPECT().GetPage(gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, nil)
+			tests[i].repo.EXPECT().GetPage(gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, nil)
 			continue
 		}
 		if tests[i].name == "WrongData: wrong creatorUUId" {
 			continue
 		}
 		if tests[i].expectedStatusCode == models.InternalError {
-			mockCreatorRepo.EXPECT().GetPage(gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, models.InternalError)
+			tests[i].repo.EXPECT().GetPage(gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, models.InternalError)
 		} else {
-			mockCreatorRepo.EXPECT().GetPage(gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, models.WrongData)
+			tests[i].repo.EXPECT().GetPage(gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, models.WrongData)
 		}
 	}
 

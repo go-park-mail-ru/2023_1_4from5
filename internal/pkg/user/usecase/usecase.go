@@ -3,6 +3,7 @@ package usecase
 import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user"
+	"github.com/google/uuid"
 )
 
 type UserUsecase struct {
@@ -31,4 +32,13 @@ func (uc *UserUsecase) GetHomePage(details models.AccessDetails) (models.UserHom
 	}
 
 	return homePage, nil
+}
+
+func (uc *UserUsecase) UpdatePhoto(details models.AccessDetails) (uuid.UUID, error) {
+	path := uuid.New()
+	err := uc.repo.UpdateProfilePhoto(details.Id, path)
+	if err != nil {
+		return uuid.Nil, models.InternalError
+	}
+	return path, nil
 }

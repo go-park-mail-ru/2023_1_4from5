@@ -12,6 +12,7 @@ const (
 	CreatorInfo       = `SELECT user_id, name, cover_photo, followers_count, description, posts_count FROM "creator" WHERE creator_id=$1;`
 	CreatorPosts      = `SELECT "post".post_id, creation_date, title, post_text, array_agg(attachment_path), array_agg(subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE creator_id = $1 GROUP BY "post".post_id, creation_date, title, post_text ORDER BY creation_date DESC;`
 	UserSubscriptions = `SELECT subscription_id FROM "user_subscription" WHERE user_id=$1;`
+	IsLiked           = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2`
 )
 
 type CreatorRepo struct {
@@ -66,6 +67,13 @@ func (ur *CreatorRepo) GetPage(userId uuid.UUID, creatorId uuid.UUID) (models.Cr
 				for _, userSubscription := range userSubscriptions {
 					if availableSubscription == userSubscription {
 						post.IsAvailable = true
+						//проверяем, лайкнул ли его пользователь
+						row := ur.db.QueryRow(IsLiked, post.Id, userId)
+						if err = row.Scan(&post.Id, &userId); err != nil && !errors.Is(sql.ErrNoRows, err) {
+							return models.CreatorPage{}, models.InternalError
+						} else if err == nil {
+							post.IsLiked = true
+						}
 						break
 					}
 				}

@@ -8,7 +8,7 @@ type Creator struct {
 	Id             uuid.UUID `json:"creator_id"`
 	UserId         uuid.UUID `json:"user_id"`
 	Name           string    `json:"name"`
-	CoverPhoto     string    `json:"cover_photo"`
+	CoverPhoto     uuid.UUID `json:"cover_photo"`
 	FollowersCount int       `json:"followers_count"`
 	Description    string    `json:"description"`
 	PostsCount     int       `json:"posts_count"`

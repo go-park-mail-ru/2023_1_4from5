@@ -3,6 +3,7 @@ package http
 import (
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
+	mockAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/mocks"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
 	mock "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/mocks"
 	"github.com/golang/mock/gomock"
@@ -27,7 +28,8 @@ func TestNewUserHandler(t *testing.T) {
 	defer ctl.Finish()
 
 	mockUsecase := mock.NewMockUserUsecase(ctl)
-	testHandler := NewUserHandler(mockUsecase)
+	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
+	testHandler := NewUserHandler(mockUsecase, mockAuthUsecase)
 	if testHandler.usecase != mockUsecase {
 		t.Error("bad constructor")
 	}
@@ -42,8 +44,9 @@ func TestGetProfile(t *testing.T) {
 	bdy, _ := tkn.GetToken(models.User{Login: testUser.Login, Id: uuid.New()})
 
 	usecaseMock := mock.NewMockUserUsecase(ctl)
+	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
 
-	handler := NewUserHandler(usecaseMock)
+	handler := NewUserHandler(usecaseMock, mockAuthUsecase)
 
 	var r *http.Request
 	var status int
@@ -88,8 +91,9 @@ func TestGetHomePage(t *testing.T) {
 	bdy, _ := tkn.GetToken(models.User{Login: testUser.Login, Id: uuid.New()})
 
 	usecaseMock := mock.NewMockUserUsecase(ctl)
+	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
 
-	handler := NewUserHandler(usecaseMock)
+	handler := NewUserHandler(usecaseMock, mockAuthUsecase)
 
 	var r *http.Request
 	var status int

@@ -262,7 +262,9 @@ func easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels2(in *j
 		case "name":
 			out.Name = string(in.String())
 		case "profile_photo":
-			out.ProfilePhoto = string(in.String())
+			if data := in.UnsafeBytes(); in.Ok() {
+				in.AddError((out.ProfilePhoto).UnmarshalText(data))
+			}
 		case "password_hash":
 			out.PasswordHash = string(in.String())
 		case "registration":
@@ -303,7 +305,7 @@ func easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels2(out *
 	{
 		const prefix string = ",\"profile_photo\":"
 		out.RawString(prefix)
-		out.String(string(in.ProfilePhoto))
+		out.RawText((in.ProfilePhoto).MarshalText())
 	}
 	{
 		const prefix string = ",\"password_hash\":"

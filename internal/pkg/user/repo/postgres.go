@@ -8,11 +8,10 @@ import (
 )
 
 const (
-	UserProfile    = `SELECT login, display_name, profile_photo, registration_date FROM "user" WHERE user_id=$1;`
-	UserNamePhoto  = `SELECT display_name, profile_photo FROM "user" WHERE user_id=$1;`
-	CheckIfCreator = `SELECT creator_id FROM "creator" WHERE user_id=$1;`
-	//GET_USER_POSTS = "SELECT post_id, creator_id, creation_date, title, post_text, attachments, available_subscriptions FROM public.post WHERE UNNEST(available_subscriptions) IN (SELECT subscriptions FROM public.user WHERE user_id = $1);"
-	//SELECT array_agg(aa.id)::int[] FROM UNNEST(ARRAY[1,2,3,45,67,8,8]) AS aa (id) WHERE aa.id = ANY(ARRAY[1,2,3,4,56,56,56,56]);
+	UserProfile        = `SELECT login, display_name, profile_photo, registration_date FROM "user" WHERE user_id=$1;`
+	UserNamePhoto      = `SELECT display_name, profile_photo FROM "user" WHERE user_id=$1;`
+	CheckIfCreator     = `SELECT creator_id FROM "creator" WHERE user_id=$1;`
+	UpdateProfilePhoto = `UPDATE "user" SET profile_photo = $1 WHERE user_id = $2`
 )
 
 type UserRepo struct {
@@ -51,4 +50,12 @@ func (ur *UserRepo) GetHomePage(id uuid.UUID) (models.UserHomePage, error) {
 		page.IsCreator = true
 	}
 	return page, nil
+}
+
+func (ur *UserRepo) UpdateProfilePhoto(userID uuid.UUID, path uuid.UUID) error {
+	row := ur.db.QueryRow(UpdateProfilePhoto, path, userID)
+	if err := row.Err(); err != nil {
+		return models.InternalError
+	}
+	return nil
 }

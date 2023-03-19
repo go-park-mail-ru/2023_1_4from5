@@ -23,7 +23,7 @@ create table "user"
         constraint login_pk
             unique,
     display_name      varchar(40) not null,
-    profile_photo     text,
+    profile_photo     uuid,
     password_hash     varchar(64) not null,
     registration_date timestamp            default now() not null
 );
@@ -37,7 +37,7 @@ create table creator
         constraint creator_user_user_id_fk
             references "user" (user_id),
     name            varchar(40)       not null,
-    cover_photo     text,
+    cover_photo     uuid,
     followers_count integer default 0 not null,
     description     varchar(500),
     posts_count     integer default 0 not null
