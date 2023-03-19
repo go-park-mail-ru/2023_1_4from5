@@ -12,5 +12,5 @@ type AttachmentUsecase interface {
 }
 
 type AttachmentRepo interface {
-	CreateAttach(postID uuid.UUID, attachment models.AttachmentData) error
+	CreateAttach(postID uuid.UUID, attachment models.AttachmentData) (uuid.UUID, error)
 }

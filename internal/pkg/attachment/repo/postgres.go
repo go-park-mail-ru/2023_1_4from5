@@ -18,14 +18,14 @@ func NewAttachmentRepo(db *sql.DB) *AttachmentRepo {
 	return &AttachmentRepo{db: db}
 }
 
-func (repo *AttachmentRepo) CreateAttach(postID uuid.UUID, attachment models.AttachmentData) error {
+func (repo *AttachmentRepo) CreateAttach(postID uuid.UUID, attachment models.AttachmentData) (uuid.UUID, error) {
 	attachment.Id = uuid.New()
 
 	row := repo.db.QueryRow(InsertAttach, attachment.Id, postID, attachment.Type)
 
 	if err := row.Err(); err != nil {
-		return models.InternalError
+		return uuid.Nil, models.InternalError
 	}
 
-	return nil
+	return attachment.Id, nil
 }
