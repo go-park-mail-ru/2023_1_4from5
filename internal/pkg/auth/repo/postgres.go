@@ -6,12 +6,11 @@ import (
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
-	"time"
 )
 
 const (
 	UserAccessDetails = `SELECT user_id, password_hash, user_version FROM "user" WHERE login=$1;`
-	AddUser           = `INSERT INTO "user"(user_id, login, display_name, profile_photo, password_hash, registration_date) VALUES($1, $2, $3, $4, $5, $6) RETURNING user_id;`
+	AddUser           = `INSERT INTO "user"(user_id, login, display_name, profile_photo, password_hash) VALUES($1, $2, $3, $4, $5) RETURNING user_id;`
 	IncUserVersion    = `UPDATE "user" SET user_version = user_version + 1 WHERE user_id=$1 RETURNING user_version;`
 	CheckUserVersion  = `SELECT user_version FROM "user" WHERE user_id = $1`
 )
@@ -27,7 +26,7 @@ func NewAuthRepo(db *sql.DB) *AuthRepo {
 func (r *AuthRepo) CreateUser(user models.User) (models.User, error) {
 	var id uuid.UUID
 	user.Id = uuid.New()
-	row := r.db.QueryRow(AddUser, user.Id, user.Login, user.Name, user.ProfilePhoto, user.PasswordHash, time.Now().UTC())
+	row := r.db.QueryRow(AddUser, user.Id, user.Login, user.Name, user.ProfilePhoto, user.PasswordHash)
 
 	if err := row.Scan(&id); err != nil {
 		fmt.Println(err)
