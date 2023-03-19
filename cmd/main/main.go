@@ -2,6 +2,8 @@ package main
 
 import (
 	"database/sql"
+	attachmentRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment/repo"
+	attachmentUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment/usecase"
 	authDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/http"
 	authRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/repo"
 	authUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
@@ -9,6 +11,9 @@ import (
 	creatorRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/repo"
 	creatorUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/usecase"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
+	postDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/delivery/http"
+	postRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/repo"
+	postUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/usecase"
 	userDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/http"
 	userRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/repo"
 	userUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/usecase"
@@ -57,6 +62,13 @@ func run() error {
 	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo)
 	creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse)
 
+	attachmentRepo := attachmentRepository.NewAttachmentRepo(db)
+	attachmentUse := attachmentUsecase.NewAttachmentUsecase(attachmentRepo)
+
+	postRepo := postRepository.NewPostRepo(db)
+	postUse := postUsecase.NewPostUsecase(postRepo)
+	postHandler := postDelivery.NewPostHandler(postUse, authUse, attachmentUse)
+
 	r := mux.NewRouter().PathPrefix("/api").Subrouter()
 	r.Use(middleware.CORSMiddleware)
 	auth := r.PathPrefix("/auth").Subrouter()
@@ -76,6 +88,12 @@ func run() error {
 	{
 		creator.HandleFunc("/page/{creator-uuid}", creatorHandler.GetPage).Methods(http.MethodGet, http.MethodOptions)
 	}
+
+	post := r.PathPrefix("/post").Subrouter()
+	{
+		post.HandleFunc("/create", postHandler.CreatePost).Methods(http.MethodPost, http.MethodOptions)
+	}
+
 	http.Handle("/", r)
 	srv := http.Server{Handler: r, Addr: ":8000"}
 	return srv.ListenAndServe()

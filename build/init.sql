@@ -122,7 +122,6 @@ create table attachment
             primary key,
     post_id         uuid not null
         constraint attachment_post_post_id_fk references "post" (post_id),
-    attachment_path text not null,
     attachment_type varchar(40)
 );
 
