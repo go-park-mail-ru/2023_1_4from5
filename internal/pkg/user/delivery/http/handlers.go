@@ -7,6 +7,7 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/jwt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
+	"github.com/google/uuid"
 	"io"
 	"net/http"
 	"os"
@@ -62,7 +63,6 @@ func (h *UserHandler) GetHomePage(w http.ResponseWriter, r *http.Request) {
 	utils.Response(w, http.StatusOK, homePage)
 }
 
-// TODO delete file on server if already exists
 func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request) {
 	userData, err := jwt.ExtractTokenMetadata(r, jwt.ExtractTokenFromCookie)
 	if err != nil {
@@ -80,6 +80,21 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
+	}
+	// удаляем старое фото с сервера
+	// если фото не было, придёт uuid.Nil
+	var oldPath uuid.UUID
+	oldPath, err = uuid.Parse(r.PostFormValue("path"))
+	if err != nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if oldPath != uuid.Nil {
+		err = os.Remove(fmt.Sprintf("/home/ubuntu/frontend/2023_1_4from5/public/%s.jpg", oldPath.String()))
+		if err != nil {
+			utils.Response(w, http.StatusBadRequest, nil)
+		}
 	}
 
 	file, _, err := r.FormFile("upload")
