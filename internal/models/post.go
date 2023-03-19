@@ -19,7 +19,7 @@ type Post struct {
 
 type PostCreationData struct {
 	Id                     uuid.UUID        `json:"id"`
-	Creator                uuid.UUID        `json:"creator"`
+	Creator                uuid.UUID        `json:"creator_id"`
 	Title                  string           `json:"title"`
 	Text                   string           `json:"text"`
 	Attachments            []AttachmentData `json:"attachments,omitempty"`

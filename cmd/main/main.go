@@ -56,7 +56,7 @@ func run() error {
 
 	userRepo := userRepository.NewUserRepo(db)
 	userUse := userUsecase.NewUserUsecase(userRepo)
-	userHandler := userDelivery.NewUserHandler(userUse)
+	userHandler := userDelivery.NewUserHandler(userUse, authUse)
 
 	creatorRepo := creatorRepository.NewCreatorRepo(db)
 	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo)
@@ -82,6 +82,7 @@ func run() error {
 	{
 		user.HandleFunc("/profile", userHandler.GetProfile).Methods(http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/homePage", userHandler.GetHomePage).Methods(http.MethodGet, http.MethodOptions)
+		user.HandleFunc("/updateProfilePhoto", userHandler.UpdateProfilePhoto).Methods(http.MethodPut, http.MethodOptions)
 	}
 
 	creator := r.PathPrefix("/creator").Subrouter()

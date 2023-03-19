@@ -3,7 +3,6 @@ package repo
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 )
@@ -42,8 +41,6 @@ func (r *PostRepo) AddLike(userID uuid.UUID, postID uuid.UUID) (models.Like, err
 	//проверяем, лайкнул ли уже
 	row := r.db.QueryRow(IsLiked, postID, userID)
 	if err := row.Scan(&postUUID, &userUUID); err != nil && !errors.Is(sql.ErrNoRows, err) {
-		fmt.Println(err)
-		fmt.Println(postUUID, userUUID)
 		return models.Like{}, models.InternalError
 	} else if err == nil { // уже есть запись об этом лайке
 		return models.Like{}, models.WrongData
@@ -54,7 +51,6 @@ func (r *PostRepo) AddLike(userID uuid.UUID, postID uuid.UUID) (models.Like, err
 	row = r.db.QueryRow(UpdateLikeCount, 1, postID)
 
 	if err := row.Scan(&like.LikesCount); err != nil && !errors.Is(sql.ErrNoRows, err) {
-		fmt.Println(err)
 		return models.Like{}, models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
 		return models.Like{}, models.WrongData

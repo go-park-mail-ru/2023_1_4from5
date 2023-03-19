@@ -23,7 +23,7 @@ create table "user"
         constraint login_pk
             unique,
     display_name      varchar(40) not null,
-    profile_photo     text,
+    profile_photo     uuid,
     password_hash     varchar(64) not null,
     registration_date timestamp            default now() not null
 );
