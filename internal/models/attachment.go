@@ -2,6 +2,8 @@ package models
 
 import "github.com/google/uuid"
 
+// easyjson -all ./internal/models/creator.go
+
 type Attachment struct {
 	Id   uuid.UUID
 	Type string
