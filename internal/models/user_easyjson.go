@@ -41,7 +41,9 @@ func easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels(in *jl
 		case "name":
 			out.Name = string(in.String())
 		case "profile_photo":
-			out.ProfilePhoto = string(in.String())
+			if data := in.UnsafeBytes(); in.Ok() {
+				in.AddError((out.ProfilePhoto).UnmarshalText(data))
+			}
 		case "registration":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.Registration).UnmarshalJSON(data))
@@ -73,7 +75,7 @@ func easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 	{
 		const prefix string = ",\"profile_photo\":"
 		out.RawString(prefix)
-		out.String(string(in.ProfilePhoto))
+		out.RawText((in.ProfilePhoto).MarshalText())
 	}
 	{
 		const prefix string = ",\"registration\":"
@@ -128,7 +130,9 @@ func easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels1(in *j
 		case "name":
 			out.Name = string(in.String())
 		case "profile_photo":
-			out.ProfilePhoto = string(in.String())
+			if data := in.UnsafeBytes(); in.Ok() {
+				in.AddError((out.ProfilePhoto).UnmarshalText(data))
+			}
 		case "posts":
 			if in.IsNull() {
 				in.Skip()
@@ -180,7 +184,7 @@ func easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels1(out *
 	{
 		const prefix string = ",\"profile_photo\":"
 		out.RawString(prefix)
-		out.String(string(in.ProfilePhoto))
+		out.RawText((in.ProfilePhoto).MarshalText())
 	}
 	{
 		const prefix string = ",\"posts\":"
