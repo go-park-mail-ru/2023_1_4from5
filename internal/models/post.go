@@ -24,7 +24,7 @@ type PostCreationData struct {
 	Title                  string           `json:"title"`
 	Text                   string           `json:"text"`
 	Attachments            []AttachmentData `json:"attachments,omitempty"`
-	AvailableSubscriptions uuid.UUID        `json:"available_subscriptions"`
+	AvailableSubscriptions []uuid.UUID      `json:"available_subscriptions"`
 }
 
 func (post PostCreationData) IsValid() bool {

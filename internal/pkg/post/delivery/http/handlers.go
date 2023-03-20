@@ -61,6 +61,53 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	utils.Response(w, http.StatusOK, postUUID)
 }
 
+/*
+func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
+	userData, err := jwt.ExtractTokenMetadata(r, jwt.ExtractTokenFromCookie)
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	if _, err := h.authUsecase.CheckUserVersion(*userData); err != nil {
+		utils.Cookie(w, "")
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+
+	err = r.ParseMultipartForm(32 << 20) // maxMemory
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	var postData models.PostCreationData
+
+	postData.Creator, err = uuid.Parse(r.PostFormValue("creator_id"))
+	if err != nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	postData.Title = r.PostFormValue("title")
+	postData.Text = r.PostFormValue("subscriptions")
+	postData.Text = r.PostFormValue("subscriptions")
+	fmt.Println(postData)
+
+	attachs := r.MultipartForm.File["attachments"]
+	for i, v := attachs {
+		attach, err := attachs[i].Open()
+		if err != nil {
+			utils.Response(w, http.StatusBadRequest, nil)
+			return
+		}
+		defer attach.Close()
+
+		//
+
+	}
+	utils.Response(w, http.StatusOK, postData)
+}*/
+
 func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
 	userData, err := jwt.ExtractTokenMetadata(r, jwt.ExtractTokenFromCookie)
 	if err != nil {
