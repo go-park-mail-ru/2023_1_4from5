@@ -91,7 +91,7 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 	}
 
 	if oldPath != uuid.Nil {
-		err = os.Remove(fmt.Sprintf("/home/ubuntu/frontend/2023_1_4from5/public/%s.jpg", oldPath.String()))
+		err = os.Remove(fmt.Sprintf("/images/%s.jpg", oldPath.String()))
 		if err != nil {
 			utils.Response(w, http.StatusBadRequest, nil)
 		}

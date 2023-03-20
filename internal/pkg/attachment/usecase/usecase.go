@@ -36,7 +36,7 @@ func (u *AttachmentUsecase) CreateAttachs(postID uuid.UUID, attachments ...model
 		}
 		resultIds[i] = uuid.New()
 
-		f, err := os.Create(fmt.Sprintf("/home/ubuntu/frontend/2023_1_4from5/public/images/%s.%s", resultIds[i].String(), attachmentType))
+		f, err := os.Create(fmt.Sprintf("/images/%s.%s", resultIds[i].String(), attachmentType))
 		if err != nil {
 			fmt.Println(err)
 			return nil, models.InternalError
