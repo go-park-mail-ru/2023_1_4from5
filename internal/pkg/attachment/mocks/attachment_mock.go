@@ -35,23 +35,24 @@ func (m *MockAttachmentUsecase) EXPECT() *MockAttachmentUsecaseMockRecorder {
 	return m.recorder
 }
 
-// CreateAttach mocks base method.
-func (m *MockAttachmentUsecase) CreateAttach(postID uuid.UUID, attachments ...models.AttachmentData) error {
+// CreateAttachs mocks base method.
+func (m *MockAttachmentUsecase) CreateAttachs(postID uuid.UUID, attachments ...models.AttachmentData) ([]uuid.UUID, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{postID}
 	for _, a := range attachments {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "CreateAttach", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "CreateAttachs", varargs...)
+	ret0, _ := ret[0].([]uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// CreateAttach indicates an expected call of CreateAttach.
-func (mr *MockAttachmentUsecaseMockRecorder) CreateAttach(postID interface{}, attachments ...interface{}) *gomock.Call {
+// CreateAttachs indicates an expected call of CreateAttachs.
+func (mr *MockAttachmentUsecaseMockRecorder) CreateAttachs(postID interface{}, attachments ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{postID}, attachments...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAttach", reflect.TypeOf((*MockAttachmentUsecase)(nil).CreateAttach), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAttachs", reflect.TypeOf((*MockAttachmentUsecase)(nil).CreateAttachs), varargs...)
 }
 
 // MockAttachmentRepo is a mock of AttachmentRepo interface.
@@ -78,16 +79,15 @@ func (m *MockAttachmentRepo) EXPECT() *MockAttachmentRepoMockRecorder {
 }
 
 // CreateAttach mocks base method.
-func (m *MockAttachmentRepo) CreateAttach(postID uuid.UUID, attachment models.AttachmentData) (uuid.UUID, error) {
+func (m *MockAttachmentRepo) CreateAttach(postID, userID uuid.UUID, attachmentType string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateAttach", postID, attachment)
-	ret0, _ := ret[0].(uuid.UUID)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "CreateAttach", postID, userID, attachmentType)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // CreateAttach indicates an expected call of CreateAttach.
-func (mr *MockAttachmentRepoMockRecorder) CreateAttach(postID, attachment interface{}) *gomock.Call {
+func (mr *MockAttachmentRepoMockRecorder) CreateAttach(postID, userID, attachmentType interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAttach", reflect.TypeOf((*MockAttachmentRepo)(nil).CreateAttach), postID, attachment)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAttach", reflect.TypeOf((*MockAttachmentRepo)(nil).CreateAttach), postID, userID, attachmentType)
 }

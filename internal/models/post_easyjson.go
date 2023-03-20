@@ -57,24 +57,47 @@ func easyjson5a72dc82DecodeGithubComGoParkMailRu202314from5InternalModels(in *jl
 				in.Delim('[')
 				if out.Attachments == nil {
 					if !in.IsDelim(']') {
-						out.Attachments = make([]AttachmentData, 0, 1)
+						out.Attachments = make([]uuid.UUID, 0, 4)
 					} else {
-						out.Attachments = []AttachmentData{}
+						out.Attachments = []uuid.UUID{}
 					}
 				} else {
 					out.Attachments = (out.Attachments)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v1 AttachmentData
-					(v1).UnmarshalEasyJSON(in)
+					var v1 uuid.UUID
+					if data := in.UnsafeBytes(); in.Ok() {
+						in.AddError((v1).UnmarshalText(data))
+					}
 					out.Attachments = append(out.Attachments, v1)
 					in.WantComma()
 				}
 				in.Delim(']')
 			}
 		case "available_subscriptions":
-			if data := in.UnsafeBytes(); in.Ok() {
-				in.AddError((out.AvailableSubscriptions).UnmarshalText(data))
+			if in.IsNull() {
+				in.Skip()
+				out.AvailableSubscriptions = nil
+			} else {
+				in.Delim('[')
+				if out.AvailableSubscriptions == nil {
+					if !in.IsDelim(']') {
+						out.AvailableSubscriptions = make([]uuid.UUID, 0, 4)
+					} else {
+						out.AvailableSubscriptions = []uuid.UUID{}
+					}
+				} else {
+					out.AvailableSubscriptions = (out.AvailableSubscriptions)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v2 uuid.UUID
+					if data := in.UnsafeBytes(); in.Ok() {
+						in.AddError((v2).UnmarshalText(data))
+					}
+					out.AvailableSubscriptions = append(out.AvailableSubscriptions, v2)
+					in.WantComma()
+				}
+				in.Delim(']')
 			}
 		default:
 			in.SkipRecursive()
@@ -115,11 +138,11 @@ func easyjson5a72dc82EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 		out.RawString(prefix)
 		{
 			out.RawByte('[')
-			for v2, v3 := range in.Attachments {
-				if v2 > 0 {
+			for v3, v4 := range in.Attachments {
+				if v3 > 0 {
 					out.RawByte(',')
 				}
-				(v3).MarshalEasyJSON(out)
+				out.RawText((v4).MarshalText())
 			}
 			out.RawByte(']')
 		}
@@ -127,7 +150,18 @@ func easyjson5a72dc82EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 	{
 		const prefix string = ",\"available_subscriptions\":"
 		out.RawString(prefix)
-		out.RawText((in.AvailableSubscriptions).MarshalText())
+		if in.AvailableSubscriptions == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
+			out.RawString("null")
+		} else {
+			out.RawByte('[')
+			for v5, v6 := range in.AvailableSubscriptions {
+				if v5 > 0 {
+					out.RawByte(',')
+				}
+				out.RawText((v6).MarshalText())
+			}
+			out.RawByte(']')
+		}
 	}
 	out.RawByte('}')
 }
@@ -210,11 +244,11 @@ func easyjson5a72dc82DecodeGithubComGoParkMailRu202314from5InternalModels1(in *j
 					out.Attachments = (out.Attachments)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v4 uuid.UUID
+					var v7 uuid.UUID
 					if data := in.UnsafeBytes(); in.Ok() {
-						in.AddError((v4).UnmarshalText(data))
+						in.AddError((v7).UnmarshalText(data))
 					}
-					out.Attachments = append(out.Attachments, v4)
+					out.Attachments = append(out.Attachments, v7)
 					in.WantComma()
 				}
 				in.Delim(']')
@@ -273,11 +307,11 @@ func easyjson5a72dc82EncodeGithubComGoParkMailRu202314from5InternalModels1(out *
 		out.RawString(prefix)
 		{
 			out.RawByte('[')
-			for v5, v6 := range in.Attachments {
-				if v5 > 0 {
+			for v8, v9 := range in.Attachments {
+				if v8 > 0 {
 					out.RawByte(',')
 				}
-				out.RawText((v6).MarshalText())
+				out.RawText((v9).MarshalText())
 			}
 			out.RawByte(']')
 		}

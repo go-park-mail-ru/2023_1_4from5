@@ -8,7 +8,7 @@ import (
 )
 
 type PostUsecase interface {
-	CreatePost(postData models.PostCreationData) error
+	CreatePost(postData models.PostCreationData) (uuid.UUID, error)
 	AddLike(userID uuid.UUID, postID uuid.UUID) (models.Like, error)
 	RemoveLike(userID uuid.UUID, postID uuid.UUID) (models.Like, error)
 }

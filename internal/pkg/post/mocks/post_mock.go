@@ -51,11 +51,12 @@ func (mr *MockPostUsecaseMockRecorder) AddLike(userID, postID interface{}) *gomo
 }
 
 // CreatePost mocks base method.
-func (m *MockPostUsecase) CreatePost(postData models.PostCreationData) error {
+func (m *MockPostUsecase) CreatePost(postData models.PostCreationData) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePost", postData)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CreatePost indicates an expected call of CreatePost.

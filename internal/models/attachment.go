@@ -1,8 +1,11 @@
 package models
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"mime/multipart"
+)
 
-// easyjson -all ./internal/models/creator.go
+// easyjson -all ./internal/models/attachment.go
 
 type Attachment struct {
 	Id   uuid.UUID
@@ -10,7 +13,7 @@ type Attachment struct {
 }
 
 type AttachmentData struct {
-	Id   uuid.UUID `json:"id"`
-	Data []byte    `json:"data"`
-	Type string    `json:"type"`
+	Id   uuid.UUID
+	Data multipart.File
+	Type string
 }
