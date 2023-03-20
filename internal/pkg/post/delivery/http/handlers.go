@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
@@ -25,7 +26,7 @@ func NewPostHandler(uc post.PostUsecase, auc auth.AuthUsecase, attuc attachment.
 		attachmentUsecase: attuc,
 	}
 }
-
+/*
 func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	userData, err := jwt.ExtractTokenMetadata(r, jwt.ExtractTokenFromCookie)
 	if err != nil {
@@ -60,8 +61,8 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	utils.Response(w, http.StatusOK, postUUID)
 }
+*/
 
-/*
 func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	userData, err := jwt.ExtractTokenMetadata(r, jwt.ExtractTokenFromCookie)
 	if err != nil {
@@ -89,7 +90,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	postData.Title = r.PostFormValue("title")
-	postData.Text = r.PostFormValue("subscriptions")
+	postData.Text = r.PostFormValue("text")
 	postData.Text = r.PostFormValue("subscriptions")
 	fmt.Println(postData)
 
@@ -106,7 +107,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	}
 	utils.Response(w, http.StatusOK, postData)
-}*/
+}
 
 func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
 	userData, err := jwt.ExtractTokenMetadata(r, jwt.ExtractTokenFromCookie)
