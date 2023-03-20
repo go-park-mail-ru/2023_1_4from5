@@ -30,23 +30,20 @@ func NewAttachmentUsecase(repo attachment.AttachmentRepo) *AttachmentUsecase {
 func (u *AttachmentUsecase) CreateAttachs(postID uuid.UUID, attachments ...models.AttachmentData) ([]uuid.UUID, error) {
 	resultIds := make([]uuid.UUID, len(attachments))
 	for i, attach := range attachments {
-		fmt.Println(attach.Type)
 		attachmentType, ok := types[attach.Type]
 		if !ok {
 			return nil, models.WrongData
 		}
 		resultIds[i] = uuid.New()
 
-		f, err := os.Create(fmt.Sprintf("/home/ubuntu/frontend/2023_1_4from5/public/%s.%s", resultIds[i].String(), attachmentType))
+		f, err := os.Create(fmt.Sprintf("/home/ubuntu/frontend/2023_1_4from5/public/images/%s.%s", resultIds[i].String(), attachmentType))
 		if err != nil {
 			fmt.Println(err)
 			return nil, models.InternalError
 		}
 		defer f.Close()
-		if w, err := io.Copy(f, attach.Data); err != nil {
+		if _, err := io.Copy(f, attach.Data); err != nil {
 			return nil, models.InternalError
-		} else {
-			fmt.Println(w)
 		}
 
 		if err = u.repo.CreateAttach(postID, resultIds[i], attach.Type); err != nil {
