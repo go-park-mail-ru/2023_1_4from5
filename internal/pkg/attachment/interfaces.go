@@ -8,9 +8,9 @@ import (
 //go:generate mockgen -source=interfaces.go -destination=./mocks/attachment_mock.go -package=mock
 
 type AttachmentUsecase interface {
-	CreateAttach(postID uuid.UUID, attachments ...models.AttachmentData) error
+	CreateAttachs(postID uuid.UUID, attachments ...models.AttachmentData) ([]uuid.UUID, error)
 }
 
 type AttachmentRepo interface {
-	CreateAttach(postID uuid.UUID, attachment models.AttachmentData) (uuid.UUID, error)
+	CreateAttach(postID uuid.UUID, attachID uuid.UUID, attachmentType string) error
 }

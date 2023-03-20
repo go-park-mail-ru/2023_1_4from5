@@ -13,7 +13,7 @@ const (
 	RemoveLike      = `DELETE FROM "like_post" WHERE post_id = $1 AND user_id = $2`
 	UpdateLikeCount = `UPDATE "post" SET likes_count = likes_count + $1 WHERE post_id = $2 RETURNING likes_count;`
 	IsLiked         = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2`
-	IsPostAvailable = `SELECT user_id FROM "user_subscription" INNER JOIN post_subscription p on "user_subscription".subscription_id = p.subscription_id WHERE user_id = $1 AND post_id = $2 AND expire_date > now()`
+	IsPostAvailable = `SELECT user_id FROM "user_subscription" INNER JOIN "post_subscription" p on "user_subscription".subscription_id = p.subscription_id WHERE user_id = $1 AND post_id = $2 AND expire_date > now()`
 )
 
 type PostRepo struct {

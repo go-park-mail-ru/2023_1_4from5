@@ -57,16 +57,18 @@ func easyjson5a72dc82DecodeGithubComGoParkMailRu202314from5InternalModels(in *jl
 				in.Delim('[')
 				if out.Attachments == nil {
 					if !in.IsDelim(']') {
-						out.Attachments = make([]AttachmentData, 0, 1)
+						out.Attachments = make([]uuid.UUID, 0, 4)
 					} else {
-						out.Attachments = []AttachmentData{}
+						out.Attachments = []uuid.UUID{}
 					}
 				} else {
 					out.Attachments = (out.Attachments)[:0]
 				}
 				for !in.IsDelim(']') {
-					var v1 AttachmentData
-					(v1).UnmarshalEasyJSON(in)
+					var v1 uuid.UUID
+					if data := in.UnsafeBytes(); in.Ok() {
+						in.AddError((v1).UnmarshalText(data))
+					}
 					out.Attachments = append(out.Attachments, v1)
 					in.WantComma()
 				}
@@ -140,7 +142,7 @@ func easyjson5a72dc82EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 				if v3 > 0 {
 					out.RawByte(',')
 				}
-				(v4).MarshalEasyJSON(out)
+				out.RawText((v4).MarshalText())
 			}
 			out.RawByte(']')
 		}
