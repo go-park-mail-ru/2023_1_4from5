@@ -1,13 +1,13 @@
 package usecase
 
 import (
-	"errors"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment"
 	"github.com/google/uuid"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 type AttachmentUsecase struct {
@@ -57,16 +57,12 @@ func (u *AttachmentUsecase) CreateAttachs(postID uuid.UUID, attachments ...model
 
 func (u *AttachmentUsecase) DeleteAttachsByID(attachmentIDs ...uuid.UUID) error {
 	for _, attachId := range attachmentIDs {
-		if _, err := os.Stat(fmt.Sprintf("/images/%s", attachId.String())); errors.Is(err, os.ErrNotExist) {
-			return models.WrongData
-		}
-
 		if err := u.repo.DeleteAttachByID(attachId); err != nil {
 			return models.InternalError
 		}
 
-		if err := os.Remove(fmt.Sprintf("/images/%s", attachId.String())); err != nil {
-			return models.WrongData
+		if err := deleteByFileName(attachId.String()); err != nil {
+			return err
 		}
 	}
 
@@ -79,8 +75,29 @@ func (u *AttachmentUsecase) DeleteAttachsByPostID(postID uuid.UUID) error {
 		return models.InternalError
 	}
 	for _, attachID := range attachIDs {
-		if err := os.Remove(fmt.Sprintf("/images/%s.jpeg", attachID.String())); err != nil {
-			return models.WrongData
+		if err := deleteByFileName(attachID.String()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func deleteByFileName(filename string) error {
+	dir := "/images/"
+	pattern := filename + "*"
+
+	// find all files matching the pattern in the directory
+	files, err := filepath.Glob(filepath.Join(dir, pattern))
+	if err != nil {
+		fmt.Println(err)
+	}
+	if len(files) == 0 {
+		return models.WrongData
+	}
+	//TODO: он затирает все файлы, по сути у нас он всегда будет один, но я не знаю, как лучше обработать этот массив
+	for _, file := range files {
+		if err := os.Remove(file); err != nil {
+			return models.InternalError
 		}
 	}
 	return nil
