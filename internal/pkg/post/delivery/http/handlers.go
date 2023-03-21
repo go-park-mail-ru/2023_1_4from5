@@ -29,7 +29,7 @@ func NewPostHandler(uc post.PostUsecase, auc auth.AuthUsecase, attuc attachment.
 }
 
 func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
-	//TODO: проверка на соответствие userId и creatorId
+	//TODO: проверка на соответствие userId и creatorId в кукеееееееее
 	userData, err := jwt.ExtractTokenMetadata(r, jwt.ExtractTokenFromCookie)
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
