@@ -57,7 +57,7 @@ func (u *AttachmentUsecase) CreateAttachs(postID uuid.UUID, attachments ...model
 
 func (u *AttachmentUsecase) DeleteAttachsByID(attachmentIDs ...uuid.UUID) error {
 	for _, attachId := range attachmentIDs {
-		if _, err := os.Stat(fmt.Sprintf("/images/%s", attachId)); errors.Is(err, os.ErrNotExist) {
+		if _, err := os.Stat(fmt.Sprintf("/images/%s", attachId.String())); errors.Is(err, os.ErrNotExist) {
 			return models.WrongData
 		}
 
@@ -65,7 +65,7 @@ func (u *AttachmentUsecase) DeleteAttachsByID(attachmentIDs ...uuid.UUID) error 
 			return models.InternalError
 		}
 
-		if err := os.Remove(fmt.Sprintf("/images/%s", attachId)); err != nil {
+		if err := os.Remove(fmt.Sprintf("/images/%s", attachId.String())); err != nil {
 			return models.WrongData
 		}
 	}
@@ -79,7 +79,7 @@ func (u *AttachmentUsecase) DeleteAttachsByPostID(postID uuid.UUID) error {
 		return models.InternalError
 	}
 	for _, attachID := range attachIDs {
-		if err := os.Remove(fmt.Sprintf("/images/%s", attachID.String())); err != nil {
+		if err := os.Remove(fmt.Sprintf("/images/%s.jpeg", attachID.String())); err != nil {
 			return models.WrongData
 		}
 	}
