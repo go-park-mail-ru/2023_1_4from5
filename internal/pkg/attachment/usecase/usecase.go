@@ -36,12 +36,15 @@ func (u *AttachmentUsecase) CreateAttachs(postID uuid.UUID, attachments ...model
 			return nil, models.WrongData
 		}
 		resultIds[i] = uuid.New()
-
+		//TODO проверить наличие места, перед тем как передавать в usecase, делать buffer хуюфер всё такое
 		f, err := os.Create(fmt.Sprintf("/images/%s.%s", resultIds[i].String(), attachmentType))
 		if err != nil {
 			fmt.Println(err)
 			return nil, models.InternalError
 		}
+		//TODO две подкапотные репо функции на создание поста и аттачей и их в транзакцию
+		//TODO проверить хватит ли места на все файлы, все разом сохраняем, если наебнётся посстгра удаляем файлы
+		//TODO если какой-то из файлов не сохранился все считанные файлы отменяем CANCEL CANCEL
 		defer f.Close()
 		if _, err := io.Copy(f, attach.Data); err != nil {
 			return nil, models.InternalError
