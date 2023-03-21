@@ -79,7 +79,7 @@ func (u *AttachmentUsecase) DeleteAttachsByPostID(postID uuid.UUID) error {
 		return models.InternalError
 	}
 	for _, attachID := range attachIDs {
-		if err := os.Remove(fmt.Sprintf("/images/%s", attachID)); err != nil {
+		if err := os.Remove(fmt.Sprintf("/images/%s", attachID.String())); err != nil {
 			return models.WrongData
 		}
 	}
