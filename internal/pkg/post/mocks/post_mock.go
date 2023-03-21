@@ -65,6 +65,35 @@ func (mr *MockPostUsecaseMockRecorder) CreatePost(postData interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePost", reflect.TypeOf((*MockPostUsecase)(nil).CreatePost), postData)
 }
 
+// DeletePost mocks base method.
+func (m *MockPostUsecase) DeletePost(postID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeletePost", postID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeletePost indicates an expected call of DeletePost.
+func (mr *MockPostUsecaseMockRecorder) DeletePost(postID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePost", reflect.TypeOf((*MockPostUsecase)(nil).DeletePost), postID)
+}
+
+// IsPostOwner mocks base method.
+func (m *MockPostUsecase) IsPostOwner(userId, postId uuid.UUID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsPostOwner", userId, postId)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsPostOwner indicates an expected call of IsPostOwner.
+func (mr *MockPostUsecaseMockRecorder) IsPostOwner(userId, postId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPostOwner", reflect.TypeOf((*MockPostUsecase)(nil).IsPostOwner), userId, postId)
+}
+
 // RemoveLike mocks base method.
 func (m *MockPostUsecase) RemoveLike(userID, postID uuid.UUID) (models.Like, error) {
 	m.ctrl.T.Helper()
@@ -130,6 +159,35 @@ func (m *MockPostRepo) CreatePost(postData models.PostCreationData) error {
 func (mr *MockPostRepoMockRecorder) CreatePost(postData interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePost", reflect.TypeOf((*MockPostRepo)(nil).CreatePost), postData)
+}
+
+// DeletePost mocks base method.
+func (m *MockPostRepo) DeletePost(postID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeletePost", postID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeletePost indicates an expected call of DeletePost.
+func (mr *MockPostRepoMockRecorder) DeletePost(postID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePost", reflect.TypeOf((*MockPostRepo)(nil).DeletePost), postID)
+}
+
+// IsPostOwner mocks base method.
+func (m *MockPostRepo) IsPostOwner(userId, postId uuid.UUID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsPostOwner", userId, postId)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsPostOwner indicates an expected call of IsPostOwner.
+func (mr *MockPostRepoMockRecorder) IsPostOwner(userId, postId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPostOwner", reflect.TypeOf((*MockPostRepo)(nil).IsPostOwner), userId, postId)
 }
 
 // RemoveLike mocks base method.

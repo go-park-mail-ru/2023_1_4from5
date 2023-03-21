@@ -96,6 +96,7 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 			utils.Response(w, http.StatusBadRequest, nil)
 		}
 	}
+	//TODO: добавить проверку mime-type'а\n
 
 	file, _, err := r.FormFile("upload")
 	if err != nil {

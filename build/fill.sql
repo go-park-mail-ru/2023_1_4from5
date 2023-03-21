@@ -74,7 +74,7 @@ VALUES ('c3d5be1f-64ba-49d1-bb1d-06516c64bcba', 'df0dd4ee-0772-43e2-919c-9b059e3
 --------------------------------------------------------------------------------------------------------------
 
 ------------------------------------Подписчик без доступа-----------AUTHOR BASHMAK---------------------------------------------------
----LOGIN Bashmak PASSWORD Bashmak1!
+---LOGIN Bashmakq PASSWORD Bashmak1!
 INSERT INTO "user"(user_id, login, display_name, password_hash, registration_date)
 VALUES ('0b5ce9bf-ba11-415a-ac49-941ec9f0076f', 'Bashmakq', 'Даня Поляков',
         'b1dc543073c224c94d5c9f247a05896774e9d78eb6a542f405c68e33d49d4149', '2023-02-24 08:40');

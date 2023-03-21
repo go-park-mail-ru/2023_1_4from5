@@ -9,8 +9,12 @@ import (
 
 type AttachmentUsecase interface {
 	CreateAttachs(postID uuid.UUID, attachments ...models.AttachmentData) ([]uuid.UUID, error)
+	DeleteAttachsByID(attachmentIDs ...uuid.UUID) error
+	DeleteAttachsByPostID(postID uuid.UUID) error
 }
 
 type AttachmentRepo interface {
 	CreateAttach(postID uuid.UUID, attachID uuid.UUID, attachmentType string) error
+	DeleteAttachByID(attachID uuid.UUID) error
+	DeleteAttachByPostID(postID uuid.UUID) ([]uuid.UUID, error)
 }

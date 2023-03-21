@@ -95,6 +95,7 @@ func run() error {
 		post.HandleFunc("/create", postHandler.CreatePost).Methods(http.MethodPost, http.MethodOptions)
 		post.HandleFunc("/addLike", postHandler.AddLike).Methods(http.MethodPut, http.MethodOptions)
 		post.HandleFunc("/removeLike", postHandler.RemoveLike).Methods(http.MethodPut, http.MethodOptions)
+		post.HandleFunc("/{post-uuid}", postHandler.DeletePost).Methods(http.MethodDelete, http.MethodOptions)
 	}
 
 	http.Handle("/", r)
