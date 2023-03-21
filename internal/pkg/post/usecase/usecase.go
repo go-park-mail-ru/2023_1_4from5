@@ -21,6 +21,15 @@ func (u *PostUsecase) CreatePost(postData models.PostCreationData) (uuid.UUID, e
 	}
 	return postData.Id, nil
 }
+func (u *PostUsecase) DeletePost(postID uuid.UUID) error {
+	if err := u.repo.DeletePost(postID); err != nil {
+		return models.InternalError
+	}
+	return nil
+}
+func (u *PostUsecase) IsPostOwner(userId uuid.UUID, postId uuid.UUID) (bool, error) {
+	return u.repo.IsPostOwner(userId, postId)
+}
 
 func (u *PostUsecase) AddLike(userID uuid.UUID, postID uuid.UUID) (models.Like, error) {
 	like, err := u.repo.AddLike(userID, postID)

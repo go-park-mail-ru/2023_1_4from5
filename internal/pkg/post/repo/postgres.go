@@ -9,6 +9,8 @@ import (
 
 const (
 	InsertPost      = `INSERT INTO "post"(post_id, creator_id, title, post_text) VALUES($1, $2, $3, $4);`
+	DeletePost      = `DELETE FROM  "post" WHERE post_id = $1;`
+	GetUserId       = `SELECT user_id FROM "post" JOIN "creator" c on c.creator_id = "post".creator_id WHERE post_id = $1`
 	AddLike         = `INSERT INTO "like_post"(post_id, user_id) VALUES($1, $2);`
 	RemoveLike      = `DELETE FROM "like_post" WHERE post_id = $1 AND user_id = $2`
 	UpdateLikeCount = `UPDATE "post" SET likes_count = likes_count + $1 WHERE post_id = $2 RETURNING likes_count;`
@@ -32,6 +34,29 @@ func (r *PostRepo) CreatePost(postData models.PostCreationData) error {
 	}
 
 	return nil
+}
+func (r *PostRepo) DeletePost(postID uuid.UUID) error {
+	row := r.db.QueryRow(DeletePost, postID)
+
+	if err := row.Err(); err != nil {
+		return models.InternalError
+	}
+
+	return nil
+}
+
+func (r *PostRepo) IsPostOwner(userId uuid.UUID, postId uuid.UUID) (bool, error) {
+	row := r.db.QueryRow(GetUserId, postId)
+	var userIdtmp uuid.UUID
+	if err := row.Scan(&userIdtmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		return false, models.InternalError
+	} else if errors.Is(sql.ErrNoRows, err) {
+		return false, models.WrongData
+	}
+	if userIdtmp != userId {
+		return false, nil
+	}
+	return true, nil
 }
 
 func (r *PostRepo) AddLike(userID uuid.UUID, postID uuid.UUID) (models.Like, error) {

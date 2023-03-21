@@ -20,8 +20,7 @@ func NewCreatorHandler(uc creator.CreatorUsecase) *CreatorHandler {
 }
 
 func (h *CreatorHandler) GetPage(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	creatorUUID, ok := vars["creator-uuid"]
+	creatorUUID, ok := mux.Vars(r)["creator-uuid"]
 	if !ok {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
