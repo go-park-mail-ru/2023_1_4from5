@@ -23,7 +23,7 @@ func (u *AuthUsecase) Logout(details models.AccessDetails) (int, error) {
 func (u *AuthUsecase) SignIn(user models.LoginUser) (string, error) {
 	user.PasswordHash = u.encrypter.EncryptPswd(user.PasswordHash)
 	dbUser, dbErr := u.repo.CheckUser(models.User{Login: user.Login, PasswordHash: user.PasswordHash})
-	token, err := u.tokenator.GetToken(dbUser)
+	token, err := u.tokenator.GetJWTToken(dbUser)
 	if dbErr == nil && err == nil {
 		return token, nil
 	}
@@ -37,7 +37,7 @@ func (u *AuthUsecase) SignUp(user models.User) (string, error) {
 		return "", models.WrongData
 	}
 	newUser, dbErr := u.repo.CreateUser(user)
-	token, tokenErr := u.tokenator.GetToken(newUser)
+	token, tokenErr := u.tokenator.GetJWTToken(newUser)
 	if dbErr == nil && tokenErr == nil {
 		return token, nil
 	}

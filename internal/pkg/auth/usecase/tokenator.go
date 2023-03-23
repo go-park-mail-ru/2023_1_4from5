@@ -15,7 +15,7 @@ func NewTokenator() *Tokenator {
 	return &Tokenator{}
 }
 
-func (t *Tokenator) GetToken(user models.User) (string, error) {
+func (t *Tokenator) GetJWTToken(user models.User) (string, error) {
 	tokenModel := models.Token{
 		Login:       user.Login,
 		Id:          user.Id.String(),

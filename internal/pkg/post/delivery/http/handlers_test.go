@@ -77,7 +77,7 @@ func TestPostHandler_AddLike(t *testing.T) {
 
 	os.Setenv("TOKEN_SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
-	token, _ := tkn.GetToken(models.User{Login: testUser.Login, Id: uuid.New()})
+	token, _ := tkn.GetJWTToken(models.User{Login: testUser.Login, Id: uuid.New()})
 
 	tests := []struct {
 		name   string
@@ -193,7 +193,7 @@ func TestPostHandler_RemoveLike(t *testing.T) {
 
 	os.Setenv("TOKEN_SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
-	token, _ := tkn.GetToken(models.User{Login: testUser.Login, Id: uuid.New()})
+	token, _ := tkn.GetJWTToken(models.User{Login: testUser.Login, Id: uuid.New()})
 
 	tests := []struct {
 		name   string

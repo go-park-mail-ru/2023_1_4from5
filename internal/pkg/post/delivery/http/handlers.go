@@ -4,8 +4,8 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/jwt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -30,14 +30,14 @@ func NewPostHandler(uc post.PostUsecase, auc auth.AuthUsecase, attuc attachment.
 
 func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	//TODO: проверка на соответствие userId и creatorId в кукеееееееее
-	userData, err := jwt.ExtractTokenMetadata(r, jwt.ExtractTokenFromCookie)
+	userData, err := token.ExtractJWTTokenMetadata(r)
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
 
 	if _, err := h.authUsecase.CheckUserVersion(*userData); err != nil {
-		utils.Cookie(w, "")
+		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -109,14 +109,14 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
-	userData, err := jwt.ExtractTokenMetadata(r, jwt.ExtractTokenFromCookie)
+	userData, err := token.ExtractJWTTokenMetadata(r)
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
 
 	if _, err := h.authUsecase.CheckUserVersion(*userData); err != nil {
-		utils.Cookie(w, "")
+		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -141,14 +141,14 @@ func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PostHandler) RemoveLike(w http.ResponseWriter, r *http.Request) {
-	userData, err := jwt.ExtractTokenMetadata(r, jwt.ExtractTokenFromCookie)
+	userData, err := token.ExtractJWTTokenMetadata(r)
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
 
 	if _, err := h.authUsecase.CheckUserVersion(*userData); err != nil {
-		utils.Cookie(w, "")
+		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -185,14 +185,14 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userData, err := jwt.ExtractTokenMetadata(r, jwt.ExtractTokenFromCookie)
+	userData, err := token.ExtractJWTTokenMetadata(r)
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
 
 	if _, err := h.authUsecase.CheckUserVersion(*userData); err != nil {
-		utils.Cookie(w, "")
+		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}

@@ -22,7 +22,7 @@ type AuthRepo interface {
 }
 
 type TokenGenerator interface {
-	GetToken(user models.User) (string, error)
+	GetJWTToken(user models.User) (string, error)
 }
 
 type Encrypter interface {

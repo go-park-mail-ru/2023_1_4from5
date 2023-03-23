@@ -40,7 +40,7 @@ func TestGetPage(t *testing.T) {
 
 	os.Setenv("TOKEN_SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
-	bdy, _ := tkn.GetToken(models.User{Login: testUser.Login, Id: uuid.New()})
+	bdy, _ := tkn.GetJWTToken(models.User{Login: testUser.Login, Id: uuid.New()})
 
 	usecaseMock := mock.NewMockCreatorUsecase(ctl)
 

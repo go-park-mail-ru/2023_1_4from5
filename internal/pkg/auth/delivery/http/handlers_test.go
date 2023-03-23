@@ -253,7 +253,7 @@ func TestAuthHandler_Logout(t *testing.T) {
 
 	os.Setenv("TOKEN_SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
-	bdy, _ := tkn.GetToken(models.User{Login: testUsers[1].Login, Id: uuid.New()})
+	bdy, _ := tkn.GetJWTToken(models.User{Login: testUsers[1].Login, Id: uuid.New()})
 
 	tests := []struct {
 		name  string

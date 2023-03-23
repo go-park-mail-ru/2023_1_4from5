@@ -1,34 +1,27 @@
-package jwt
+package token
 
 import (
+	"errors"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 )
 
-type Extractor func(r *http.Request) string
-
-func ExtractTokenFromCookie(r *http.Request) string {
-	tokenCookie, err := r.Cookie("SSID")
+func ExtractCSRFTokenFromCookie(r *http.Request) string {
+	tokenCookie, err := r.Cookie("X-CSRF-Token")
 	if err != nil {
-		fmt.Println(err)
 		return ""
 	}
 	token := tokenCookie.Value
-	strArr := strings.Split(token, " ")
-	if len(strArr) == 2 {
-		return strArr[1]
-	}
-	return strArr[0]
+	return token
 }
 
-func VerifyToken(r *http.Request, extractor Extractor) (*models.Token, error) {
-	tokenStr := extractor(r)
+func VerifyCSRFToken(r *http.Request) (*models.Token, error) {
+	tokenStr := ExtractCSRFTokenFromCookie(r)
 	if tokenStr == "" {
 		return nil, models.NoToken
 	}
@@ -36,7 +29,7 @@ func VerifyToken(r *http.Request, extractor Extractor) (*models.Token, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(os.Getenv("TOKEN_SECRET")), nil
+		return []byte(os.Getenv("CSRF_SECRET")), nil
 	})
 	if err != nil {
 		return nil, err
@@ -49,23 +42,46 @@ func VerifyToken(r *http.Request, extractor Extractor) (*models.Token, error) {
 	return nil, models.NoAuthData
 }
 
-func ExtractTokenMetadata(r *http.Request, extractor Extractor) (*models.AccessDetails, error) {
-	token, err := VerifyToken(r, extractor)
+func ExtractCSRFTokenMetadata(r *http.Request) (*models.AccessDetails, error) {
+	token, err := VerifyCSRFToken(r)
 	if err != nil {
 		return nil, err
 	}
-	exp := token.ExpiresAt
-	if exp < time.Now().UTC().Unix() {
+
+	if err = token.Valid(); err != nil {
 		return nil, models.ExpiredToken
 	}
+
 	uid, err := uuid.Parse(token.Id)
 	if err != nil {
 		return nil, err
 	}
+
 	data := &models.AccessDetails{Login: token.Login, Id: uid, UserVersion: token.UserVersion}
 	if data.Login == "" || data.Id.String() == "" {
 		return nil, models.InvalidToken
 	}
-
 	return data, err
+}
+
+func GetCSRFToken(user models.User) (string, error) {
+	tokenModel := models.Token{
+		Login:       user.Login,
+		Id:          user.Id.String(),
+		UserVersion: user.UserVersion,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Minute * 10).Unix(),
+		},
+	}
+	secretKey, flag := os.LookupEnv("CSRF_SECRET")
+	if !flag {
+		return "", errors.New("NoSecretKey")
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, tokenModel)
+
+	jwtCookie, err := token.SignedString([]byte(secretKey))
+	if err != nil {
+		return "", errors.New("NoSecretKey")
+	}
+	return jwtCookie, nil
 }
