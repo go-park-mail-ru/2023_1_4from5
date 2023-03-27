@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
@@ -22,7 +23,7 @@ func NewUserRepo(db *sql.DB) *UserRepo {
 	return &UserRepo{db: db}
 }
 
-func (ur *UserRepo) GetUserProfile(id uuid.UUID) (models.UserProfile, error) {
+func (ur *UserRepo) GetUserProfile(ctx context.Context, id uuid.UUID) (models.UserProfile, error) {
 	var profile models.UserProfile
 
 	row := ur.db.QueryRow(UserProfile, id)
@@ -34,7 +35,7 @@ func (ur *UserRepo) GetUserProfile(id uuid.UUID) (models.UserProfile, error) {
 	return profile, nil
 }
 
-func (ur *UserRepo) GetHomePage(id uuid.UUID) (models.UserHomePage, error) {
+func (ur *UserRepo) GetHomePage(ctx context.Context, id uuid.UUID) (models.UserHomePage, error) {
 	var page models.UserHomePage
 
 	row := ur.db.QueryRow(UserNamePhoto, id)
@@ -52,7 +53,7 @@ func (ur *UserRepo) GetHomePage(id uuid.UUID) (models.UserHomePage, error) {
 	return page, nil
 }
 
-func (ur *UserRepo) UpdateProfilePhoto(userID uuid.UUID, path uuid.UUID) error {
+func (ur *UserRepo) UpdateProfilePhoto(ctx context.Context, userID uuid.UUID, path uuid.UUID) error {
 	row := ur.db.QueryRow(UpdateProfilePhoto, path, userID)
 	if err := row.Err(); err != nil {
 		return models.InternalError

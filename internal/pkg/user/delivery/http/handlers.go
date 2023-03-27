@@ -31,7 +31,7 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
-	userProfile, err := h.usecase.GetProfile(*userInfo)
+	userProfile, err := h.usecase.GetProfile(r.Context(), *userInfo)
 	if err == models.InternalError {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
@@ -50,7 +50,7 @@ func (h *UserHandler) GetHomePage(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
-	homePage, err := h.usecase.GetHomePage(*userInfo)
+	homePage, err := h.usecase.GetHomePage(r.Context(), *userInfo)
 	if err == models.InternalError {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
@@ -71,7 +71,7 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(*userDataJWT); err != nil {
+	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -136,7 +136,7 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	name, err := h.usecase.UpdatePhoto(*userDataJWT)
+	name, err := h.usecase.UpdatePhoto(r.Context(), *userDataJWT)
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
 	}

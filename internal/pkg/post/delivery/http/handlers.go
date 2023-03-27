@@ -43,7 +43,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(*userData); err != nil {
+	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userData); err != nil {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -124,7 +124,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	postData.Id = uuid.New()
-	if err := h.usecase.CreatePost(postData); err != nil {
+	if err := h.usecase.CreatePost(r.Context(), postData); err != nil {
 		_ = h.attachmentUsecase.DeleteAttaches(postData.Attachments...)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
@@ -140,7 +140,7 @@ func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(*userData); err != nil {
+	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userData); err != nil {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -153,7 +153,7 @@ func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	like, err = h.usecase.AddLike(userData.Id, like.PostID)
+	like, err = h.usecase.AddLike(r.Context(), userData.Id, like.PostID)
 	if err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
@@ -172,7 +172,7 @@ func (h *PostHandler) RemoveLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(*userData); err != nil {
+	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userData); err != nil {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -185,7 +185,7 @@ func (h *PostHandler) RemoveLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	like, err = h.usecase.RemoveLike(userData.Id, like.PostID)
+	like, err = h.usecase.RemoveLike(r.Context(), userData.Id, like.PostID)
 	if err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
@@ -216,13 +216,13 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(*userData); err != nil {
+	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userData); err != nil {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
 
-	ok, err = h.usecase.IsPostOwner((*userData).Id, postID)
+	ok, err = h.usecase.IsPostOwner(r.Context(), (*userData).Id, postID)
 	if err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
@@ -247,7 +247,7 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
-	if err = h.usecase.DeletePost(postID); err != nil {
+	if err = h.usecase.DeletePost(r.Context(), postID); err != nil {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}

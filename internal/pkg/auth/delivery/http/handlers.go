@@ -26,7 +26,7 @@ func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	token, err := h.usecase.SignIn(user)
+	token, err := h.usecase.SignIn(r.Context(), user)
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
@@ -41,7 +41,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	if _, err := h.usecase.Logout(*userData); err != nil {
+	if _, err := h.usecase.Logout(r.Context(), *userData); err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -57,7 +57,7 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.usecase.SignUp(user)
+	token, err := h.usecase.SignUp(r.Context(), user)
 	if token == "" {
 		if err == models.WrongData {
 			utils.Response(w, http.StatusConflict, nil)

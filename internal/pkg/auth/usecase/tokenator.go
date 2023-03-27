@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"errors"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/golang-jwt/jwt"
@@ -15,7 +16,7 @@ func NewTokenator() *Tokenator {
 	return &Tokenator{}
 }
 
-func (t *Tokenator) GetJWTToken(user models.User) (string, error) {
+func (t *Tokenator) GetJWTToken(ctx context.Context, user models.User) (string, error) {
 	tokenModel := models.Token{
 		Login:       user.Login,
 		Id:          user.Id.String(),

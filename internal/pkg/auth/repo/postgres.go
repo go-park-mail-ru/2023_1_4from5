@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -23,7 +24,7 @@ func NewAuthRepo(db *sql.DB) *AuthRepo {
 	return &AuthRepo{db: db}
 }
 
-func (r *AuthRepo) CreateUser(user models.User) (models.User, error) {
+func (r *AuthRepo) CreateUser(ctx context.Context, user models.User) (models.User, error) {
 	var id uuid.UUID
 	user.Id = uuid.New()
 	row := r.db.QueryRow(AddUser, user.Id, user.Login, user.Name, user.ProfilePhoto, user.PasswordHash)
@@ -43,7 +44,7 @@ func (r *AuthRepo) CreateUser(user models.User) (models.User, error) {
 	return userOut, nil
 }
 
-func (r *AuthRepo) CheckUser(user models.User) (models.User, error) {
+func (r *AuthRepo) CheckUser(ctx context.Context, user models.User) (models.User, error) {
 	var (
 		passwordHash string
 		userVersion  int
@@ -73,7 +74,7 @@ func (r *AuthRepo) CheckUser(user models.User) (models.User, error) {
 	return models.User{}, models.WrongPassword
 }
 
-func (r *AuthRepo) IncUserVersion(userId uuid.UUID) (int, error) {
+func (r *AuthRepo) IncUserVersion(ctx context.Context, userId uuid.UUID) (int, error) {
 	row := r.db.QueryRow(IncUserVersion, userId)
 	var userVersion int
 
@@ -84,7 +85,7 @@ func (r *AuthRepo) IncUserVersion(userId uuid.UUID) (int, error) {
 	return userVersion, nil
 }
 
-func (r *AuthRepo) CheckUserVersion(details models.AccessDetails) (int, error) {
+func (r *AuthRepo) CheckUserVersion(ctx context.Context, details models.AccessDetails) (int, error) {
 	row := r.db.QueryRow(CheckUserVersion, details.Id)
 	var userVersion int
 

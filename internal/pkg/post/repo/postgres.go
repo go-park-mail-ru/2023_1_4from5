@@ -29,14 +29,13 @@ func NewPostRepo(db *sql.DB) *PostRepo {
 	return &PostRepo{db: db}
 }
 
-func (r *PostRepo) CreatePost(postData models.PostCreationData) error {
-	//TODO: прокидывать db context
-	tx, err := r.db.BeginTx(context.Background(), nil)
+func (r *PostRepo) CreatePost(ctx context.Context, postData models.PostCreationData) error {
+	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return models.InternalError
 	}
 
-	row, err := tx.QueryContext(context.Background(), InsertPost, postData.Id, postData.Creator, postData.Title, postData.Text) //TODO: fix context
+	row, err := tx.QueryContext(ctx, InsertPost, postData.Id, postData.Creator, postData.Title, postData.Text) //TODO: fix context
 	if err := row.Err(); err != nil {
 		tx.Rollback()
 		return models.InternalError
@@ -44,7 +43,7 @@ func (r *PostRepo) CreatePost(postData models.PostCreationData) error {
 	row.Close()
 
 	for _, attach := range postData.Attachments {
-		row, err = tx.QueryContext(context.Background(), InsertAttach, attach.Id, postData.Id, attach.Type)
+		row, err = tx.QueryContext(ctx, InsertAttach, attach.Id, postData.Id, attach.Type)
 		if err := row.Err(); err != nil {
 			fmt.Println(err)
 			tx.Rollback()
@@ -56,7 +55,7 @@ func (r *PostRepo) CreatePost(postData models.PostCreationData) error {
 
 	return nil
 }
-func (r *PostRepo) DeletePost(postID uuid.UUID) error {
+func (r *PostRepo) DeletePost(ctx context.Context, postID uuid.UUID) error {
 	row := r.db.QueryRow(DeletePost, postID)
 
 	if err := row.Err(); err != nil {
@@ -66,7 +65,7 @@ func (r *PostRepo) DeletePost(postID uuid.UUID) error {
 	return nil
 }
 
-func (r *PostRepo) IsPostOwner(userId uuid.UUID, postId uuid.UUID) (bool, error) {
+func (r *PostRepo) IsPostOwner(ctx context.Context, userId uuid.UUID, postId uuid.UUID) (bool, error) {
 	row := r.db.QueryRow(GetUserId, postId)
 	var userIdtmp uuid.UUID
 	if err := row.Scan(&userIdtmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
@@ -80,7 +79,7 @@ func (r *PostRepo) IsPostOwner(userId uuid.UUID, postId uuid.UUID) (bool, error)
 	return true, nil
 }
 
-func (r *PostRepo) AddLike(userID uuid.UUID, postID uuid.UUID) (models.Like, error) {
+func (r *PostRepo) AddLike(ctx context.Context, userID uuid.UUID, postID uuid.UUID) (models.Like, error) {
 	var (
 		userUUID uuid.UUID
 		postUUID uuid.UUID
@@ -119,7 +118,7 @@ func (r *PostRepo) AddLike(userID uuid.UUID, postID uuid.UUID) (models.Like, err
 	return like, nil
 }
 
-func (r *PostRepo) RemoveLike(userID uuid.UUID, postID uuid.UUID) (models.Like, error) {
+func (r *PostRepo) RemoveLike(ctx context.Context, userID uuid.UUID, postID uuid.UUID) (models.Like, error) {
 	var (
 		userUUID uuid.UUID
 		postUUID uuid.UUID

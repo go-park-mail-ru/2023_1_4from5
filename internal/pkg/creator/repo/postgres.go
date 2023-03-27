@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
@@ -24,7 +25,7 @@ func NewCreatorRepo(db *sql.DB) *CreatorRepo {
 	return &CreatorRepo{db: db}
 }
 
-func (r *CreatorRepo) GetUserSubscriptions(userId uuid.UUID) ([]uuid.UUID, error) {
+func (r *CreatorRepo) GetUserSubscriptions(ctx context.Context, userId uuid.UUID) ([]uuid.UUID, error) {
 	userSubscriptions := make([]uuid.UUID, 0)
 	row := r.db.QueryRow(UserSubscriptions, userId)
 	if err := row.Scan(pq.Array(&userSubscriptions)); err != nil && !errors.Is(sql.ErrNoRows, err) {
@@ -33,7 +34,7 @@ func (r *CreatorRepo) GetUserSubscriptions(userId uuid.UUID) ([]uuid.UUID, error
 	return userSubscriptions, nil
 }
 
-func (r *CreatorRepo) IsLiked(userID uuid.UUID, postID uuid.UUID) (bool, error) {
+func (r *CreatorRepo) IsLiked(ctx context.Context, userID uuid.UUID, postID uuid.UUID) (bool, error) {
 	row := r.db.QueryRow(IsLiked, postID, userID)
 	if err := row.Scan(&postID, &userID); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		return false, models.InternalError
@@ -43,7 +44,7 @@ func (r *CreatorRepo) IsLiked(userID uuid.UUID, postID uuid.UUID) (bool, error) 
 	return false, nil
 }
 
-func (r *CreatorRepo) CreatorInfo(creatorPage *models.CreatorPage, creatorID uuid.UUID) error {
+func (r *CreatorRepo) CreatorInfo(ctx context.Context, creatorPage *models.CreatorPage, creatorID uuid.UUID) error {
 	row := r.db.QueryRow(CreatorInfo, creatorID)
 	if err := row.Scan(&creatorPage.CreatorInfo.UserId, &creatorPage.CreatorInfo.Name, &creatorPage.CreatorInfo.CoverPhoto,
 		&creatorPage.CreatorInfo.FollowersCount, &creatorPage.CreatorInfo.Description, &creatorPage.CreatorInfo.PostsCount); err != nil && !errors.Is(sql.ErrNoRows, err) {
@@ -54,19 +55,19 @@ func (r *CreatorRepo) CreatorInfo(creatorPage *models.CreatorPage, creatorID uui
 	return nil
 }
 
-func (r *CreatorRepo) GetPage(userId uuid.UUID, creatorId uuid.UUID) (models.CreatorPage, error) {
+func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId uuid.UUID) (models.CreatorPage, error) {
 	var creatorPage models.CreatorPage
 	creatorPage.CreatorInfo.Id = creatorId
 	creatorPage.Posts = make([]models.Post, 0)
 	userSubscriptions := make([]uuid.UUID, 0)
 
-	if err := r.CreatorInfo(&creatorPage, creatorId); err == models.InternalError {
+	if err := r.CreatorInfo(ctx, &creatorPage, creatorId); err == models.InternalError {
 		return models.CreatorPage{}, models.InternalError
 	} else if err == nil { //нашёл такого автора
 		if creatorPage.CreatorInfo.UserId == userId { // страница автора принадлежит пользователю
 			creatorPage.IsMyPage = true
 		} else { // находим подписки пользователя
-			tmp, err := r.GetUserSubscriptions(userId)
+			tmp, err := r.GetUserSubscriptions(ctx, userId)
 			copy(userSubscriptions, tmp)
 			if err != nil {
 				return models.CreatorPage{}, models.InternalError
@@ -97,7 +98,7 @@ func (r *CreatorRepo) GetPage(userId uuid.UUID, creatorId uuid.UUID) (models.Cre
 					if availableSubscription == userSubscription {
 						post.IsAvailable = true
 						//проверяем, лайкнул ли его пользователь
-						if post.IsLiked, err = r.IsLiked(userId, post.Id); err != nil {
+						if post.IsLiked, err = r.IsLiked(ctx, userId, post.Id); err != nil {
 							return models.CreatorPage{}, models.InternalError
 						}
 						break

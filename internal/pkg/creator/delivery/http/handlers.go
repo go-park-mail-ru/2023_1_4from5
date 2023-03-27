@@ -30,7 +30,7 @@ func (h *CreatorHandler) GetPage(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
-	creatorPage, err := h.usecase.GetPage(userInfo, creatorUUID)
+	creatorPage, err := h.usecase.GetPage(r.Context(), userInfo, creatorUUID)
 	if err == models.InternalError {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
