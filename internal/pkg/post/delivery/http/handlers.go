@@ -28,6 +28,13 @@ func NewPostHandler(uc post.PostUsecase, auc auth.AuthUsecase, attuc attachment.
 	}
 }
 
+// Создать массив uuid для attachs
+// Создать attachs в файлах:
+//Проверить наличие места подо все файлы сразу
+//В цикле сохранить все файлы
+// если ошибка - у нас есть индекс, до него проходимся и удаляем файлы
+// Выполнить транзакцию
+
 func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	//TODO: проверка на соответствие userId и creatorId в кукеееееееее
 	userData, err := token.ExtractJWTTokenMetadata(r)
@@ -41,11 +48,25 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
-
-	err = r.ParseMultipartForm(32 << 20) // maxMemory
+	/////////////////////////////////////////////////////////////////////////////
+	r.Body = http.MaxBytesReader(w, r.Body, int64(models.MaxFormSize))
+	err = r.ParseMultipartForm(models.MaxFormSize) // maxMemory
 	if err != nil {
-		utils.Response(w, http.StatusInternalServerError, nil)
+		utils.Response(w, http.StatusBadRequest, nil)
 		return
+	}
+	if len(r.MultipartForm.File["attachments"]) > models.MaxFiles {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	for _, headers := range r.MultipartForm.File {
+		for _, header := range headers {
+			if header.Size > int64(models.MaxFileSize) {
+				utils.Response(w, http.StatusBadRequest, nil)
+				return
+			}
+		}
 	}
 
 	postValues := r.MultipartForm.Value
@@ -70,37 +91,41 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	///////////////////////////////////////////////////////////////////////////////
 
-	postData.Id, err = h.usecase.CreatePost(postData)
-	if err != nil {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
-	//TODO: в случае ошибки удалить пост
-
-	attachments := make([]models.AttachmentData, len(postFilesTmp))
-
+	postData.Attachments = make([]models.AttachmentData, len(postFilesTmp))
 	for i, file := range postFilesTmp {
-		attachments[i].Data, err = file.Open()
+		tmpFile, err := file.Open()
 		if err != nil {
 			utils.Response(w, http.StatusBadRequest, nil)
 			return
 		}
+		buf, _ := io.ReadAll(tmpFile)
 
-		buf, _ := io.ReadAll(attachments[i].Data)
-		attachments[i].Data.Close()
-		if attachments[i].Data, err = file.Open(); err != nil {
+		if err = tmpFile.Close(); err != nil {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+
+		if postData.Attachments[i].Data, err = file.Open(); err != nil {
 			utils.Response(w, http.StatusBadRequest, nil)
 			return
 		}
-		attachments[i].Type = http.DetectContentType(buf)
+		postData.Attachments[i].Type = http.DetectContentType(buf)
+		postData.Attachments[i].Id = uuid.New()
 	}
 
-	postData.Attachments = make([]uuid.UUID, len(attachments))
-	if postData.Attachments, err = h.attachmentUsecase.CreateAttachs(postData.Id, attachments...); err == models.WrongData {
+	if err = h.attachmentUsecase.CreateAttaches(postData.Attachments...); err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	} else if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	postData.Id = uuid.New()
+	if err := h.usecase.CreatePost(postData); err != nil {
+		_ = h.attachmentUsecase.DeleteAttaches(postData.Attachments...)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -213,7 +238,7 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.attachmentUsecase.DeleteAttachsByPostID(postID)
+	//err = h.attachmentUsecase.DeleteAttachsByPostID(postID) //DON't WORK
 	if err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
