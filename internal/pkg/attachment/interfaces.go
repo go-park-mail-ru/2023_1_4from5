@@ -8,13 +8,11 @@ import (
 //go:generate mockgen -source=interfaces.go -destination=./mocks/attachment_mock.go -package=mock
 
 type AttachmentUsecase interface {
-	CreateAttachs(postID uuid.UUID, attachments ...models.AttachmentData) ([]uuid.UUID, error)
-	DeleteAttachsByID(attachmentIDs ...uuid.UUID) error
-	DeleteAttachsByPostID(postID uuid.UUID) error
+	CreateAttaches(attachments ...models.AttachmentData) error
+	DeleteAttaches(attachments ...models.AttachmentData) error
 }
 
 type AttachmentRepo interface {
 	CreateAttach(postID uuid.UUID, attachID uuid.UUID, attachmentType string) error
-	DeleteAttachByID(attachID uuid.UUID) error
-	DeleteAttachByPostID(postID uuid.UUID) ([]uuid.UUID, error)
+	//DeleteAttachsByPostID(postID uuid.UUID) error
 }

@@ -129,14 +129,8 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	path, flag := os.LookupEnv("IMAGES_DIR")
-	if !flag {
-		utils.Response(w, http.StatusInternalServerError, nil)
-		return
-	}
-
 	if oldName != uuid.Nil {
-		err = os.Remove(fmt.Sprintf("%s%s.jpg", path, oldName.String()))
+		err = os.Remove(fmt.Sprintf("%s%s.jpg", models.FolderPath, oldName.String()))
 		if err != nil {
 			utils.Response(w, http.StatusBadRequest, nil)
 		}
@@ -147,7 +141,7 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 		utils.Response(w, http.StatusInternalServerError, nil)
 	}
 
-	f, err := os.Create(fmt.Sprintf("%s%s.jpg", path, name.String()))
+	f, err := os.Create(fmt.Sprintf("%s%s.jpg", models.FolderPath, name.String()))
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return

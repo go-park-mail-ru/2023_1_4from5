@@ -1,14 +1,17 @@
 package repo
 
 import (
+	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 )
 
 const (
 	InsertPost      = `INSERT INTO "post"(post_id, creator_id, title, post_text) VALUES($1, $2, $3, $4);`
+	InsertAttach    = `INSERT INTO "attachment"(attachment_id, post_id, attachment_type) VALUES($1, $2, $3);`
 	DeletePost      = `DELETE FROM  "post" WHERE post_id = $1;`
 	GetUserId       = `SELECT user_id FROM "post" JOIN "creator" c on c.creator_id = "post".creator_id WHERE post_id = $1`
 	AddLike         = `INSERT INTO "like_post"(post_id, user_id) VALUES($1, $2);`
@@ -27,11 +30,29 @@ func NewPostRepo(db *sql.DB) *PostRepo {
 }
 
 func (r *PostRepo) CreatePost(postData models.PostCreationData) error {
-	row := r.db.QueryRow(InsertPost, postData.Id, postData.Creator, postData.Title, postData.Text)
-
-	if err := row.Err(); err != nil {
+	//TODO: прокидывать db context
+	tx, err := r.db.BeginTx(context.Background(), nil)
+	if err != nil {
 		return models.InternalError
 	}
+
+	row, err := tx.QueryContext(context.Background(), InsertPost, postData.Id, postData.Creator, postData.Title, postData.Text) //TODO: fix context
+	if err := row.Err(); err != nil {
+		tx.Rollback()
+		return models.InternalError
+	}
+	row.Close()
+
+	for _, attach := range postData.Attachments {
+		row, err = tx.QueryContext(context.Background(), InsertAttach, attach.Id, postData.Id, attach.Type)
+		if err := row.Err(); err != nil {
+			fmt.Println(err)
+			tx.Rollback()
+			return models.InternalError
+		}
+		row.Close()
+	}
+	tx.Commit()
 
 	return nil
 }

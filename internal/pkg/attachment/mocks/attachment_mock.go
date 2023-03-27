@@ -36,23 +36,22 @@ func (m *MockAttachmentUsecase) EXPECT() *MockAttachmentUsecaseMockRecorder {
 }
 
 // CreateAttachs mocks base method.
-func (m *MockAttachmentUsecase) CreateAttachs(postID uuid.UUID, attachments ...models.AttachmentData) ([]uuid.UUID, error) {
+func (m *MockAttachmentUsecase) CreateAttachs(postID uuid.UUID, attachments ...models.AttachmentData) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{postID}
 	for _, a := range attachments {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "CreateAttachs", varargs...)
-	ret0, _ := ret[0].([]uuid.UUID)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "CreateAttaches", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // CreateAttachs indicates an expected call of CreateAttachs.
 func (mr *MockAttachmentUsecaseMockRecorder) CreateAttachs(postID interface{}, attachments ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{postID}, attachments...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAttachs", reflect.TypeOf((*MockAttachmentUsecase)(nil).CreateAttachs), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAttaches", reflect.TypeOf((*MockAttachmentUsecase)(nil).CreateAttachs), varargs...)
 }
 
 // DeleteAttachsByID mocks base method.

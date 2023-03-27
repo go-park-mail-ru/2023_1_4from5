@@ -14,12 +14,11 @@ func NewPostUsecase(repo post.PostRepo) *PostUsecase {
 	return &PostUsecase{repo: repo}
 }
 
-func (u *PostUsecase) CreatePost(postData models.PostCreationData) (uuid.UUID, error) {
-	postData.Id = uuid.New()
+func (u *PostUsecase) CreatePost(postData models.PostCreationData) error {
 	if err := u.repo.CreatePost(postData); err != nil {
-		return uuid.Nil, models.InternalError
+		return models.InternalError
 	}
-	return postData.Id, nil
+	return nil
 }
 func (u *PostUsecase) DeletePost(postID uuid.UUID) error {
 	if err := u.repo.DeletePost(postID); err != nil {
