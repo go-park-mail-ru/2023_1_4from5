@@ -11,10 +11,9 @@ import (
 
 const (
 	CreatorInfo       = `SELECT user_id, name, cover_photo, followers_count, description, posts_count FROM "creator" WHERE creator_id=$1;`
-	CreatorPosts      = `SELECT "post".post_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE creator_id = $1 GROUP BY "post".post_id, creation_date, title, post_text ORDER BY creation_date DESC;`
+	CreatorPosts      = `SELECT "post".post_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), array_agg(subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE creator_id = $1 GROUP BY "post".post_id, creation_date, title, post_text ORDER BY creation_date DESC;`
 	UserSubscriptions = `SELECT subscription_id FROM "user_subscription" WHERE user_id=$1;`
 	IsLiked           = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2`
-	//IsPostAvailable = `SELECT user_id FROM "user_subscription" INNER JOIN post_subscription p on "user_subscription".subscription_id = p.subscription_id WHERE user_id = $1 AND post_id = $2 AND expire_date < now()`
 )
 
 type CreatorRepo struct {
@@ -83,10 +82,17 @@ func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId u
 			var post models.Post
 			availableSubscriptions := make([]uuid.UUID, 0)
 			post.Creator = creatorId
+			attachs := make([]uuid.UUID, 0)
+			types := make([]string, 0)
 			err = rows.Scan(&post.Id, &post.Creation, &post.Title,
-				&post.Text, pq.Array(&post.Attachments), pq.Array(&availableSubscriptions)) //подписки, при которыз пост доступен
+				&post.Text, pq.Array(&attachs), pq.Array(&types), pq.Array(&availableSubscriptions)) //подписки, при которыз пост доступен
 			if err != nil {
 				return models.CreatorPage{}, models.InternalError
+			}
+			post.Attachments = make([]models.Attachment, len(attachs))
+			for i, v := range attachs {
+				post.Attachments[i].Type = types[i]
+				post.Attachments[i].Id = v
 			}
 
 			if creatorPage.IsMyPage {
@@ -108,7 +114,10 @@ func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId u
 					break
 				}
 			}
-
+			if !post.IsAvailable {
+				post.Text = ""
+				post.Attachments = nil
+			}
 			creatorPage.Posts = append(creatorPage.Posts, post)
 		}
 

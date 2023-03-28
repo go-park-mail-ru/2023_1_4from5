@@ -1,9 +1,11 @@
 package usecase
 
 import (
+	"context"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment"
+	"github.com/google/uuid"
 	"io"
 	"os"
 )
@@ -26,18 +28,27 @@ func NewAttachmentUsecase(repo attachment.AttachmentRepo) *AttachmentUsecase {
 	return &AttachmentUsecase{repo: repo}
 }
 
-func (u *AttachmentUsecase) CreateAttaches(attachments ...models.AttachmentData) error {
+func (u *AttachmentUsecase) DeleteAttachesByPostID(ctx context.Context, postID uuid.UUID) error {
+	attachs, err := u.repo.DeleteAttachesByPostID(ctx, postID)
+	if err != nil {
+		return err
+	}
+	err = u.DeleteAttaches(ctx, attachs...)
+	return err
+}
+
+func (u *AttachmentUsecase) CreateAttaches(ctx context.Context, attachments ...models.AttachmentData) error {
 	for i, attach := range attachments {
 		attachmentType, ok := types[attach.Type]
 		if !ok {
-			if err := u.DeleteAttaches(attachments[:i]...); err != nil {
+			if err := u.DeleteAttaches(ctx, attachments[:i]...); err != nil {
 				return models.InternalError
 			}
 			return models.WrongData
 		}
 		f, err := os.Create(fmt.Sprintf("%s%s.%s", models.FolderPath, attach.Id.String(), attachmentType))
 		if err != nil {
-			if err := u.DeleteAttaches(attachments[:i]...); err != nil {
+			if err := u.DeleteAttaches(ctx, attachments[:i]...); err != nil {
 				return models.InternalError
 			}
 			return models.InternalError
@@ -46,7 +57,7 @@ func (u *AttachmentUsecase) CreateAttaches(attachments ...models.AttachmentData)
 		defer f.Close()
 
 		if _, err := io.Copy(f, attach.Data); err != nil {
-			if err := u.DeleteAttaches(attachments[:i]...); err != nil {
+			if err := u.DeleteAttaches(ctx, attachments[:i]...); err != nil {
 				return models.InternalError
 			}
 			return models.InternalError
@@ -69,7 +80,7 @@ func (u *AttachmentUsecase) CreateAttaches(attachments ...models.AttachmentData)
 //		return nil
 //	}
 
-func (u *AttachmentUsecase) DeleteAttaches(attachments ...models.AttachmentData) error {
+func (u *AttachmentUsecase) DeleteAttaches(ctx context.Context, attachments ...models.AttachmentData) error {
 	for _, file := range attachments {
 		if err := deleteAttach(file); err != nil {
 			return models.InternalError

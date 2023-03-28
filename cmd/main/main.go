@@ -93,10 +93,11 @@ func run() error {
 
 	post := r.PathPrefix("/post").Subrouter()
 	{
-		post.HandleFunc("/create", postHandler.CreatePost).Methods(http.MethodPost, http.MethodOptions)
+		post.HandleFunc("/create", postHandler.CreatePost).Methods(http.MethodPost, http.MethodOptions, http.MethodGet)
 		post.HandleFunc("/addLike", postHandler.AddLike).Methods(http.MethodPut, http.MethodOptions)
 		post.HandleFunc("/removeLike", postHandler.RemoveLike).Methods(http.MethodPut, http.MethodOptions)
-		post.HandleFunc("/{post-uuid}", postHandler.DeletePost).Methods(http.MethodDelete, http.MethodOptions)
+		post.HandleFunc("/delete/{post-uuid}", postHandler.DeletePost).Methods(http.MethodDelete, http.MethodOptions, http.MethodGet)
+		post.HandleFunc("/get/{post-uuid}", postHandler.GetPost).Methods(http.MethodGet, http.MethodOptions, http.MethodGet)
 	}
 
 	http.Handle("/", r)

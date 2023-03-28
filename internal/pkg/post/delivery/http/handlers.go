@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
@@ -28,27 +29,41 @@ func NewPostHandler(uc post.PostUsecase, auc auth.AuthUsecase, attuc attachment.
 	}
 }
 
-// Создать массив uuid для attachs
-// Создать attachs в файлах:
-//Проверить наличие места подо все файлы сразу
-//В цикле сохранить все файлы
-// если ошибка - у нас есть индекс, до него проходимся и удаляем файлы
-// Выполнить транзакцию
-
 func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
-	//TODO: проверка на соответствие userId и creatorId в кукеееееееее
-	userData, err := token.ExtractJWTTokenMetadata(r)
+
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userData); err != nil {
+	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
+	if r.Method == http.MethodGet {
+		tokenCSRF, err := token.GetCSRFToken(models.User{Login: userDataJWT.Login, Id: userDataJWT.Id, UserVersion: userDataJWT.UserVersion})
+		if err != nil {
+			utils.Response(w, http.StatusUnauthorized, nil)
+			return
+		}
+		utils.Cookie(w, tokenCSRF, "X-CSRF-Token")
+		return
+	}
+
+	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
+	if err != nil {
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+	if *userDataCSRF != *userDataJWT {
+		fmt.Println(userDataJWT, " ", userDataCSRF)
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
 	/////////////////////////////////////////////////////////////////////////////
+
 	r.Body = http.MaxBytesReader(w, r.Body, int64(models.MaxFormSize))
 	err = r.ParseMultipartForm(models.MaxFormSize) // maxMemory
 	if err != nil {
@@ -76,6 +91,23 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	if postData.Creator, err = uuid.Parse(postValues["creator"][0]); err != nil {
 		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	ok, err := h.usecase.IsCreator(r.Context(), userDataJWT.Id, postData.Creator)
+
+	if err == models.WrongData {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if !ok {
+		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
 
@@ -115,7 +147,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		postData.Attachments[i].Id = uuid.New()
 	}
 
-	if err = h.attachmentUsecase.CreateAttaches(postData.Attachments...); err == models.WrongData {
+	if err = h.attachmentUsecase.CreateAttaches(r.Context(), postData.Attachments...); err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	} else if err != nil {
@@ -125,7 +157,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	postData.Id = uuid.New()
 	if err := h.usecase.CreatePost(r.Context(), postData); err != nil {
-		_ = h.attachmentUsecase.DeleteAttaches(postData.Attachments...)
+		_ = h.attachmentUsecase.DeleteAttaches(r.Context(), postData.Attachments...)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -198,6 +230,37 @@ func (h *PostHandler) RemoveLike(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+		utils.Cookie(w, "", "SSID")
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+	if r.Method == http.MethodGet {
+		tokenCSRF, err := token.GetCSRFToken(models.User{Login: userDataJWT.Login, Id: userDataJWT.Id, UserVersion: userDataJWT.UserVersion})
+		if err != nil {
+			utils.Response(w, http.StatusUnauthorized, nil)
+			return
+		}
+		utils.Cookie(w, tokenCSRF, "X-CSRF-Token")
+		return
+	}
+
+	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
+	if err != nil {
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+	if *userDataCSRF != *userDataJWT {
+		fmt.Println(userDataJWT, " ", userDataCSRF)
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
 	postIDtmp, ok := mux.Vars(r)["post-uuid"]
 
 	if !ok {
@@ -210,19 +273,7 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userData, err := token.ExtractJWTTokenMetadata(r)
-	if err != nil {
-		utils.Response(w, http.StatusUnauthorized, nil)
-		return
-	}
-
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userData); err != nil {
-		utils.Cookie(w, "", "SSID")
-		utils.Response(w, http.StatusForbidden, nil)
-		return
-	}
-
-	ok, err = h.usecase.IsPostOwner(r.Context(), (*userData).Id, postID)
+	ok, err = h.usecase.IsPostOwner(r.Context(), (*userDataJWT).Id, postID)
 	if err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
@@ -238,7 +289,7 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//err = h.attachmentUsecase.DeleteAttachsByPostID(postID) //DON't WORK
+	err = h.attachmentUsecase.DeleteAttachesByPostID(r.Context(), postID) //DON't WORK
 	if err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
@@ -253,4 +304,36 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.Response(w, http.StatusOK, nil)
+}
+
+func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+
+	postIDtmp, ok := mux.Vars(r)["post-uuid"]
+	if !ok {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	postID, err := uuid.Parse(postIDtmp)
+	if err != nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	post, err := h.usecase.GetPost(r.Context(), userDataJWT.Id, postID)
+
+	if err == models.Forbbiden {
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+	if err == models.WrongData {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, post)
 }

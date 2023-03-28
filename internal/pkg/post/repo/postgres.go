@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 const (
@@ -15,10 +16,13 @@ const (
 	DeletePost      = `DELETE FROM  "post" WHERE post_id = $1;`
 	GetUserId       = `SELECT user_id FROM "post" JOIN "creator" c on c.creator_id = "post".creator_id WHERE post_id = $1`
 	AddLike         = `INSERT INTO "like_post"(post_id, user_id) VALUES($1, $2);`
-	RemoveLike      = `DELETE FROM "like_post" WHERE post_id = $1 AND user_id = $2`
+	RemoveLike      = `DELETE FROM "like_post" WHERE post_id = $1 AND user_id = $2;`
 	UpdateLikeCount = `UPDATE "post" SET likes_count = likes_count + $1 WHERE post_id = $2 RETURNING likes_count;`
-	IsLiked         = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2`
+	IsLiked         = `SELECT post_id, user_id FROM "like_postGetPost" WHERE post_id = $1 AND user_id = $2;`
 	IsPostAvailable = `SELECT user_id FROM "user_subscription" INNER JOIN "post_subscription" p on "user_subscription".subscription_id = p.subscription_id WHERE user_id = $1 AND post_id = $2 AND expire_date > now()`
+	IsCreator       = `SELECT user_id FROM "creators WHERE creator_id = $1;"`
+	GetPost         = `SELECT "post".post_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), array_agg(subscription_id) FROM "post" JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE "post".post_id = $1 GROUP BY "post".post_id, creation_date, title, post_text;`
+	GetSubInfo      = `SELECT creator_id, month_cost, title, description FROM "subscription" WHERE subscription_id = $1;`
 )
 
 type PostRepo struct {
@@ -27,6 +31,17 @@ type PostRepo struct {
 
 func NewPostRepo(db *sql.DB) *PostRepo {
 	return &PostRepo{db: db}
+}
+
+func (r *PostRepo) IsPostAvailable(ctx context.Context, userID, postID uuid.UUID) error {
+	var userIDtmp uuid.UUID
+	row := r.db.QueryRow(IsPostAvailable, userID, postID)
+	if err := row.Scan(&userIDtmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		return models.InternalError
+	} else if errors.Is(sql.ErrNoRows, err) {
+		return models.WrongData
+	}
+	return nil
 }
 
 func (r *PostRepo) CreatePost(ctx context.Context, postData models.PostCreationData) error {
@@ -55,19 +70,66 @@ func (r *PostRepo) CreatePost(ctx context.Context, postData models.PostCreationD
 
 	return nil
 }
+
+func (r *PostRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]models.Subscription, error) {
+	subsInfo := make([]models.Subscription, len(subsIDs))
+	for i, v := range subsIDs {
+		row := r.db.QueryRow(GetSubInfo, v)
+		err := row.Scan(&subsInfo[i].Creator, &subsInfo[i].MonthConst, &subsInfo[i].Title,
+			&subsInfo[i].Description)
+		if err != nil {
+			return nil, models.InternalError
+		}
+	}
+	return subsInfo, nil
+}
+
+func (r *PostRepo) GetPost(ctx context.Context, postID, userID uuid.UUID) (models.Post, error) {
+	var post models.Post
+	attachs := make([]uuid.UUID, 0)
+	types := make([]string, 0)
+	subs := make([]uuid.UUID, 0)
+	row := r.db.QueryRow(GetPost, postID)
+	err := row.Scan(&post.Id, &post.Creation, &post.Title,
+		&post.Text, pq.Array(&attachs), pq.Array(&types), pq.Array(&subs)) //подписки, при которыз пост доступен
+	if err != nil {
+		return models.Post{}, models.InternalError
+	}
+	post.Attachments = make([]models.Attachment, len(attachs))
+	for i, v := range attachs {
+		post.Attachments[i].Type = types[i]
+		post.Attachments[i].Id = v
+	}
+
+	post.Subscriptions, err = r.GetSubsByID(ctx, subs...)
+	return post, err
+}
+
+func (r *PostRepo) IsCreator(ctx context.Context, userID, creatorID uuid.UUID) (bool, error) {
+	var userIdtmp uuid.UUID
+	row := r.db.QueryRow(IsCreator, creatorID)
+	if err := row.Scan(&userIdtmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		return false, models.InternalError
+	} else if errors.Is(sql.ErrNoRows, err) {
+		return false, models.WrongData
+	}
+	if userIdtmp != userID {
+		return false, nil
+	}
+	return true, nil
+}
+
 func (r *PostRepo) DeletePost(ctx context.Context, postID uuid.UUID) error {
 	row := r.db.QueryRow(DeletePost, postID)
-
 	if err := row.Err(); err != nil {
 		return models.InternalError
 	}
-
 	return nil
 }
 
 func (r *PostRepo) IsPostOwner(ctx context.Context, userId uuid.UUID, postId uuid.UUID) (bool, error) {
-	row := r.db.QueryRow(GetUserId, postId)
 	var userIdtmp uuid.UUID
+	row := r.db.QueryRow(GetUserId, postId)
 	if err := row.Scan(&userIdtmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		return false, models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
@@ -92,11 +154,8 @@ func (r *PostRepo) AddLike(ctx context.Context, userID uuid.UUID, postID uuid.UU
 		return models.Like{}, models.WrongData
 	}
 	// проверяем, есть ли доступ к этому посту
-	row = r.db.QueryRow(IsPostAvailable, userID, postID)
-	if err := row.Scan(&userUUID); err != nil && !errors.Is(sql.ErrNoRows, err) {
-		return models.Like{}, models.InternalError
-	} else if errors.Is(sql.ErrNoRows, err) {
-		return models.Like{}, models.WrongData
+	if err := r.IsPostAvailable(ctx, userID, postID); err != nil {
+		return models.Like{}, err
 	}
 	// обновляем кол-во лайков, заодно смотрим, есть ли вообще такой пост
 	var like models.Like
