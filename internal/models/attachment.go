@@ -16,10 +16,11 @@ const (
 // easyjson -all ./internal/models/attachment.go
 
 type Attachment struct {
-	Id   uuid.UUID
-	Type string
+	Id   uuid.UUID `json:"id"`
+	Type string    `json:"type"`
 }
 
+//easyjson:skip
 type AttachmentData struct {
 	Id   uuid.UUID
 	Data io.Reader

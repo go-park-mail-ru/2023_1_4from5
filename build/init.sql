@@ -51,7 +51,7 @@ create table subscription
     creator_id      uuid        not null
         constraint subscription_creator_creator_id_fk
             references creator (creator_id),
-    month_cost      money       not null,
+    month_cost      int       not null,
     title           varchar(40) not null,
     description     varchar(200)
 );

@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
@@ -58,11 +57,9 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if *userDataCSRF != *userDataJWT {
-		fmt.Println(userDataJWT, " ", userDataCSRF)
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
-	/////////////////////////////////////////////////////////////////////////////
 
 	r.Body = http.MaxBytesReader(w, r.Body, int64(models.MaxFormSize))
 	err = r.ParseMultipartForm(models.MaxFormSize) // maxMemory
@@ -74,7 +71,6 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-
 	for _, headers := range r.MultipartForm.File {
 		for _, header := range headers {
 			if header.Size > int64(models.MaxFileSize) {
@@ -123,7 +119,6 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	///////////////////////////////////////////////////////////////////////////////
 
 	postData.Attachments = make([]models.AttachmentData, len(postFilesTmp))
 	for i, file := range postFilesTmp {
@@ -162,7 +157,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.Response(w, http.StatusOK, postData)
+	utils.Response(w, http.StatusOK, nil)
 }
 
 func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
@@ -257,7 +252,6 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if *userDataCSRF != *userDataJWT {
-		fmt.Println(userDataJWT, " ", userDataCSRF)
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -320,7 +314,7 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post, err := h.usecase.GetPost(r.Context(), userDataJWT.Id, postID)
+	post, err := h.usecase.GetPost(r.Context(), postID, userDataJWT.Id)
 
 	if err == models.Forbbiden {
 		utils.Response(w, http.StatusForbidden, nil)

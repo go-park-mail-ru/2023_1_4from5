@@ -4,25 +4,26 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
 const (
-	InsertPost      = `INSERT INTO "post"(post_id, creator_id, title, post_text) VALUES($1, $2, $3, $4);`
-	InsertAttach    = `INSERT INTO "attachment"(attachment_id, post_id, attachment_type) VALUES($1, $2, $3);`
-	DeletePost      = `DELETE FROM  "post" WHERE post_id = $1;`
-	GetUserId       = `SELECT user_id FROM "post" JOIN "creator" c on c.creator_id = "post".creator_id WHERE post_id = $1`
-	AddLike         = `INSERT INTO "like_post"(post_id, user_id) VALUES($1, $2);`
-	RemoveLike      = `DELETE FROM "like_post" WHERE post_id = $1 AND user_id = $2;`
-	UpdateLikeCount = `UPDATE "post" SET likes_count = likes_count + $1 WHERE post_id = $2 RETURNING likes_count;`
-	IsLiked         = `SELECT post_id, user_id FROM "like_postGetPost" WHERE post_id = $1 AND user_id = $2;`
-	IsPostAvailable = `SELECT user_id FROM "user_subscription" INNER JOIN "post_subscription" p on "user_subscription".subscription_id = p.subscription_id WHERE user_id = $1 AND post_id = $2 AND expire_date > now()`
-	IsCreator       = `SELECT user_id FROM "creators WHERE creator_id = $1;"`
-	GetPost         = `SELECT "post".post_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), array_agg(subscription_id) FROM "post" JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE "post".post_id = $1 GROUP BY "post".post_id, creation_date, title, post_text;`
-	GetSubInfo      = `SELECT creator_id, month_cost, title, description FROM "subscription" WHERE subscription_id = $1;`
+	InsertPost             = `INSERT INTO "post"(post_id, creator_id, title, post_text) VALUES($1, $2, $3, $4);`
+	InsertAttach           = `INSERT INTO "attachment"(attachment_id, post_id, attachment_type) VALUES($1, $2, $3);`
+	IncPostCount           = `UPDATE "creator" SET posts_count = posts_count+1 WHERE creator_id = $1;`
+	AddSubscriptionsToPost = `INSERT INTO "post_subscription"(post_id, subscription_id) VALUES($1,$2);`
+	DeletePost             = `DELETE FROM  "post" WHERE post_id = $1;`
+	GetUserId              = `SELECT user_id FROM "post" JOIN "creator" c on c.creator_id = "post".creator_id WHERE post_id = $1`
+	AddLike                = `INSERT INTO "like_post"(post_id, user_id) VALUES($1, $2);`
+	RemoveLike             = `DELETE FROM "like_post" WHERE post_id = $1 AND user_id = $2;`
+	UpdateLikeCount        = `UPDATE "post" SET likes_count = likes_count + $1 WHERE post_id = $2 RETURNING likes_count;`
+	IsLiked                = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2;`
+	IsPostAvailable        = `SELECT user_id FROM "user_subscription" INNER JOIN "post_subscription" p on "user_subscription".subscription_id = p.subscription_id WHERE user_id = $1 AND post_id = $2 AND expire_date > now()`
+	IsCreator              = `SELECT user_id FROM "creator" WHERE creator_id = $1;`
+	GetPost                = `SELECT "post".post_id, "post".creator_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE "post".post_id = $1 GROUP BY "post".post_id, creation_date, title, post_text;`
+	GetSubInfo             = `SELECT creator_id, month_cost, title, description FROM "subscription" WHERE subscription_id = $1;`
 )
 
 type PostRepo struct {
@@ -50,7 +51,7 @@ func (r *PostRepo) CreatePost(ctx context.Context, postData models.PostCreationD
 		return models.InternalError
 	}
 
-	row, err := tx.QueryContext(ctx, InsertPost, postData.Id, postData.Creator, postData.Title, postData.Text) //TODO: fix context
+	row, err := tx.QueryContext(ctx, InsertPost, postData.Id, postData.Creator, postData.Title, postData.Text)
 	if err := row.Err(); err != nil {
 		tx.Rollback()
 		return models.InternalError
@@ -60,12 +61,28 @@ func (r *PostRepo) CreatePost(ctx context.Context, postData models.PostCreationD
 	for _, attach := range postData.Attachments {
 		row, err = tx.QueryContext(ctx, InsertAttach, attach.Id, postData.Id, attach.Type)
 		if err := row.Err(); err != nil {
-			fmt.Println(err)
 			tx.Rollback()
 			return models.InternalError
 		}
 		row.Close()
 	}
+
+	row, err = tx.QueryContext(ctx, IncPostCount, postData.Creator)
+	if err := row.Err(); err != nil {
+		tx.Rollback()
+		return models.InternalError
+	}
+	row.Close()
+
+	for _, sub := range postData.AvailableSubscriptions {
+		row, err = tx.QueryContext(ctx, AddSubscriptionsToPost, postData.Id, sub)
+		if err := row.Err(); err != nil {
+			tx.Rollback()
+			return models.InternalError
+		}
+		row.Close()
+	}
+
 	tx.Commit()
 
 	return nil
@@ -80,6 +97,7 @@ func (r *PostRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]mod
 		if err != nil {
 			return nil, models.InternalError
 		}
+		subsInfo[i].Id = v
 	}
 	return subsInfo, nil
 }
@@ -87,17 +105,18 @@ func (r *PostRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]mod
 func (r *PostRepo) GetPost(ctx context.Context, postID, userID uuid.UUID) (models.Post, error) {
 	var post models.Post
 	attachs := make([]uuid.UUID, 0)
-	types := make([]string, 0)
+	types := make([]sql.NullString, 0)
 	subs := make([]uuid.UUID, 0)
 	row := r.db.QueryRow(GetPost, postID)
-	err := row.Scan(&post.Id, &post.Creation, &post.Title,
+	err := row.Scan(&post.Id, &post.Creator, &post.Creation, &post.Title,
 		&post.Text, pq.Array(&attachs), pq.Array(&types), pq.Array(&subs)) //подписки, при которыз пост доступен
 	if err != nil {
 		return models.Post{}, models.InternalError
 	}
+	attachs = attachs[:len(attachs)/2] //TODO !!!!!!!!!!!!!!!!
 	post.Attachments = make([]models.Attachment, len(attachs))
 	for i, v := range attachs {
-		post.Attachments[i].Type = types[i]
+		post.Attachments[i].Type = types[i].String
 		post.Attachments[i].Id = v
 	}
 
@@ -120,6 +139,7 @@ func (r *PostRepo) IsCreator(ctx context.Context, userID, creatorID uuid.UUID) (
 }
 
 func (r *PostRepo) DeletePost(ctx context.Context, postID uuid.UUID) error {
+	//TODO: delete also in another table (or cascade delete?)
 	row := r.db.QueryRow(DeletePost, postID)
 	if err := row.Err(); err != nil {
 		return models.InternalError

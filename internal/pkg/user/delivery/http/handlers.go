@@ -92,7 +92,6 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	if *userDataCSRF != *userDataJWT {
-		fmt.Println(userDataJWT, " ", userDataCSRF)
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -124,7 +123,6 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 	var oldName uuid.UUID
 	oldName, err = uuid.Parse(r.PostFormValue("path"))
 	if err != nil {
-		fmt.Println(err)
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}

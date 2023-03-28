@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 )
@@ -30,7 +29,6 @@ func (r *AuthRepo) CreateUser(ctx context.Context, user models.User) (models.Use
 	row := r.db.QueryRow(AddUser, user.Id, user.Login, user.Name, user.ProfilePhoto, user.PasswordHash)
 
 	if err := row.Scan(&id); err != nil {
-		fmt.Println(err)
 		return models.User{}, models.InternalError
 	}
 
@@ -53,7 +51,6 @@ func (r *AuthRepo) CheckUser(ctx context.Context, user models.User) (models.User
 
 	row := r.db.QueryRow(UserAccessDetails, user.Login) // Ищем пользователя с таким логином и берем его пароль и id и юзерверсию
 	if err := row.Scan(&id, &passwordHash, &userVersion); err != nil && !errors.Is(sql.ErrNoRows, err) {
-		fmt.Println(err)
 		return models.User{}, models.InternalError
 	}
 

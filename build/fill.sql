@@ -22,7 +22,7 @@ VALUES ('b184cc4e-78ef-434f-ac88-5084a77ee087', 'Dasha2003!', 'Дарья Так
 INSERT INTO creator (creator_id, user_id, name,  followers_count, description, posts_count)
 VALUES ('10b0d1b8-0e67-4e7e-9f08-124b3e32cce4', 'b184cc4e-78ef-434f-ac88-5084a77ee087', 'FOOD BLOGGER',  2,
         'Кулинарный блог обычной девочки из Москвы',
-        1);
+        2);
 
 --------------------------------------ПОДПИСКИ-----------------------------------------------------------------------
 INSERT INTO subscription (subscription_id, creator_id, month_cost, title, description)

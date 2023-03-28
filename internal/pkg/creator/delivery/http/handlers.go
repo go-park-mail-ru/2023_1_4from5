@@ -39,5 +39,6 @@ func (h *CreatorHandler) GetPage(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
+
 	utils.Response(w, http.StatusOK, creatorPage)
 }

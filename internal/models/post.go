@@ -19,13 +19,14 @@ type Post struct {
 	Subscriptions []Subscription `json:"subscriptions"`
 }
 
+//easyjson:skip
 type PostCreationData struct {
-	Id                     uuid.UUID        `json:"id"`
-	Creator                uuid.UUID        `json:"creator_id"`
-	Title                  string           `json:"title"`
-	Text                   string           `json:"text"`
-	Attachments            []AttachmentData `json:"attachments"`
-	AvailableSubscriptions []uuid.UUID      `json:"available_subscriptions"`
+	Id                     uuid.UUID
+	Creator                uuid.UUID
+	Title                  string
+	Text                   string
+	Attachments            []AttachmentData
+	AvailableSubscriptions []uuid.UUID
 }
 
 func (post PostCreationData) IsValid() bool {
