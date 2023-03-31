@@ -1,17 +1,19 @@
 package usecase
 
 import (
+	"context"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 	"io"
 	"os"
-	"path/filepath"
 )
 
 type AttachmentUsecase struct {
-	repo attachment.AttachmentRepo
+	repo   attachment.AttachmentRepo
+	logger *zap.SugaredLogger
 }
 
 var types = map[string]string{
@@ -24,81 +26,85 @@ var types = map[string]string{
 	"audio/mpeg": "mp3",
 }
 
-func NewAttachmentUsecase(repo attachment.AttachmentRepo) *AttachmentUsecase {
-	return &AttachmentUsecase{repo: repo}
+func NewAttachmentUsecase(repo attachment.AttachmentRepo, logger *zap.SugaredLogger) *AttachmentUsecase {
+	return &AttachmentUsecase{
+		repo:   repo,
+		logger: logger,
+	}
 }
 
-func (u *AttachmentUsecase) CreateAttachs(postID uuid.UUID, attachments ...models.AttachmentData) ([]uuid.UUID, error) {
-	resultIds := make([]uuid.UUID, len(attachments))
+func (u *AttachmentUsecase) DeleteAttachesByPostID(ctx context.Context, postID uuid.UUID) error {
+	attachs, err := u.repo.DeleteAttachesByPostID(ctx, postID)
+	if err != nil {
+		u.logger.Error(err)
+		return err
+	}
+	err = u.DeleteAttaches(ctx, attachs...)
+	return err
+}
+
+func (u *AttachmentUsecase) CreateAttaches(ctx context.Context, attachments ...models.AttachmentData) error {
 	for i, attach := range attachments {
 		attachmentType, ok := types[attach.Type]
 		if !ok {
-			return nil, models.WrongData
+			if err := u.DeleteAttaches(ctx, attachments[:i]...); err != nil {
+				u.logger.Error(err)
+				return models.InternalError
+			}
+			return models.WrongData
 		}
-		resultIds[i] = uuid.New()
-
-		f, err := os.Create(fmt.Sprintf("/images/%s.%s", resultIds[i].String(), attachmentType))
+		f, err := os.Create(fmt.Sprintf("%s%s.%s", models.FolderPath, attach.Id.String(), attachmentType))
 		if err != nil {
-			fmt.Println(err)
-			return nil, models.InternalError
+			if err := u.DeleteAttaches(ctx, attachments[:i]...); err != nil {
+				u.logger.Error(err)
+				return models.InternalError
+			}
+			return models.InternalError
 		}
+
 		defer f.Close()
+
 		if _, err := io.Copy(f, attach.Data); err != nil {
-			return nil, models.InternalError
-		}
-
-		if err = u.repo.CreateAttach(postID, resultIds[i], attach.Type); err != nil {
-			return nil, models.InternalError
-		}
-	}
-	//TODO: всё на транзакции
-	return resultIds, nil
-}
-
-func (u *AttachmentUsecase) DeleteAttachsByID(attachmentIDs ...uuid.UUID) error {
-	for _, attachId := range attachmentIDs {
-		if err := u.repo.DeleteAttachByID(attachId); err != nil {
+			if err := u.DeleteAttaches(ctx, attachments[:i]...); err != nil {
+				u.logger.Error(err)
+				return models.InternalError
+			}
+			u.logger.Error(err)
 			return models.InternalError
 		}
 
-		if err := deleteByFileName(attachId.String()); err != nil {
-			return err
-		}
 	}
-
 	return nil
 }
 
-func (u *AttachmentUsecase) DeleteAttachsByPostID(postID uuid.UUID) error {
-	attachIDs, err := u.repo.DeleteAttachByPostID(postID)
-	if err != nil {
+//	func (u *AttachmentUsecase) DeleteAttachsByPostID(postID uuid.UUID) error {
+//		attachIDs, err := u.repo.DeleteAttachByPostID(postID)
+//		if err != nil {
+//			return models.InternalError
+//		}
+//		for _, attachID := range attachIDs {
+//			if err := deleteByFileName(attachID.String()); err != nil {
+//				return err
+//			}
+//		}
+//		return nil
+//	}
+
+func (u *AttachmentUsecase) DeleteAttaches(ctx context.Context, attachments ...models.AttachmentData) error {
+	for _, file := range attachments {
+		if err := deleteAttach(file); err != nil {
+			u.logger.Error(err)
+			return models.InternalError
+		}
+	}
+	return nil
+}
+
+func deleteAttach(attach models.AttachmentData) error {
+	filename := models.FolderPath + attach.Id.String() + "." + types[attach.Type]
+
+	if err := os.Remove(filename); err != nil {
 		return models.InternalError
-	}
-	for _, attachID := range attachIDs {
-		if err := deleteByFileName(attachID.String()); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func deleteByFileName(filename string) error {
-	dir := "/images/"
-	pattern := filename + "*"
-
-	// find all files matching the pattern in the directory
-	files, err := filepath.Glob(filepath.Join(dir, pattern))
-	if err != nil {
-		fmt.Println(err)
-	}
-	if len(files) == 0 {
-		return models.WrongData
-	}
-	//TODO: он затирает все файлы, по сути у нас он всегда будет один, но я не знаю, как лучше обработать этот массив
-	for _, file := range files {
-		if err := os.Remove(file); err != nil {
-			return models.InternalError
-		}
 	}
 	return nil
 }

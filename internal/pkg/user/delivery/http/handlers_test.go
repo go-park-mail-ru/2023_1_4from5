@@ -41,7 +41,7 @@ func TestGetProfile(t *testing.T) {
 
 	os.Setenv("TOKEN_SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
-	bdy, _ := tkn.GetToken(models.User{Login: testUser.Login, Id: uuid.New()})
+	bdy, _ := tkn.GetJWTToken(models.User{Login: testUser.Login, Id: uuid.New()})
 
 	usecaseMock := mock.NewMockUserUsecase(ctl)
 	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
@@ -88,7 +88,7 @@ func TestGetHomePage(t *testing.T) {
 
 	os.Setenv("SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
-	bdy, _ := tkn.GetToken(models.User{Login: testUser.Login, Id: uuid.New()})
+	bdy, _ := tkn.GetJWTToken(models.User{Login: testUser.Login, Id: uuid.New()})
 
 	usecaseMock := mock.NewMockUserUsecase(ctl)
 	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)

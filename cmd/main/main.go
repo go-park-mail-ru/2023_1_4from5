@@ -20,6 +20,7 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"go.uber.org/zap"
 	"log"
 	"net/http"
 	"os"
@@ -33,6 +34,16 @@ func main() {
 }
 
 func run() error {
+	logger, err := zap.NewProduction()
+	defer func(logger *zap.Logger) {
+		err = logger.Sync()
+		if err != nil {
+			log.Print(err)
+		}
+	}(logger)
+
+	zapSugar := logger.Sugar()
+
 	str, err := utils.GetConnectionString()
 	if err != nil {
 		return err
@@ -43,6 +54,7 @@ func run() error {
 		return err
 	}
 	defer db.Close()
+	db.SetMaxOpenConns(10)
 
 	tokenGenerator := authUsecase.NewTokenator()
 	encryptor, err := authUsecase.NewEncryptor()
@@ -50,27 +62,30 @@ func run() error {
 		return err
 	}
 
-	authRepo := authRepository.NewAuthRepo(db)
-	authUse := authUsecase.NewAuthUsecase(authRepo, tokenGenerator, encryptor)
-	authHandler := authDelivery.NewAuthHandler(authUse)
+	authRepo := authRepository.NewAuthRepo(db, zapSugar)
+	authUse := authUsecase.NewAuthUsecase(authRepo, tokenGenerator, encryptor, zapSugar)
+	authHandler := authDelivery.NewAuthHandler(authUse, zapSugar)
 
-	userRepo := userRepository.NewUserRepo(db)
-	userUse := userUsecase.NewUserUsecase(userRepo)
+	userRepo := userRepository.NewUserRepo(db, zapSugar)
+	userUse := userUsecase.NewUserUsecase(userRepo, zapSugar)
 	userHandler := userDelivery.NewUserHandler(userUse, authUse)
 
-	creatorRepo := creatorRepository.NewCreatorRepo(db)
-	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo)
+	creatorRepo := creatorRepository.NewCreatorRepo(db, zapSugar)
+	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo, zapSugar)
 	creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse)
 
-	attachmentRepo := attachmentRepository.NewAttachmentRepo(db)
-	attachmentUse := attachmentUsecase.NewAttachmentUsecase(attachmentRepo)
+	attachmentRepo := attachmentRepository.NewAttachmentRepo(db, zapSugar)
+	attachmentUse := attachmentUsecase.NewAttachmentUsecase(attachmentRepo, zapSugar)
 
-	postRepo := postRepository.NewPostRepo(db)
-	postUse := postUsecase.NewPostUsecase(postRepo)
-	postHandler := postDelivery.NewPostHandler(postUse, authUse, attachmentUse)
+	postRepo := postRepository.NewPostRepo(db, zapSugar)
+	postUse := postUsecase.NewPostUsecase(postRepo, zapSugar)
+	postHandler := postDelivery.NewPostHandler(postUse, authUse, attachmentUse, zapSugar)
 
+	logMw := middleware.NewLoggerMiddleware(zapSugar)
 	r := mux.NewRouter().PathPrefix("/api").Subrouter()
 	r.Use(middleware.CORSMiddleware)
+	r.Use(logMw.LogRequest)
+
 	auth := r.PathPrefix("/auth").Subrouter()
 	{
 		auth.HandleFunc("/signUp", authHandler.SignUp).Methods(http.MethodPost, http.MethodOptions)
@@ -82,7 +97,7 @@ func run() error {
 	{
 		user.HandleFunc("/profile", userHandler.GetProfile).Methods(http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/homePage", userHandler.GetHomePage).Methods(http.MethodGet, http.MethodOptions)
-		user.HandleFunc("/updateProfilePhoto", userHandler.UpdateProfilePhoto).Methods(http.MethodPut, http.MethodOptions)
+		user.HandleFunc("/updateProfilePhoto", userHandler.UpdateProfilePhoto).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
 	}
 
 	creator := r.PathPrefix("/creator").Subrouter()
@@ -92,10 +107,11 @@ func run() error {
 
 	post := r.PathPrefix("/post").Subrouter()
 	{
-		post.HandleFunc("/create", postHandler.CreatePost).Methods(http.MethodPost, http.MethodOptions)
+		post.HandleFunc("/create", postHandler.CreatePost).Methods(http.MethodPost, http.MethodOptions, http.MethodGet)
 		post.HandleFunc("/addLike", postHandler.AddLike).Methods(http.MethodPut, http.MethodOptions)
 		post.HandleFunc("/removeLike", postHandler.RemoveLike).Methods(http.MethodPut, http.MethodOptions)
-		post.HandleFunc("/{post-uuid}", postHandler.DeletePost).Methods(http.MethodDelete, http.MethodOptions)
+		post.HandleFunc("/delete/{post-uuid}", postHandler.DeletePost).Methods(http.MethodDelete, http.MethodOptions, http.MethodGet)
+		post.HandleFunc("/get/{post-uuid}", postHandler.GetPost).Methods(http.MethodGet, http.MethodOptions)
 	}
 
 	http.Handle("/", r)

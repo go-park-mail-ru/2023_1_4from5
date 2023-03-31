@@ -201,19 +201,19 @@ func (m *MockTokenGenerator) EXPECT() *MockTokenGeneratorMockRecorder {
 	return m.recorder
 }
 
-// GetToken mocks base method.
-func (m *MockTokenGenerator) GetToken(user models.User) (string, error) {
+// GetJWTToken mocks base method.
+func (m *MockTokenGenerator) GetJWTToken(user models.User) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetToken", user)
+	ret := m.ctrl.Call(m, "GetJWTToken", user)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetToken indicates an expected call of GetToken.
-func (mr *MockTokenGeneratorMockRecorder) GetToken(user interface{}) *gomock.Call {
+// GetJWTToken indicates an expected call of GetJWTToken.
+func (mr *MockTokenGeneratorMockRecorder) GetJWTToken(user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetToken", reflect.TypeOf((*MockTokenGenerator)(nil).GetToken), user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetJWTToken", reflect.TypeOf((*MockTokenGenerator)(nil).GetJWTToken), user)
 }
 
 // MockEncrypter is a mock of Encrypter interface.

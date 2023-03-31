@@ -6,10 +6,10 @@ import (
 	"time"
 )
 
-func Cookie(w http.ResponseWriter, token string) {
-	domain, _ := os.LookupEnv("DOMAIN") //TODO: обработать ошибку, ещё есть места где errors.NEw() прокидываются
+func Cookie(w http.ResponseWriter, token, name string) {
+	domain, _ := os.LookupEnv("DOMAIN")
 	SSCookie := &http.Cookie{
-		Name:   "SSID",
+		Name:   name,
 		Value:  token,
 		Path:   "/",
 		Domain: domain,

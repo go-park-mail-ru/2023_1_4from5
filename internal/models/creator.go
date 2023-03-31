@@ -15,8 +15,8 @@ type Creator struct {
 }
 
 type CreatorPage struct {
-	CreatorInfo Creator `json:"creator_info"`
-	IsMyPage    bool    `json:"is_my_page"`
-	Posts       []Post  `json:"posts"`
-	//Subscriptions [] Subscription `json:"subscriptions"`
+	CreatorInfo   Creator        `json:"creator_info"`
+	IsMyPage      bool           `json:"is_my_page"`
+	Posts         []Post         `json:"posts"`
+	Subscriptions []Subscription `json:"subscriptions"`
 }

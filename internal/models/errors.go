@@ -12,4 +12,5 @@ var (
 	InvalidToken  = errors.New("InvalidToken")
 	WrongData     = errors.New("WrongData")
 	Unauthorized  = errors.New("Unauthorized")
+	Forbbiden     = errors.New("Forbbiden")
 )

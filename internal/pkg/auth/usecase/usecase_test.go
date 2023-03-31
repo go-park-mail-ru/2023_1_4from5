@@ -87,7 +87,7 @@ func TestAuthUsecase_SignIn(t *testing.T) {
 			mockAuthRepo.EXPECT().CheckUser(gomock.Any()).Return(models.User{}, models.WrongPassword)
 		}
 		mockEncrypter.EXPECT().EncryptPswd(gomock.Any()).Return("test")
-		mockTokenGen.EXPECT().GetToken(gomock.Any()).Return("TEST TOKEN", nil)
+		mockTokenGen.EXPECT().GetJWTToken(gomock.Any()).Return("TEST TOKEN", nil)
 	}
 
 	for i, test := range tests {
@@ -148,7 +148,7 @@ func TestAuthUsecase_SignUp(t *testing.T) {
 			mockAuthRepo.EXPECT().CheckUser(gomock.Any()).Return(models.User{}, models.NotFound)
 			mockAuthRepo.EXPECT().CreateUser(gomock.Any()).Return(models.User{}, models.InternalError)
 		}
-		mockTokenGen.EXPECT().GetToken(gomock.Any()).Return("TEST TOKEN", nil)
+		mockTokenGen.EXPECT().GetJWTToken(gomock.Any()).Return("TEST TOKEN", nil)
 	}
 
 	for i, test := range tests {
