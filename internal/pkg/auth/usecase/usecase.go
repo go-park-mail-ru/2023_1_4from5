@@ -5,16 +5,23 @@ import (
 	"errors"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
+	"go.uber.org/zap"
 )
 
 type AuthUsecase struct {
 	repo      auth.AuthRepo
 	tokenator auth.TokenGenerator
 	encrypter auth.Encrypter
+	logger    *zap.SugaredLogger
 }
 
-func NewAuthUsecase(repo auth.AuthRepo, tokenator auth.TokenGenerator, encrypter auth.Encrypter) *AuthUsecase {
-	return &AuthUsecase{repo: repo, tokenator: tokenator, encrypter: encrypter}
+func NewAuthUsecase(repo auth.AuthRepo, tokenator auth.TokenGenerator, encrypter auth.Encrypter, logger *zap.SugaredLogger) *AuthUsecase {
+	return &AuthUsecase{
+		repo:      repo,
+		tokenator: tokenator,
+		encrypter: encrypter,
+		logger:    logger,
+	}
 }
 
 func (u *AuthUsecase) Logout(ctx context.Context, details models.AccessDetails) (int, error) {

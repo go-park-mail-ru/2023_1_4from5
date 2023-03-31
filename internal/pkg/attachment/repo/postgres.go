@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 const (
@@ -14,17 +15,22 @@ const (
 )
 
 type AttachmentRepo struct {
-	db *sql.DB
+	db     *sql.DB
+	logger *zap.SugaredLogger
 }
 
-func NewAttachmentRepo(db *sql.DB) *AttachmentRepo {
-	return &AttachmentRepo{db: db}
+func NewAttachmentRepo(db *sql.DB, logger *zap.SugaredLogger) *AttachmentRepo {
+	return &AttachmentRepo{
+		db:     db,
+		logger: logger,
+	}
 }
 
 func (repo *AttachmentRepo) CreateAttach(ctx context.Context, postID uuid.UUID, attachID uuid.UUID, attachmentType string) error {
 	row := repo.db.QueryRow(InsertAttach, attachID, postID, attachmentType)
 
 	if err := row.Err(); err != nil {
+		repo.logger.Error(err)
 		return models.InternalError
 	}
 
@@ -35,6 +41,7 @@ func (repo *AttachmentRepo) DeleteAttachByID(ctx context.Context, attachID uuid.
 	row := repo.db.QueryRow(DeleteAttachByID, attachID)
 
 	if err := row.Err(); err != nil {
+		repo.logger.Error(err)
 		return models.InternalError
 	}
 
@@ -45,6 +52,7 @@ func (repo *AttachmentRepo) DeleteAttachesByPostID(ctx context.Context, postID u
 	resultAttachs := make([]models.AttachmentData, models.MaxFiles)
 	rows, err := repo.db.Query(DeleteAttachByPostID, postID)
 	if err != nil {
+		repo.logger.Error(err)
 		return nil, models.InternalError
 	}
 	defer rows.Close()

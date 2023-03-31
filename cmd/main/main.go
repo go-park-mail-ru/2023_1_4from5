@@ -20,6 +20,7 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"go.uber.org/zap"
 	"log"
 	"net/http"
 	"os"
@@ -33,6 +34,16 @@ func main() {
 }
 
 func run() error {
+	logger, err := zap.NewProduction()
+	defer func(logger *zap.Logger) {
+		err = logger.Sync()
+		if err != nil {
+			log.Print(err)
+		}
+	}(logger)
+
+	zapSugar := logger.Sugar()
+
 	str, err := utils.GetConnectionString()
 	if err != nil {
 		return err
@@ -51,27 +62,30 @@ func run() error {
 		return err
 	}
 
-	authRepo := authRepository.NewAuthRepo(db)
-	authUse := authUsecase.NewAuthUsecase(authRepo, tokenGenerator, encryptor)
-	authHandler := authDelivery.NewAuthHandler(authUse)
+	authRepo := authRepository.NewAuthRepo(db, zapSugar)
+	authUse := authUsecase.NewAuthUsecase(authRepo, tokenGenerator, encryptor, zapSugar)
+	authHandler := authDelivery.NewAuthHandler(authUse, zapSugar)
 
-	userRepo := userRepository.NewUserRepo(db)
-	userUse := userUsecase.NewUserUsecase(userRepo)
+	userRepo := userRepository.NewUserRepo(db, zapSugar)
+	userUse := userUsecase.NewUserUsecase(userRepo, zapSugar)
 	userHandler := userDelivery.NewUserHandler(userUse, authUse)
 
-	creatorRepo := creatorRepository.NewCreatorRepo(db)
-	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo)
+	creatorRepo := creatorRepository.NewCreatorRepo(db, zapSugar)
+	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo, zapSugar)
 	creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse)
 
-	attachmentRepo := attachmentRepository.NewAttachmentRepo(db)
-	attachmentUse := attachmentUsecase.NewAttachmentUsecase(attachmentRepo)
+	attachmentRepo := attachmentRepository.NewAttachmentRepo(db, zapSugar)
+	attachmentUse := attachmentUsecase.NewAttachmentUsecase(attachmentRepo, zapSugar)
 
-	postRepo := postRepository.NewPostRepo(db)
-	postUse := postUsecase.NewPostUsecase(postRepo)
-	postHandler := postDelivery.NewPostHandler(postUse, authUse, attachmentUse)
+	postRepo := postRepository.NewPostRepo(db, zapSugar)
+	postUse := postUsecase.NewPostUsecase(postRepo, zapSugar)
+	postHandler := postDelivery.NewPostHandler(postUse, authUse, attachmentUse, zapSugar)
 
+	logMw := middleware.NewLoggerMiddleware(zapSugar)
 	r := mux.NewRouter().PathPrefix("/api").Subrouter()
 	r.Use(middleware.CORSMiddleware)
+	r.Use(logMw.LogRequest)
+
 	auth := r.PathPrefix("/auth").Subrouter()
 	{
 		auth.HandleFunc("/signUp", authHandler.SignUp).Methods(http.MethodPost, http.MethodOptions)

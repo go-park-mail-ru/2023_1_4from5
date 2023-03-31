@@ -7,6 +7,7 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
+	"go.uber.org/zap"
 )
 
 const (
@@ -18,17 +19,22 @@ const (
 )
 
 type CreatorRepo struct {
-	db *sql.DB
+	db     *sql.DB
+	logger *zap.SugaredLogger
 }
 
-func NewCreatorRepo(db *sql.DB) *CreatorRepo {
-	return &CreatorRepo{db: db}
+func NewCreatorRepo(db *sql.DB, logger *zap.SugaredLogger) *CreatorRepo {
+	return &CreatorRepo{
+		db:     db,
+		logger: logger,
+	}
 }
 
 func (r *CreatorRepo) GetUserSubscriptions(ctx context.Context, userId uuid.UUID) ([]uuid.UUID, error) {
 	userSubscriptions := make([]uuid.UUID, 0)
 	row := r.db.QueryRow(UserSubscriptions, userId)
 	if err := row.Scan(pq.Array(&userSubscriptions)); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
 		return nil, models.InternalError
 	}
 	return userSubscriptions, nil
@@ -37,6 +43,7 @@ func (r *CreatorRepo) GetUserSubscriptions(ctx context.Context, userId uuid.UUID
 func (r *CreatorRepo) IsLiked(ctx context.Context, userID uuid.UUID, postID uuid.UUID) (bool, error) {
 	row := r.db.QueryRow(IsLiked, postID, userID)
 	if err := row.Scan(&postID, &userID); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
 		return false, models.InternalError
 	} else if err == nil {
 		return true, nil
@@ -70,12 +77,14 @@ func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId u
 			userSubscriptions = make([]uuid.UUID, len(tmp))
 			copy(userSubscriptions, tmp)
 			if err != nil {
+				r.logger.Error(err)
 				return models.CreatorPage{}, models.InternalError
 			}
 		}
 		// смотрим, какие посты доступны пользователю, исходя из его уровня подписки
 		rows, err := r.db.Query(CreatorPosts, creatorId)
 		if err != nil && !errors.Is(sql.ErrNoRows, err) {
+			r.logger.Error(err)
 			return models.CreatorPage{}, models.InternalError
 		}
 		defer rows.Close()
@@ -88,6 +97,7 @@ func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId u
 			err = rows.Scan(&post.Id, &post.Creation, &post.Title,
 				&post.Text, pq.Array(&attachs), pq.Array(&types), pq.Array(&availableSubscriptions)) //подписки, при которыз пост доступен
 			if err != nil {
+				r.logger.Error(err)
 				return models.CreatorPage{}, models.InternalError
 			}
 			attachs = attachs[:len(attachs)/2] //TODO: из-за двойного джойна дублируется, пофиксить
@@ -117,6 +127,7 @@ func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId u
 			}
 			post.Subscriptions = make([]models.Subscription, len(availableSubscriptions))
 			if post.Subscriptions, err = r.GetSubsByID(ctx, availableSubscriptions...); err != nil {
+				r.logger.Error(err)
 				return models.CreatorPage{}, models.InternalError
 			}
 
@@ -139,6 +150,7 @@ func (r *CreatorRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]
 		err := row.Scan(&subsInfo[i].Creator, &subsInfo[i].MonthConst, &subsInfo[i].Title,
 			&subsInfo[i].Description)
 		if err != nil {
+			r.logger.Error(err)
 			return nil, models.InternalError
 		}
 		subsInfo[i].Id = v

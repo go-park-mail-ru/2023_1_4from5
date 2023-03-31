@@ -6,12 +6,14 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 	"io"
 	"os"
 )
 
 type AttachmentUsecase struct {
-	repo attachment.AttachmentRepo
+	repo   attachment.AttachmentRepo
+	logger *zap.SugaredLogger
 }
 
 var types = map[string]string{
@@ -24,13 +26,17 @@ var types = map[string]string{
 	"audio/mpeg": "mp3",
 }
 
-func NewAttachmentUsecase(repo attachment.AttachmentRepo) *AttachmentUsecase {
-	return &AttachmentUsecase{repo: repo}
+func NewAttachmentUsecase(repo attachment.AttachmentRepo, logger *zap.SugaredLogger) *AttachmentUsecase {
+	return &AttachmentUsecase{
+		repo:   repo,
+		logger: logger,
+	}
 }
 
 func (u *AttachmentUsecase) DeleteAttachesByPostID(ctx context.Context, postID uuid.UUID) error {
 	attachs, err := u.repo.DeleteAttachesByPostID(ctx, postID)
 	if err != nil {
+		u.logger.Error(err)
 		return err
 	}
 	err = u.DeleteAttaches(ctx, attachs...)
@@ -42,6 +48,7 @@ func (u *AttachmentUsecase) CreateAttaches(ctx context.Context, attachments ...m
 		attachmentType, ok := types[attach.Type]
 		if !ok {
 			if err := u.DeleteAttaches(ctx, attachments[:i]...); err != nil {
+				u.logger.Error(err)
 				return models.InternalError
 			}
 			return models.WrongData
@@ -49,6 +56,7 @@ func (u *AttachmentUsecase) CreateAttaches(ctx context.Context, attachments ...m
 		f, err := os.Create(fmt.Sprintf("%s%s.%s", models.FolderPath, attach.Id.String(), attachmentType))
 		if err != nil {
 			if err := u.DeleteAttaches(ctx, attachments[:i]...); err != nil {
+				u.logger.Error(err)
 				return models.InternalError
 			}
 			return models.InternalError
@@ -58,8 +66,10 @@ func (u *AttachmentUsecase) CreateAttaches(ctx context.Context, attachments ...m
 
 		if _, err := io.Copy(f, attach.Data); err != nil {
 			if err := u.DeleteAttaches(ctx, attachments[:i]...); err != nil {
+				u.logger.Error(err)
 				return models.InternalError
 			}
+			u.logger.Error(err)
 			return models.InternalError
 		}
 
@@ -83,6 +93,7 @@ func (u *AttachmentUsecase) CreateAttaches(ctx context.Context, attachments ...m
 func (u *AttachmentUsecase) DeleteAttaches(ctx context.Context, attachments ...models.AttachmentData) error {
 	for _, file := range attachments {
 		if err := deleteAttach(file); err != nil {
+			u.logger.Error(err)
 			return models.InternalError
 		}
 	}

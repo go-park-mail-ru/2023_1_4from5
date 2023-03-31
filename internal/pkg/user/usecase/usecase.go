@@ -5,14 +5,19 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 type UserUsecase struct {
-	repo user.UserRepo
+	repo   user.UserRepo
+	logger *zap.SugaredLogger
 }
 
-func NewUserUsecase(repo user.UserRepo) *UserUsecase {
-	return &UserUsecase{repo: repo}
+func NewUserUsecase(repo user.UserRepo, logger *zap.SugaredLogger) *UserUsecase {
+	return &UserUsecase{
+		repo:   repo,
+		logger: logger,
+	}
 }
 
 func (uc *UserUsecase) GetProfile(ctx context.Context, details models.AccessDetails) (models.UserProfile, error) {

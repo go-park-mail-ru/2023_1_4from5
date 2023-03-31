@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 const (
@@ -16,11 +17,15 @@ const (
 )
 
 type AuthRepo struct {
-	db *sql.DB
+	db     *sql.DB
+	logger *zap.SugaredLogger
 }
 
-func NewAuthRepo(db *sql.DB) *AuthRepo {
-	return &AuthRepo{db: db}
+func NewAuthRepo(db *sql.DB, logger *zap.SugaredLogger) *AuthRepo {
+	return &AuthRepo{
+		db:     db,
+		logger: logger,
+	}
 }
 
 func (r *AuthRepo) CreateUser(ctx context.Context, user models.User) (models.User, error) {
@@ -29,8 +34,11 @@ func (r *AuthRepo) CreateUser(ctx context.Context, user models.User) (models.Use
 	row := r.db.QueryRow(AddUser, user.Id, user.Login, user.Name, user.ProfilePhoto, user.PasswordHash)
 
 	if err := row.Scan(&id); err != nil {
+		r.logger.Error(err)
 		return models.User{}, models.InternalError
 	}
+
+	//https://codewithmukesh.com/blog/structured-logging-in-golang-with-zap/#Getting_Started_with_Structured_Logging_in_Golang_with_Zap
 
 	userOut := models.User{
 		Id:           id,
@@ -51,6 +59,7 @@ func (r *AuthRepo) CheckUser(ctx context.Context, user models.User) (models.User
 
 	row := r.db.QueryRow(UserAccessDetails, user.Login) // Ищем пользователя с таким логином и берем его пароль и id и юзерверсию
 	if err := row.Scan(&id, &passwordHash, &userVersion); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
 		return models.User{}, models.InternalError
 	}
 
@@ -76,6 +85,7 @@ func (r *AuthRepo) IncUserVersion(ctx context.Context, userId uuid.UUID) (int, e
 	var userVersion int
 
 	if err := row.Scan(&userVersion); err != nil {
+		r.logger.Error(err)
 		return 0, models.InternalError
 	}
 
@@ -87,6 +97,7 @@ func (r *AuthRepo) CheckUserVersion(ctx context.Context, details models.AccessDe
 	var userVersion int
 
 	if err := row.Scan(&userVersion); err != nil {
+		r.logger.Error(err)
 		return 0, models.InternalError
 	}
 

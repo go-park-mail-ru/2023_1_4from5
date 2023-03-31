@@ -6,16 +6,19 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/mailru/easyjson"
+	"go.uber.org/zap"
 	"net/http"
 )
 
 type AuthHandler struct {
 	usecase auth.AuthUsecase
+	logger  *zap.SugaredLogger
 }
 
-func NewAuthHandler(uc auth.AuthUsecase) *AuthHandler {
+func NewAuthHandler(uc auth.AuthUsecase, logger *zap.SugaredLogger) *AuthHandler {
 	return &AuthHandler{
 		usecase: uc,
+		logger:  logger,
 	}
 }
 

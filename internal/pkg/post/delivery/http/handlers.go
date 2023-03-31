@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/mailru/easyjson"
+	"go.uber.org/zap"
 	"io"
 	"net/http"
 )
@@ -18,13 +19,15 @@ type PostHandler struct {
 	usecase           post.PostUsecase
 	authUsecase       auth.AuthUsecase
 	attachmentUsecase attachment.AttachmentUsecase
+	logger            *zap.SugaredLogger
 }
 
-func NewPostHandler(uc post.PostUsecase, auc auth.AuthUsecase, attuc attachment.AttachmentUsecase) *PostHandler {
+func NewPostHandler(uc post.PostUsecase, auc auth.AuthUsecase, attuc attachment.AttachmentUsecase, logger *zap.SugaredLogger) *PostHandler {
 	return &PostHandler{
 		usecase:           uc,
 		authUsecase:       auc,
 		attachmentUsecase: attuc,
+		logger:            logger,
 	}
 }
 
@@ -98,6 +101,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -130,6 +134,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		buf, _ := io.ReadAll(tmpFile)
 
 		if err = tmpFile.Close(); err != nil {
+			h.logger.Error(err)
 			utils.Response(w, http.StatusInternalServerError, nil)
 			return
 		}
@@ -146,6 +151,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	} else if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -153,6 +159,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	postData.Id = uuid.New()
 	if err := h.usecase.CreatePost(r.Context(), postData); err != nil {
 		_ = h.attachmentUsecase.DeleteAttaches(r.Context(), postData.Attachments...)
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -186,6 +193,7 @@ func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err == models.InternalError {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -218,6 +226,7 @@ func (h *PostHandler) RemoveLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err == models.InternalError {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -274,6 +283,7 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -289,6 +299,7 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -325,6 +336,7 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}

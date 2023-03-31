@@ -5,14 +5,19 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 type PostUsecase struct {
-	repo post.PostRepo
+	repo   post.PostRepo
+	logger *zap.SugaredLogger
 }
 
-func NewPostUsecase(repo post.PostRepo) *PostUsecase {
-	return &PostUsecase{repo: repo}
+func NewPostUsecase(repo post.PostRepo, logger *zap.SugaredLogger) *PostUsecase {
+	return &PostUsecase{
+		repo:   repo,
+		logger: logger,
+	}
 }
 
 func (u *PostUsecase) CreatePost(ctx context.Context, postData models.PostCreationData) error {

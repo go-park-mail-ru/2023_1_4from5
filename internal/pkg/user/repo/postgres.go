@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 const (
@@ -16,11 +17,15 @@ const (
 )
 
 type UserRepo struct {
-	db *sql.DB
+	db     *sql.DB
+	logger *zap.SugaredLogger
 }
 
-func NewUserRepo(db *sql.DB) *UserRepo {
-	return &UserRepo{db: db}
+func NewUserRepo(db *sql.DB, logger *zap.SugaredLogger) *UserRepo {
+	return &UserRepo{
+		db:     db,
+		logger: logger,
+	}
 }
 
 func (ur *UserRepo) GetUserProfile(ctx context.Context, id uuid.UUID) (models.UserProfile, error) {
@@ -28,6 +33,7 @@ func (ur *UserRepo) GetUserProfile(ctx context.Context, id uuid.UUID) (models.Us
 
 	row := ur.db.QueryRow(UserProfile, id)
 	if err := row.Scan(&profile.Login, &profile.Name, &profile.ProfilePhoto, &profile.Registration); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		ur.logger.Error(err)
 		return models.UserProfile{}, models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
 		return models.UserProfile{}, models.NotFound
@@ -40,12 +46,14 @@ func (ur *UserRepo) GetHomePage(ctx context.Context, id uuid.UUID) (models.UserH
 
 	row := ur.db.QueryRow(UserNamePhoto, id)
 	if err := row.Scan(&page.Name, &page.ProfilePhoto); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		ur.logger.Error(err)
 		return models.UserHomePage{}, models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
 		return models.UserHomePage{}, models.NotFound
 	}
 	row = ur.db.QueryRow(CheckIfCreator, id)
 	if err := row.Scan(&page.CreatorId); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		ur.logger.Error(err)
 		return models.UserHomePage{}, models.InternalError
 	} else if err == nil {
 		page.IsCreator = true
@@ -56,6 +64,7 @@ func (ur *UserRepo) GetHomePage(ctx context.Context, id uuid.UUID) (models.UserH
 func (ur *UserRepo) UpdateProfilePhoto(ctx context.Context, userID uuid.UUID, path uuid.UUID) error {
 	row := ur.db.QueryRow(UpdateProfilePhoto, path, userID)
 	if err := row.Err(); err != nil {
+		ur.logger.Error(err)
 		return models.InternalError
 	}
 	return nil

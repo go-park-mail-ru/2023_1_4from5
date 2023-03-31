@@ -7,6 +7,7 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
+	"go.uber.org/zap"
 )
 
 const (
@@ -27,17 +28,22 @@ const (
 )
 
 type PostRepo struct {
-	db *sql.DB
+	db     *sql.DB
+	logger *zap.SugaredLogger
 }
 
-func NewPostRepo(db *sql.DB) *PostRepo {
-	return &PostRepo{db: db}
+func NewPostRepo(db *sql.DB, logger *zap.SugaredLogger) *PostRepo {
+	return &PostRepo{
+		db:     db,
+		logger: logger,
+	}
 }
 
 func (r *PostRepo) IsPostAvailable(ctx context.Context, userID, postID uuid.UUID) error {
 	var userIDtmp uuid.UUID
 	row := r.db.QueryRow(IsPostAvailable, userID, postID)
 	if err := row.Scan(&userIDtmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
 		return models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
 		return models.WrongData
@@ -48,42 +54,59 @@ func (r *PostRepo) IsPostAvailable(ctx context.Context, userID, postID uuid.UUID
 func (r *PostRepo) CreatePost(ctx context.Context, postData models.PostCreationData) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
+		r.logger.Error(err)
 		return models.InternalError
 	}
 
 	row, err := tx.QueryContext(ctx, InsertPost, postData.Id, postData.Creator, postData.Title, postData.Text)
-	if err := row.Err(); err != nil {
-		tx.Rollback()
+	if err != nil {
+		_ = tx.Rollback()
+		r.logger.Error(err)
 		return models.InternalError
 	}
-	row.Close()
+
+	if err = row.Close(); err != nil {
+		return models.InternalError
+	}
 
 	for _, attach := range postData.Attachments {
-		row, err = tx.QueryContext(ctx, InsertAttach, attach.Id, postData.Id, attach.Type)
-		if err := row.Err(); err != nil {
-			tx.Rollback()
+		if row, err = tx.QueryContext(ctx, InsertAttach, attach.Id, postData.Id, attach.Type); err != nil {
+			_ = tx.Rollback()
+			r.logger.Error(err)
 			return models.InternalError
 		}
-		row.Close()
+		if err = row.Close(); err != nil {
+			r.logger.Error(err)
+			return models.InternalError
+		}
 	}
 
-	row, err = tx.QueryContext(ctx, IncPostCount, postData.Creator)
-	if err := row.Err(); err != nil {
-		tx.Rollback()
+	if row, err = tx.QueryContext(ctx, IncPostCount, postData.Creator); err != nil {
+		_ = tx.Rollback()
+		r.logger.Error(err)
 		return models.InternalError
 	}
-	row.Close()
-
-	for _, sub := range postData.AvailableSubscriptions {
-		row, err = tx.QueryContext(ctx, AddSubscriptionsToPost, postData.Id, sub)
-		if err := row.Err(); err != nil {
-			tx.Rollback()
-			return models.InternalError
-		}
-		row.Close()
+	if err = row.Close(); err != nil {
+		r.logger.Error(err)
+		return models.InternalError
 	}
 
-	tx.Commit()
+	for _, sub := range postData.AvailableSubscriptions {
+		if row, err = tx.QueryContext(ctx, AddSubscriptionsToPost, postData.Id, sub); err != nil {
+			_ = tx.Rollback()
+			r.logger.Error(err)
+			return models.InternalError
+		}
+		if err = row.Close(); err != nil {
+			r.logger.Error(err)
+			return models.InternalError
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		r.logger.Error(err)
+		return models.InternalError
+	}
 
 	return nil
 }
@@ -95,6 +118,7 @@ func (r *PostRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]mod
 		err := row.Scan(&subsInfo[i].Creator, &subsInfo[i].MonthConst, &subsInfo[i].Title,
 			&subsInfo[i].Description)
 		if err != nil {
+			r.logger.Error(err)
 			return nil, models.InternalError
 		}
 		subsInfo[i].Id = v
@@ -111,6 +135,7 @@ func (r *PostRepo) GetPost(ctx context.Context, postID, userID uuid.UUID) (model
 	err := row.Scan(&post.Id, &post.Creator, &post.Creation, &post.Title,
 		&post.Text, pq.Array(&attachs), pq.Array(&types), pq.Array(&subs)) //подписки, при которыз пост доступен
 	if err != nil {
+		r.logger.Error(err)
 		return models.Post{}, models.InternalError
 	}
 	attachs = attachs[:len(attachs)/2] //TODO !!!!!!!!!!!!!!!!
@@ -128,6 +153,7 @@ func (r *PostRepo) IsCreator(ctx context.Context, userID, creatorID uuid.UUID) (
 	var userIdtmp uuid.UUID
 	row := r.db.QueryRow(IsCreator, creatorID)
 	if err := row.Scan(&userIdtmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
 		return false, models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
 		return false, models.WrongData
@@ -142,6 +168,7 @@ func (r *PostRepo) DeletePost(ctx context.Context, postID uuid.UUID) error {
 	//TODO: delete also in another table (or cascade delete?)
 	row := r.db.QueryRow(DeletePost, postID)
 	if err := row.Err(); err != nil {
+		r.logger.Error(err)
 		return models.InternalError
 	}
 	return nil
@@ -151,6 +178,7 @@ func (r *PostRepo) IsPostOwner(ctx context.Context, userId uuid.UUID, postId uui
 	var userIdtmp uuid.UUID
 	row := r.db.QueryRow(GetUserId, postId)
 	if err := row.Scan(&userIdtmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
 		return false, models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
 		return false, models.WrongData
@@ -175,6 +203,7 @@ func (r *PostRepo) AddLike(ctx context.Context, userID uuid.UUID, postID uuid.UU
 	}
 	// проверяем, есть ли доступ к этому посту
 	if err := r.IsPostAvailable(ctx, userID, postID); err != nil {
+		r.logger.Error(err)
 		return models.Like{}, err
 	}
 	// обновляем кол-во лайков, заодно смотрим, есть ли вообще такой пост
@@ -191,6 +220,7 @@ func (r *PostRepo) AddLike(ctx context.Context, userID uuid.UUID, postID uuid.UU
 	row = r.db.QueryRow(AddLike, postID, userID)
 
 	if err := row.Err(); err != nil {
+		r.logger.Error(err)
 		return models.Like{}, models.InternalError
 	}
 
@@ -214,12 +244,14 @@ func (r *PostRepo) RemoveLike(ctx context.Context, userID uuid.UUID, postID uuid
 	row = r.db.QueryRow(UpdateLikeCount, -1, postID)
 
 	if err := row.Scan(&like.LikesCount); err != nil {
+		r.logger.Error(err)
 		return models.Like{}, models.InternalError
 	}
 
 	row = r.db.QueryRow(RemoveLike, postID, userID)
 
 	if err := row.Err(); err != nil {
+		r.logger.Error(err)
 		return models.Like{}, models.InternalError
 	}
 
