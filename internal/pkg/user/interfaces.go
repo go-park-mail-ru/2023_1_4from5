@@ -12,10 +12,14 @@ type UserUsecase interface {
 	GetProfile(ctx context.Context, details models.AccessDetails) (models.UserProfile, error)
 	GetHomePage(ctx context.Context, details models.AccessDetails) (models.UserHomePage, error)
 	UpdatePhoto(ctx context.Context, details models.AccessDetails) (uuid.UUID, error)
+	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
+	UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error
 }
 
 type UserRepo interface {
 	GetUserProfile(ctx context.Context, id uuid.UUID) (models.UserProfile, error)
 	GetHomePage(ctx context.Context, id uuid.UUID) (models.UserHomePage, error)
 	UpdateProfilePhoto(ctx context.Context, userID uuid.UUID, path uuid.UUID) error
+	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
+	UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error
 }

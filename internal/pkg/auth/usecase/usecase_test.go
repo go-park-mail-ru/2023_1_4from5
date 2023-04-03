@@ -215,13 +215,13 @@ func TestAuthUsecase_Logout(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			h := &AuthUsecase{
+			u := &AuthUsecase{
 				repo:      mockAuthRepo,
 				tokenator: mockTokenGen,
 				encrypter: mockEncrypter,
 			}
 
-			_, code := h.Logout(context.Background(), models.AccessDetails{})
+			_, code := u.IncUserVersion(context.Background(), models.AccessDetails{})
 			require.Equal(t, test.expectedStatusCode, code, fmt.Errorf("%s :  expected %d, got %d,",
 				test.name, test.expectedStatusCode, code))
 		})

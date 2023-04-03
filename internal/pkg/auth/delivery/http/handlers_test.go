@@ -317,11 +317,11 @@ func TestAuthHandler_Logout(t *testing.T) {
 		expires := time.Now().UTC().Add(time.Hour)
 		value := bdy
 		if tests[i].args.expectedStatusCode == http.StatusOK {
-			mockUsecase.EXPECT().Logout(gomock.Any(), gomock.Any()).Return(1, nil)
+			mockUsecase.EXPECT().IncUserVersion(gomock.Any(), gomock.Any()).Return(1, nil)
 		}
 
 		if tests[i].args.expectedStatusCode == http.StatusInternalServerError {
-			mockUsecase.EXPECT().Logout(gomock.Any(), gomock.Any()).Return(0, models.InternalError)
+			mockUsecase.EXPECT().IncUserVersion(gomock.Any(), gomock.Any()).Return(0, models.InternalError)
 		}
 		if tests[i].args.expectedStatusCode == http.StatusBadRequest {
 			switch i {

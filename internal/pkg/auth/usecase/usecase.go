@@ -25,7 +25,11 @@ func NewAuthUsecase(repo auth.AuthRepo, tokenator auth.TokenGenerator, encrypter
 	}
 }
 
-func (u *AuthUsecase) Logout(ctx context.Context, details models.AccessDetails) (int, error) {
+func (u *AuthUsecase) EncryptPwd(ctx context.Context, pwd string) string {
+	return u.encrypter.EncryptPswd(ctx, pwd)
+}
+
+func (u *AuthUsecase) IncUserVersion(ctx context.Context, details models.AccessDetails) (int, error) {
 	return u.repo.IncUserVersion(ctx, details.Id)
 }
 
@@ -37,6 +41,11 @@ func (u *AuthUsecase) SignIn(ctx context.Context, user models.LoginUser) (string
 		return token, nil
 	}
 	return "", models.NotFound
+}
+
+func (u *AuthUsecase) CheckUser(ctx context.Context, user models.User) (models.User, error) {
+	user.PasswordHash = u.encrypter.EncryptPswd(ctx, user.PasswordHash)
+	return u.repo.CheckUser(ctx, user)
 }
 
 func (u *AuthUsecase) SignUp(ctx context.Context, user models.User) (string, error) {

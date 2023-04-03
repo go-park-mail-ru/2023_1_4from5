@@ -44,7 +44,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	if _, err := h.usecase.Logout(r.Context(), *userData); err != nil {
+	if _, err := h.usecase.IncUserVersion(r.Context(), *userData); err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
