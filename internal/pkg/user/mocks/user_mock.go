@@ -5,6 +5,7 @@
 package mock
 
 import (
+	context "context"
 	reflect "reflect"
 
 	models "github.com/go-park-mail-ru/2023_1_4from5/internal/models"
@@ -36,48 +37,48 @@ func (m *MockUserUsecase) EXPECT() *MockUserUsecaseMockRecorder {
 }
 
 // GetHomePage mocks base method.
-func (m *MockUserUsecase) GetHomePage(details models.AccessDetails) (models.UserHomePage, error) {
+func (m *MockUserUsecase) GetHomePage(ctx context.Context, details models.AccessDetails) (models.UserHomePage, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHomePage", details)
+	ret := m.ctrl.Call(m, "GetHomePage", ctx, details)
 	ret0, _ := ret[0].(models.UserHomePage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetHomePage indicates an expected call of GetHomePage.
-func (mr *MockUserUsecaseMockRecorder) GetHomePage(details interface{}) *gomock.Call {
+func (mr *MockUserUsecaseMockRecorder) GetHomePage(ctx, details interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHomePage", reflect.TypeOf((*MockUserUsecase)(nil).GetHomePage), details)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHomePage", reflect.TypeOf((*MockUserUsecase)(nil).GetHomePage), ctx, details)
 }
 
 // GetProfile mocks base method.
-func (m *MockUserUsecase) GetProfile(details models.AccessDetails) (models.UserProfile, error) {
+func (m *MockUserUsecase) GetProfile(ctx context.Context, details models.AccessDetails) (models.UserProfile, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetProfile", details)
+	ret := m.ctrl.Call(m, "GetProfile", ctx, details)
 	ret0, _ := ret[0].(models.UserProfile)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetProfile indicates an expected call of GetProfile.
-func (mr *MockUserUsecaseMockRecorder) GetProfile(details interface{}) *gomock.Call {
+func (mr *MockUserUsecaseMockRecorder) GetProfile(ctx, details interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfile", reflect.TypeOf((*MockUserUsecase)(nil).GetProfile), details)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfile", reflect.TypeOf((*MockUserUsecase)(nil).GetProfile), ctx, details)
 }
 
 // UpdatePhoto mocks base method.
-func (m *MockUserUsecase) UpdatePhoto(details models.AccessDetails) (uuid.UUID, error) {
+func (m *MockUserUsecase) UpdatePhoto(ctx context.Context, details models.AccessDetails) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdatePhoto", details)
+	ret := m.ctrl.Call(m, "UpdatePhoto", ctx, details)
 	ret0, _ := ret[0].(uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdatePhoto indicates an expected call of UpdatePhoto.
-func (mr *MockUserUsecaseMockRecorder) UpdatePhoto(details interface{}) *gomock.Call {
+func (mr *MockUserUsecaseMockRecorder) UpdatePhoto(ctx, details interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePhoto", reflect.TypeOf((*MockUserUsecase)(nil).UpdatePhoto), details)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePhoto", reflect.TypeOf((*MockUserUsecase)(nil).UpdatePhoto), ctx, details)
 }
 
 // MockUserRepo is a mock of UserRepo interface.
@@ -104,45 +105,45 @@ func (m *MockUserRepo) EXPECT() *MockUserRepoMockRecorder {
 }
 
 // GetHomePage mocks base method.
-func (m *MockUserRepo) GetHomePage(id uuid.UUID) (models.UserHomePage, error) {
+func (m *MockUserRepo) GetHomePage(ctx context.Context, id uuid.UUID) (models.UserHomePage, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHomePage", id)
+	ret := m.ctrl.Call(m, "GetHomePage", ctx, id)
 	ret0, _ := ret[0].(models.UserHomePage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetHomePage indicates an expected call of GetHomePage.
-func (mr *MockUserRepoMockRecorder) GetHomePage(id interface{}) *gomock.Call {
+func (mr *MockUserRepoMockRecorder) GetHomePage(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHomePage", reflect.TypeOf((*MockUserRepo)(nil).GetHomePage), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHomePage", reflect.TypeOf((*MockUserRepo)(nil).GetHomePage), ctx, id)
 }
 
 // GetUserProfile mocks base method.
-func (m *MockUserRepo) GetUserProfile(id uuid.UUID) (models.UserProfile, error) {
+func (m *MockUserRepo) GetUserProfile(ctx context.Context, id uuid.UUID) (models.UserProfile, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserProfile", id)
+	ret := m.ctrl.Call(m, "GetUserProfile", ctx, id)
 	ret0, _ := ret[0].(models.UserProfile)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUserProfile indicates an expected call of GetUserProfile.
-func (mr *MockUserRepoMockRecorder) GetUserProfile(id interface{}) *gomock.Call {
+func (mr *MockUserRepoMockRecorder) GetUserProfile(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserProfile", reflect.TypeOf((*MockUserRepo)(nil).GetUserProfile), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserProfile", reflect.TypeOf((*MockUserRepo)(nil).GetUserProfile), ctx, id)
 }
 
 // UpdateProfilePhoto mocks base method.
-func (m *MockUserRepo) UpdateProfilePhoto(userID, path uuid.UUID) error {
+func (m *MockUserRepo) UpdateProfilePhoto(ctx context.Context, userID, path uuid.UUID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateProfilePhoto", userID, path)
+	ret := m.ctrl.Call(m, "UpdateProfilePhoto", ctx, userID, path)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateProfilePhoto indicates an expected call of UpdateProfilePhoto.
-func (mr *MockUserRepoMockRecorder) UpdateProfilePhoto(userID, path interface{}) *gomock.Call {
+func (mr *MockUserRepoMockRecorder) UpdateProfilePhoto(ctx, userID, path interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProfilePhoto", reflect.TypeOf((*MockUserRepo)(nil).UpdateProfilePhoto), userID, path)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProfilePhoto", reflect.TypeOf((*MockUserRepo)(nil).UpdateProfilePhoto), ctx, userID, path)
 }

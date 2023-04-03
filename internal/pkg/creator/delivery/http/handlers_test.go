@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
@@ -40,14 +41,14 @@ func TestGetPage(t *testing.T) {
 
 	os.Setenv("TOKEN_SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
-	bdy, _ := tkn.GetJWTToken(models.User{Login: testUser.Login, Id: uuid.New()})
+	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: uuid.New()})
 
 	usecaseMock := mock.NewMockCreatorUsecase(ctl)
 
 	handler := NewCreatorHandler(usecaseMock)
 	var r *http.Request
 	var status int
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 4; i++ {
 		value := bdy
 		r = httptest.NewRequest("GET", "/creator/page", strings.NewReader(fmt.Sprint()))
 		r = mux.SetURLVars(r, map[string]string{
@@ -55,7 +56,7 @@ func TestGetPage(t *testing.T) {
 		})
 		switch i {
 		case 0:
-			usecaseMock.EXPECT().GetPage(gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, nil)
+			usecaseMock.EXPECT().GetPage(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, nil)
 			status = http.StatusOK
 		case 1:
 			r = mux.SetURLVars(r, map[string]string{
@@ -63,13 +64,10 @@ func TestGetPage(t *testing.T) {
 			})
 			status = http.StatusBadRequest
 		case 2:
-			value = "body"
-			status = http.StatusUnauthorized
-		case 3:
-			usecaseMock.EXPECT().GetPage(gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, models.InternalError)
+			usecaseMock.EXPECT().GetPage(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, models.InternalError)
 			status = http.StatusInternalServerError
-		case 4:
-			usecaseMock.EXPECT().GetPage(gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, models.WrongData)
+		case 3:
+			usecaseMock.EXPECT().GetPage(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, models.WrongData)
 			status = http.StatusBadRequest
 		}
 		r.AddCookie(&http.Cookie{

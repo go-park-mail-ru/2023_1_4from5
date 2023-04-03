@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -44,6 +45,7 @@ func (u *AuthUsecase) SignUp(ctx context.Context, user models.User) (string, err
 	if err == nil || errors.Is(err, models.WrongPassword) {
 		return "", models.WrongData
 	}
+	user.Id = uuid.New()
 	newUser, dbErr := u.repo.CreateUser(ctx, user)
 	token, tokenErr := u.tokenator.GetJWTToken(ctx, newUser)
 	if dbErr == nil && tokenErr == nil {
