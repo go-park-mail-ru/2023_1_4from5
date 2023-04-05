@@ -157,21 +157,19 @@ func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId u
 }
 
 func (r *CreatorRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]models.Subscription, error) {
-	subsInfo := make([]models.Subscription, len(subsIDs))
-	shift := 0
-	for i, v := range subsIDs {
+	subsInfo := make([]models.Subscription, 0)
+	var sub models.Subscription
+	for _, v := range subsIDs {
 		row := r.db.QueryRow(GetSubInfo, v)
-		err := row.Scan(&subsInfo[i-shift].Creator, &subsInfo[i-shift].MonthConst, &subsInfo[i-shift].Title,
-			&subsInfo[i-shift].Description)
+		err := row.Scan(&sub.Creator, &sub.MonthConst, &sub.Title,
+			&sub.Description)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			r.logger.Error(err)
 			return nil, models.InternalError
 		} else if errors.Is(err, sql.ErrNoRows) {
-			subsInfo = subsInfo[:i-shift]
-			shift++
 			break
 		}
-		subsInfo[i-shift].Id = v
+		subsInfo = append(subsInfo, sub)
 	}
 	return subsInfo, nil
 }
