@@ -48,3 +48,10 @@ func (uc *UserUsecase) UpdatePhoto(ctx context.Context, details models.AccessDet
 	}
 	return path, nil
 }
+
+func (uc *UserUsecase) UpdatePassword(ctx context.Context, id uuid.UUID, password string) error {
+	return uc.repo.UpdatePassword(ctx, id, password)
+}
+func (uc *UserUsecase) UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error {
+	return uc.repo.UpdateProfileInfo(ctx, profileInfo, id)
+}

@@ -14,6 +14,8 @@ const (
 	UserNamePhoto      = `SELECT display_name, profile_photo FROM "user" WHERE user_id=$1;`
 	CheckIfCreator     = `SELECT creator_id FROM "creator" WHERE user_id=$1;`
 	UpdateProfilePhoto = `UPDATE "user" SET profile_photo = $1 WHERE user_id = $2`
+	UpdatePassword     = `UPDATE "user" SET password_hash = $1, user_version = user_version+1 WHERE user_id = $2`
+	UpdateProfileInfo  = `UPDATE "user" SET login = $1, display_name = $2 WHERE user_id = $3`
 )
 
 type UserRepo struct {
@@ -63,6 +65,24 @@ func (ur *UserRepo) GetHomePage(ctx context.Context, id uuid.UUID) (models.UserH
 
 func (ur *UserRepo) UpdateProfilePhoto(ctx context.Context, userID uuid.UUID, path uuid.UUID) error {
 	row := ur.db.QueryRow(UpdateProfilePhoto, path, userID)
+	if err := row.Err(); err != nil {
+		ur.logger.Error(err)
+		return models.InternalError
+	}
+	return nil
+}
+
+func (ur *UserRepo) UpdatePassword(ctx context.Context, id uuid.UUID, password string) error {
+	row := ur.db.QueryRow(UpdatePassword, password, id)
+	if err := row.Err(); err != nil {
+		ur.logger.Error(err)
+		return models.InternalError
+	}
+	return nil
+}
+
+func (ur *UserRepo) UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error {
+	row := ur.db.QueryRow(UpdateProfileInfo, profileInfo.Login, profileInfo.Name, id)
 	if err := row.Err(); err != nil {
 		ur.logger.Error(err)
 		return models.InternalError

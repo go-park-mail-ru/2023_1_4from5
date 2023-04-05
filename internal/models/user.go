@@ -18,12 +18,24 @@ type User struct {
 	UserVersion  int       `json:"user_version"`
 }
 
+func (user User) UserLoginIsValid() bool {
+	return len(user.Login) >= 7 && len(user.Login) < 40
+}
+
+func (user User) UserPasswordIsValid() bool {
+	return utils.IsValid(user.PasswordHash)
+}
+
+func (user User) UserNameIsValid() bool {
+	return len(user.Name) >= 7 && len(user.Name) < 40
+}
+
 func (user User) UserAuthIsValid() bool {
-	return len(user.Login) >= 7 && len(user.Login) < 40 && utils.IsValid(user.PasswordHash)
+	return user.UserLoginIsValid() && user.UserPasswordIsValid()
 }
 
 func (user User) UserIsValid() bool {
-	return user.UserAuthIsValid() && len(user.Name) >= 7 && len(user.Name) < 40
+	return user.UserLoginIsValid() && user.UserPasswordIsValid() && user.UserNameIsValid()
 }
 
 type LoginUser struct {
@@ -44,4 +56,13 @@ type UserHomePage struct {
 	Posts        []Post    `json:"posts"`
 	IsCreator    bool      `json:"is_creator"`
 	CreatorId    uuid.UUID `json:"creator_id"`
+}
+
+type UpdatePasswordInfo struct {
+	NewPassword string `json:"new_password"`
+	OldPassword string `json:"old_password"`
+}
+type UpdateProfileInfo struct {
+	Login string `json:"login"`
+	Name  string `json:"name"`
 }

@@ -36,6 +36,21 @@ func (m *MockAuthUsecase) EXPECT() *MockAuthUsecaseMockRecorder {
 	return m.recorder
 }
 
+// CheckUser mocks base method.
+func (m *MockAuthUsecase) CheckUser(ctx context.Context, user models.User) (models.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckUser", ctx, user)
+	ret0, _ := ret[0].(models.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckUser indicates an expected call of CheckUser.
+func (mr *MockAuthUsecaseMockRecorder) CheckUser(ctx, user interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUser", reflect.TypeOf((*MockAuthUsecase)(nil).CheckUser), ctx, user)
+}
+
 // CheckUserVersion mocks base method.
 func (m *MockAuthUsecase) CheckUserVersion(ctx context.Context, details models.AccessDetails) (int, error) {
 	m.ctrl.T.Helper()
@@ -51,19 +66,19 @@ func (mr *MockAuthUsecaseMockRecorder) CheckUserVersion(ctx, details interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUserVersion", reflect.TypeOf((*MockAuthUsecase)(nil).CheckUserVersion), ctx, details)
 }
 
-// Logout mocks base method.
-func (m *MockAuthUsecase) Logout(ctx context.Context, details models.AccessDetails) (int, error) {
+// IncUserVersion mocks base method.
+func (m *MockAuthUsecase) IncUserVersion(ctx context.Context, details models.AccessDetails) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Logout", ctx, details)
+	ret := m.ctrl.Call(m, "IncUserVersion", ctx, details)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Logout indicates an expected call of Logout.
-func (mr *MockAuthUsecaseMockRecorder) Logout(ctx, details interface{}) *gomock.Call {
+// IncUserVersion indicates an expected call of IncUserVersion.
+func (mr *MockAuthUsecaseMockRecorder) IncUserVersion(ctx, details interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Logout", reflect.TypeOf((*MockAuthUsecase)(nil).Logout), ctx, details)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncUserVersion", reflect.TypeOf((*MockAuthUsecase)(nil).IncUserVersion), ctx, details)
 }
 
 // SignIn mocks base method.

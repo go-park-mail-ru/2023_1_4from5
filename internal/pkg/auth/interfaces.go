@@ -11,7 +11,9 @@ import (
 type AuthUsecase interface {
 	SignIn(ctx context.Context, user models.LoginUser) (string, error)
 	SignUp(ctx context.Context, user models.User) (string, error)
-	Logout(ctx context.Context, details models.AccessDetails) (int, error)
+	IncUserVersion(ctx context.Context, details models.AccessDetails) (int, error)
+	CheckUser(ctx context.Context, user models.User) (models.User, error)
+	EncryptPwd(ctx context.Context, pwd string) string
 	CheckUserVersion(ctx context.Context, details models.AccessDetails) (int, error)
 }
 
