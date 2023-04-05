@@ -124,32 +124,31 @@ func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId u
 			return models.CreatorPage{}, err
 		}
 
-		for _, post := range creatorPage.Posts {
+		for i, _ := range creatorPage.Posts {
 			if creatorPage.IsMyPage {
-				post.IsAvailable = true
+				creatorPage.Posts[i].IsAvailable = true
 			}
 
-			for _, availableSubscription := range post.Subscriptions {
+			for _, availableSubscription := range creatorPage.Posts[i].Subscriptions {
 				for _, userSubscription := range userSubscriptions {
 					if availableSubscription.Id == userSubscription {
-						post.IsAvailable = true
+						creatorPage.Posts[i].IsAvailable = true
 						//проверяем, лайкнул ли его пользователь
-						if post.IsLiked, err = r.IsLiked(ctx, userId, post.Id); err != nil {
+						if creatorPage.Posts[i].IsLiked, err = r.IsLiked(ctx, userId, creatorPage.Posts[i].Id); err != nil {
 							return models.CreatorPage{}, models.InternalError
 						}
 						break
 					}
 				}
-				if post.IsAvailable {
+				if creatorPage.Posts[i].IsAvailable {
 					break
 				}
 			}
 
-			if !post.IsAvailable {
-				post.Text = ""
-				post.Attachments = nil
+			if !creatorPage.Posts[i].IsAvailable {
+				creatorPage.Posts[i].Text = ""
+				creatorPage.Posts[i].Attachments = nil
 			}
-			creatorPage.Posts = append(creatorPage.Posts, post)
 		}
 
 		return creatorPage, nil
