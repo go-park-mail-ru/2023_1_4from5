@@ -28,6 +28,7 @@ func (uc *CreatorUsecase) GetPage(ctx context.Context, details *models.AccessDet
 		return models.CreatorPage{}, models.WrongData
 	}
 	creatorPage, err := uc.repo.GetPage(ctx, userId, creatorId)
+
 	if err != nil {
 		return models.CreatorPage{}, err
 	}
