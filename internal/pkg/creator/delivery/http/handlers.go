@@ -25,12 +25,12 @@ func (h *CreatorHandler) GetPage(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	userInfo, _ := token.ExtractJWTTokenMetadata(r)
-	//if err != nil {
-	//	utils.Response(w, http.StatusUnauthorized, nil)
-	//	return
-	//}
-	creatorPage, err := h.usecase.GetPage(r.Context(), userInfo, creatorUUID)
+	userInfo := models.AccessDetails{}
+	tmpUserInfo, err := token.ExtractJWTTokenMetadata(r)
+	if err != nil {
+		tmpUserInfo = &userInfo
+	}
+	creatorPage, err := h.usecase.GetPage(r.Context(), tmpUserInfo, creatorUUID)
 	if err == models.InternalError {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
