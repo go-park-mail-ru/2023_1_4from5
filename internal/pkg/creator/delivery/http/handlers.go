@@ -25,7 +25,7 @@ func (h *CreatorHandler) GetPage(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	userInfo, err := token.ExtractJWTTokenMetadata(r)
+	userInfo, _ := token.ExtractJWTTokenMetadata(r)
 	//if err != nil {
 	//	utils.Response(w, http.StatusUnauthorized, nil)
 	//	return

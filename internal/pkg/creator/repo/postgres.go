@@ -118,32 +118,12 @@ func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId u
 				return models.CreatorPage{}, models.InternalError
 			}
 		}
-		// смотрим, какие посты доступны пользователю, исходя из его уровня подписки
-		//rows, err := r.db.Query(CreatorPosts, creatorId)
-		//if err != nil && !errors.Is(sql.ErrNoRows, err) {
-		//	r.logger.Error(err)
-		//	return models.CreatorPage{}, models.InternalError
-		//}
-		//defer rows.Close()
-		//for rows.Next() {
-		//	var post models.Post
-		//	availableSubscriptions := make([]uuid.UUID, 0)
-		//	post.Creator = creatorId
-		//	attachs := make([]uuid.UUID, 0)
-		//	types := make([]sql.NullString, 0)
-		//	err = rows.Scan(&post.Id, &post.Creation, &post.Title,
-		//		&post.Text, pq.Array(&attachs), pq.Array(&types), pq.Array(&availableSubscriptions)) //подписки, при которыз пост доступен
-		//	if err != nil {
-		//		r.logger.Error(err)
-		//		return models.CreatorPage{}, models.InternalError
-		//	}
-		//	attachs = attachs[:len(attachs)/2] //TODO: из-за двойного джойна дублируется, пофиксить
-		//	post.Attachments = make([]models.Attachment, len(attachs))
-		//	for i, v := range attachs {
-		//		post.Attachments[i].Type = types[i].String
-		//		post.Attachments[i].Id = v
-		//	}
+
 		creatorPage.Posts, err = r.CreatorPosts(ctx, creatorId)
+		if err != nil {
+			return models.CreatorPage{}, err
+		}
+
 		for _, post := range creatorPage.Posts {
 			if creatorPage.IsMyPage {
 				post.IsAvailable = true
@@ -164,11 +144,6 @@ func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId u
 					break
 				}
 			}
-			//post.Subscriptions = make([]models.Subscription, len(availableSubscriptions))
-			//if post.Subscriptions, err = r.GetSubsByID(ctx, availableSubscriptions...); err != nil {
-			//	r.logger.Error(err)
-			//	return models.CreatorPage{}, models.InternalError
-			//}
 
 			if !post.IsAvailable {
 				post.Text = ""

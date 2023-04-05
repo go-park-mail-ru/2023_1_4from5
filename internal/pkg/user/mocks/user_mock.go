@@ -66,6 +66,20 @@ func (mr *MockUserUsecaseMockRecorder) GetProfile(ctx, details interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfile", reflect.TypeOf((*MockUserUsecase)(nil).GetProfile), ctx, details)
 }
 
+// UpdatePassword mocks base method.
+func (m *MockUserUsecase) UpdatePassword(ctx context.Context, id uuid.UUID, password string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatePassword", ctx, id, password)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdatePassword indicates an expected call of UpdatePassword.
+func (mr *MockUserUsecaseMockRecorder) UpdatePassword(ctx, id, password interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePassword", reflect.TypeOf((*MockUserUsecase)(nil).UpdatePassword), ctx, id, password)
+}
+
 // UpdatePhoto mocks base method.
 func (m *MockUserUsecase) UpdatePhoto(ctx context.Context, details models.AccessDetails) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
@@ -79,6 +93,20 @@ func (m *MockUserUsecase) UpdatePhoto(ctx context.Context, details models.Access
 func (mr *MockUserUsecaseMockRecorder) UpdatePhoto(ctx, details interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePhoto", reflect.TypeOf((*MockUserUsecase)(nil).UpdatePhoto), ctx, details)
+}
+
+// UpdateProfileInfo mocks base method.
+func (m *MockUserUsecase) UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateProfileInfo", ctx, profileInfo, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateProfileInfo indicates an expected call of UpdateProfileInfo.
+func (mr *MockUserUsecaseMockRecorder) UpdateProfileInfo(ctx, profileInfo, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProfileInfo", reflect.TypeOf((*MockUserUsecase)(nil).UpdateProfileInfo), ctx, profileInfo, id)
 }
 
 // MockUserRepo is a mock of UserRepo interface.
@@ -132,6 +160,34 @@ func (m *MockUserRepo) GetUserProfile(ctx context.Context, id uuid.UUID) (models
 func (mr *MockUserRepoMockRecorder) GetUserProfile(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserProfile", reflect.TypeOf((*MockUserRepo)(nil).GetUserProfile), ctx, id)
+}
+
+// UpdatePassword mocks base method.
+func (m *MockUserRepo) UpdatePassword(ctx context.Context, id uuid.UUID, password string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatePassword", ctx, id, password)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdatePassword indicates an expected call of UpdatePassword.
+func (mr *MockUserRepoMockRecorder) UpdatePassword(ctx, id, password interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePassword", reflect.TypeOf((*MockUserRepo)(nil).UpdatePassword), ctx, id, password)
+}
+
+// UpdateProfileInfo mocks base method.
+func (m *MockUserRepo) UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateProfileInfo", ctx, profileInfo, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateProfileInfo indicates an expected call of UpdateProfileInfo.
+func (mr *MockUserRepoMockRecorder) UpdateProfileInfo(ctx, profileInfo, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProfileInfo", reflect.TypeOf((*MockUserRepo)(nil).UpdateProfileInfo), ctx, profileInfo, id)
 }
 
 // UpdateProfilePhoto mocks base method.
