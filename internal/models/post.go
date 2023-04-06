@@ -4,6 +4,7 @@ package models
 
 import (
 	"github.com/google/uuid"
+	"github.com/microcosm-cc/bluemonday"
 	"time"
 )
 
@@ -38,4 +39,13 @@ type PostEditData struct {
 
 func (post PostCreationData) IsValid() bool {
 	return len(post.Text) != 0 || len(post.Title) != 0 || post.Attachments != nil
+}
+
+func (post *Post) Sanitize() {
+	sanitizer := bluemonday.StrictPolicy()
+	post.Title = sanitizer.Sanitize(post.Title)
+	post.Text = sanitizer.Sanitize(post.Text)
+	for i, _ := range post.Subscriptions {
+		post.Subscriptions[i].Sanitize()
+	}
 }

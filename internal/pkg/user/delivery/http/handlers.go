@@ -42,6 +42,8 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userProfile.Sanitize()
+
 	utils.Response(w, http.StatusOK, userProfile)
 }
 
@@ -61,6 +63,7 @@ func (h *UserHandler) GetHomePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	homePage.Sanitize()
 	utils.Response(w, http.StatusOK, homePage)
 }
 
