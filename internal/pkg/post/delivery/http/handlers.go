@@ -67,29 +67,13 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	r.Body = http.MaxBytesReader(w, r.Body, int64(models.MaxFormSize))
 	err = r.ParseMultipartForm(models.MaxFormSize) // maxMemory
-	if err != nil {
+	/*if err != nil {
 		fmt.Println("Str 69 ", err)
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
-	}
-	if len(r.MultipartForm.File["attachments"]) > models.MaxFiles {
-		fmt.Println("Str 75 ")
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
-	for _, headers := range r.MultipartForm.File {
-		for _, header := range headers {
-			if header.Size > int64(models.MaxFileSize) {
-				fmt.Println("Str 69 ", err)
-				utils.Response(w, http.StatusBadRequest, nil)
-				return
-			}
-		}
-	}
+	}*/
 
 	postValues := r.MultipartForm.Value
-	postFilesTmp := r.MultipartForm.File["attachments"]
-
 	var postData models.PostCreationData
 
 	_, ok := postValues["creator"]
@@ -135,45 +119,67 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 	postData.Title = postValues["title"][0]
 
-	tmpSubs := postValues["subscriptions"]
-	postData.AvailableSubscriptions = make([]uuid.UUID, len(tmpSubs))
-	for i, sub := range tmpSubs {
-		if postData.AvailableSubscriptions[i], err = uuid.Parse(sub); err != nil {
+	if _, ok := r.MultipartForm.File["attachments"]; ok {
+		if len(r.MultipartForm.File["attachments"]) > models.MaxFiles {
+			fmt.Println("Str 75 ")
 			utils.Response(w, http.StatusBadRequest, nil)
 			return
 		}
-	}
+		for _, headers := range r.MultipartForm.File {
+			for _, header := range headers {
+				if header.Size > int64(models.MaxFileSize) {
+					fmt.Println("Str 69 ", err)
+					utils.Response(w, http.StatusBadRequest, nil)
+					return
+				}
+			}
+		}
 
-	postData.Attachments = make([]models.AttachmentData, len(postFilesTmp))
-	for i, file := range postFilesTmp {
-		tmpFile, err := file.Open()
-		if err != nil {
+		postFilesTmp := r.MultipartForm.File["attachments"]
+
+		postData.Attachments = make([]models.AttachmentData, len(postFilesTmp))
+		for i, file := range postFilesTmp {
+			tmpFile, err := file.Open()
+			if err != nil {
+				utils.Response(w, http.StatusBadRequest, nil)
+				return
+			}
+			buf, _ := io.ReadAll(tmpFile)
+
+			if err = tmpFile.Close(); err != nil {
+				h.logger.Error(err)
+				utils.Response(w, http.StatusInternalServerError, nil)
+				return
+			}
+
+			if postData.Attachments[i].Data, err = file.Open(); err != nil {
+				utils.Response(w, http.StatusBadRequest, nil)
+				return
+			}
+			postData.Attachments[i].Type = http.DetectContentType(buf)
+			postData.Attachments[i].Id = uuid.New()
+		}
+
+		if err = h.attachmentUsecase.CreateAttaches(r.Context(), postData.Attachments...); err == models.WrongData {
 			utils.Response(w, http.StatusBadRequest, nil)
 			return
-		}
-		buf, _ := io.ReadAll(tmpFile)
-
-		if err = tmpFile.Close(); err != nil {
+		} else if err != nil {
 			h.logger.Error(err)
 			utils.Response(w, http.StatusInternalServerError, nil)
 			return
 		}
 
-		if postData.Attachments[i].Data, err = file.Open(); err != nil {
-			utils.Response(w, http.StatusBadRequest, nil)
-			return
-		}
-		postData.Attachments[i].Type = http.DetectContentType(buf)
-		postData.Attachments[i].Id = uuid.New()
 	}
 
-	if err = h.attachmentUsecase.CreateAttaches(r.Context(), postData.Attachments...); err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	} else if err != nil {
-		h.logger.Error(err)
-		utils.Response(w, http.StatusInternalServerError, nil)
-		return
+	tmpSubs, ok := postValues["subscriptions"]
+	if ok {
+		postData.AvailableSubscriptions = make([]uuid.UUID, len(tmpSubs))
+		for i, sub := range tmpSubs {
+			if postData.AvailableSubscriptions[i], err = uuid.Parse(sub); err != nil {
+				utils.Response(w, http.StatusBadRequest, nil)
+				return
+			}
+		}
 	}
 
 	postData.Id = uuid.New()
