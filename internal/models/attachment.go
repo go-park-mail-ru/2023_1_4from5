@@ -9,8 +9,8 @@ const (
 	MaxFileSize = 5 << 20
 	MaxFormSize = 20 << 20
 	MaxFiles    = 10
-	FolderPath  = "./images/"
-	//FolderPath = "/images/"
+	//FolderPath  = "./images/"
+	FolderPath = "/images/"
 )
 
 // easyjson -all ./internal/models/attachment.go

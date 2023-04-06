@@ -54,14 +54,16 @@ func (r *CreatorRepo) IsLiked(ctx context.Context, userID uuid.UUID, postID uuid
 
 func (r *CreatorRepo) CreatorInfo(ctx context.Context, creatorPage *models.CreatorPage, creatorID uuid.UUID) error {
 	row := r.db.QueryRow(CreatorInfo, creatorID)
+	var tmpAim sql.NullString
 	if err := row.Scan(&creatorPage.CreatorInfo.UserId, &creatorPage.CreatorInfo.Name, &creatorPage.CreatorInfo.CoverPhoto,
 		&creatorPage.CreatorInfo.FollowersCount, &creatorPage.CreatorInfo.Description, &creatorPage.CreatorInfo.PostsCount,
-		&creatorPage.Aim.Description, &creatorPage.Aim.MoneyGot, &creatorPage.Aim.MoneyNeeded); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		&tmpAim, &creatorPage.Aim.MoneyGot, &creatorPage.Aim.MoneyNeeded); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		return models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
 		return models.NotFound
 	}
 	creatorPage.Aim.Creator = creatorID
+	creatorPage.Aim.Description = tmpAim.String
 	return nil
 }
 
@@ -172,6 +174,7 @@ func (r *CreatorRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]
 		} else if errors.Is(err, sql.ErrNoRows) {
 			break
 		}
+		sub.Id = v
 		subsInfo = append(subsInfo, sub)
 	}
 	return subsInfo, nil
