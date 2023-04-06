@@ -72,7 +72,7 @@ func run() error {
 
 	creatorRepo := creatorRepository.NewCreatorRepo(db, zapSugar)
 	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo, zapSugar)
-	creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse)
+	creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse, authUse)
 
 	attachmentRepo := attachmentRepository.NewAttachmentRepo(db, zapSugar)
 	attachmentUse := attachmentUsecase.NewAttachmentUsecase(attachmentRepo, zapSugar)
@@ -105,6 +105,8 @@ func run() error {
 	creator := r.PathPrefix("/creator").Subrouter()
 	{
 		creator.HandleFunc("/page/{creator-uuid}", creatorHandler.GetPage).Methods(http.MethodGet, http.MethodOptions)
+		creator.HandleFunc("/aim/create", creatorHandler.CreateAim).Methods(http.MethodPost, http.MethodOptions)
+		creator.HandleFunc("/aim/change", creatorHandler.ChangeAim).Methods(http.MethodPut, http.MethodOptions)
 	}
 
 	post := r.PathPrefix("/post").Subrouter()

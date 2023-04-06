@@ -35,3 +35,7 @@ func (uc *CreatorUsecase) GetPage(ctx context.Context, details *models.AccessDet
 
 	return creatorPage, nil
 }
+
+func (uc *CreatorUsecase) CreateAim(ctx context.Context, aimInfo models.Aim) error {
+	return uc.repo.CreateAim(ctx, aimInfo)
+}

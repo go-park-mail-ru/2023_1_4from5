@@ -67,11 +67,12 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	r.Body = http.MaxBytesReader(w, r.Body, int64(models.MaxFormSize))
 	err = r.ParseMultipartForm(models.MaxFormSize) // maxMemory
-	/*if err != nil {
+	if err != nil {
+		h.logger.Error(err)
 		fmt.Println("Str 69 ", err)
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
-	}*/
+	}
 
 	postValues := r.MultipartForm.Value
 	var postData models.PostCreationData
@@ -500,6 +501,7 @@ func (h *PostHandler) AddAttach(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, int64(models.MaxFileSize))
 	err = r.ParseMultipartForm(models.MaxFormSize)
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}

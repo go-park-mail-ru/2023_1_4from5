@@ -40,7 +40,10 @@ create table creator
     cover_photo     uuid,
     followers_count integer default 0 not null,
     description     varchar(500),
-    posts_count     integer default 0 not null
+    posts_count     integer default 0 not null,
+    aim             varchar(100),
+    money_needed    int     default 0,
+    money_got       int     default 0
 );
 
 create table subscription
@@ -51,7 +54,7 @@ create table subscription
     creator_id      uuid        not null
         constraint subscription_creator_creator_id_fk
             references creator (creator_id),
-    month_cost      int       not null,
+    month_cost      int         not null,
     title           varchar(40) not null,
     description     varchar(200)
 );

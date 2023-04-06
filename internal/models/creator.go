@@ -20,3 +20,10 @@ type CreatorPage struct {
 	Posts         []Post         `json:"posts"`
 	Subscriptions []Subscription `json:"subscriptions"`
 }
+
+type Aim struct {
+	Creator     uuid.UUID `json:"creator_id"`
+	Description string    `json:"description"`
+	MoneyNeeded int       `json:"money_needed"`
+	MoneyGot    int       `json:"money_got"`
+}

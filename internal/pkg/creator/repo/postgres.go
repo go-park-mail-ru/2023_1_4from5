@@ -16,6 +16,7 @@ const (
 	UserSubscriptions = `SELECT array_agg(subscription_id) FROM "user_subscription" WHERE user_id=$1;`
 	IsLiked           = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2`
 	GetSubInfo        = `SELECT creator_id, month_cost, title, description FROM "subscription" WHERE subscription_id = $1;`
+	AddAim            = `UPDATE creator SET aim = $1,  money_got = $2, money_needed = $3 WHERE creator_id = $4;`
 )
 
 type CreatorRepo struct {
@@ -172,4 +173,13 @@ func (r *CreatorRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]
 		subsInfo = append(subsInfo, sub)
 	}
 	return subsInfo, nil
+}
+
+func (r *CreatorRepo) CreateAim(ctx context.Context, aimInfo models.Aim) error {
+	row := r.db.QueryRow(AddAim, aimInfo.Description, aimInfo.MoneyGot, aimInfo.MoneyNeeded, aimInfo.Creator)
+	if err := row.Err(); err != nil {
+		r.logger.Error(err)
+		return models.InternalError
+	}
+	return nil
 }
