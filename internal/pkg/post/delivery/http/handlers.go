@@ -92,12 +92,18 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	var postData models.PostCreationData
 
+	_, ok := postValues["creator"]
+	if !ok {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
 	if postData.Creator, err = uuid.Parse(postValues["creator"][0]); err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
 
-	ok, err := h.usecase.IsCreator(r.Context(), userDataJWT.Id, postData.Creator)
+	ok, err = h.usecase.IsCreator(r.Context(), userDataJWT.Id, postData.Creator)
 
 	if err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
@@ -115,8 +121,18 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, ok = postValues["text"]
+	if !ok {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
 	postData.Text = postValues["text"][0]
 
+	_, ok = postValues["title"]
+	if !ok {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
 	postData.Title = postValues["title"][0]
 
 	tmpSubs := postValues["subscriptions"]
