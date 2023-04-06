@@ -172,7 +172,7 @@ func (r *CreatorRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]
 			r.logger.Error(err)
 			return nil, models.InternalError
 		} else if errors.Is(err, sql.ErrNoRows) {
-			break
+			continue
 		}
 		sub.Id = v
 		subsInfo = append(subsInfo, sub)
