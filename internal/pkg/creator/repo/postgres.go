@@ -129,7 +129,7 @@ func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId u
 			return models.CreatorPage{}, err
 		}
 
-		for i, _ := range creatorPage.Posts {
+		for i := range creatorPage.Posts {
 			if creatorPage.IsMyPage {
 				creatorPage.Posts[i].IsAvailable = true
 			}

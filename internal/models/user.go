@@ -3,7 +3,7 @@ package models
 import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/google/uuid"
-	"github.com/microcosm-cc/bluemonday"
+	"html"
 	"time"
 )
 
@@ -74,21 +74,18 @@ type Donate struct {
 }
 
 func (user *User) Sanitize() {
-	sanitizer := bluemonday.StrictPolicy()
-	user.Login = sanitizer.Sanitize(user.Login)
-	user.Name = sanitizer.Sanitize(user.Name)
+	user.Login = html.EscapeString(user.Login)
+	user.Name = html.EscapeString(user.Name)
 }
 
 func (userProfile *UserProfile) Sanitize() {
-	sanitizer := bluemonday.StrictPolicy()
-	userProfile.Login = sanitizer.Sanitize(userProfile.Login)
-	userProfile.Name = sanitizer.Sanitize(userProfile.Name)
+	userProfile.Login = html.EscapeString(userProfile.Login)
+	userProfile.Name = html.EscapeString(userProfile.Name)
 }
 
 func (userHomePage *UserHomePage) Sanitize() {
-	sanitizer := bluemonday.StrictPolicy()
-	userHomePage.Name = sanitizer.Sanitize(userHomePage.Name)
-	for i, _ := range userHomePage.Posts {
+	userHomePage.Name = html.EscapeString(userHomePage.Name)
+	for i := range userHomePage.Posts {
 		userHomePage.Posts[i].Sanitize()
 	}
 }

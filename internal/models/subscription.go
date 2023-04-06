@@ -4,7 +4,7 @@ package models
 
 import (
 	"github.com/google/uuid"
-	"github.com/microcosm-cc/bluemonday"
+	"html"
 )
 
 type Subscription struct {
@@ -16,7 +16,6 @@ type Subscription struct {
 }
 
 func (subscription *Subscription) Sanitize() {
-	sanitizer := bluemonday.StrictPolicy()
-	subscription.Title = sanitizer.Sanitize(subscription.Title)
-	subscription.Description = sanitizer.Sanitize(subscription.Description)
+	subscription.Title = html.EscapeString(subscription.Title)
+	subscription.Description = html.EscapeString(subscription.Description)
 }

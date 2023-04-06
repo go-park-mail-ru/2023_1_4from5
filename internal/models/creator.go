@@ -2,7 +2,7 @@ package models
 
 import (
 	"github.com/google/uuid"
-	"github.com/microcosm-cc/bluemonday"
+	"html"
 )
 
 // easyjson -all ./internal/models/creator.go
@@ -33,23 +33,21 @@ type Aim struct {
 }
 
 func (creator *Creator) Sanitize() {
-	sanitizer := bluemonday.StrictPolicy()
-	creator.Name = sanitizer.Sanitize(creator.Name)
-	creator.Description = sanitizer.Sanitize(creator.Description)
+	creator.Name = html.EscapeString(creator.Name)
+	creator.Description = html.EscapeString(creator.Description)
 }
 
 func (aim *Aim) Sanitize() {
-	sanitizer := bluemonday.StrictPolicy()
-	aim.Description = sanitizer.Sanitize(aim.Description)
+	aim.Description = html.EscapeString(aim.Description)
 }
 
 func (page *CreatorPage) Sanitize() {
 	page.CreatorInfo.Sanitize()
 	page.Aim.Sanitize()
-	for i, _ := range page.Posts {
+	for i := range page.Posts {
 		page.Posts[i].Sanitize()
 	}
-	for i, _ := range page.Subscriptions {
+	for i := range page.Subscriptions {
 		page.Subscriptions[i].Sanitize()
 	}
 }
