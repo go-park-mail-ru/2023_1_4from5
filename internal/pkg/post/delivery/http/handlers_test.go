@@ -2,6 +2,7 @@ package http
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,6 +17,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -50,7 +52,20 @@ func TestNewPostHandler(t *testing.T) {
 	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
 	mockPostUsecase := mockPost.NewMockPostUsecase(ctl)
 	mockAttachUsecase := mockAttach.NewMockAttachmentUsecase(ctl)
-	testHandler := NewPostHandler(mockPostUsecase, mockAuthUsecase, mockAttachUsecase)
+
+	logger, err := zap.NewProduction()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	defer func(logger *zap.Logger) {
+		err = logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	testHandler := NewPostHandler(mockPostUsecase, mockAuthUsecase, mockAttachUsecase, zapSugar)
 	if testHandler.usecase != mockPostUsecase {
 		t.Error("bad constructor")
 	}
@@ -74,10 +89,21 @@ func TestPostHandler_AddLike(t *testing.T) {
 	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
 	mockPostUsecase := mockPost.NewMockPostUsecase(ctl)
 	mockAttachUsecase := mockAttach.NewMockAttachmentUsecase(ctl)
+	logger, err := zap.NewProduction()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	defer func(logger *zap.Logger) {
+		err = logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
 
 	os.Setenv("TOKEN_SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
-	token, _ := tkn.GetJWTToken(models.User{Login: testUser.Login, Id: uuid.New()})
+	token, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: uuid.New()})
 
 	tests := []struct {
 		name   string
@@ -144,20 +170,20 @@ func TestPostHandler_AddLike(t *testing.T) {
 		value := token
 		switch tests[i].name {
 		case "OK":
-			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any()).Return(0, nil)
-			mockPostUsecase.EXPECT().AddLike(gomock.Any(), gomock.Any()).Return(models.Like{}, nil)
+			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+			mockPostUsecase.EXPECT().AddLike(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Like{}, nil)
 		case "Unauthorized":
 			value = "body"
 		case "InternalServerError":
-			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any()).Return(0, nil)
-			mockPostUsecase.EXPECT().AddLike(gomock.Any(), gomock.Any()).Return(models.Like{}, models.InternalError)
+			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+			mockPostUsecase.EXPECT().AddLike(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Like{}, models.InternalError)
 		case "BadRequest1":
-			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any()).Return(0, nil)
+			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 		case "BadRequest2":
-			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any()).Return(0, nil)
-			mockPostUsecase.EXPECT().AddLike(gomock.Any(), gomock.Any()).Return(models.Like{}, models.WrongData)
+			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+			mockPostUsecase.EXPECT().AddLike(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Like{}, models.WrongData)
 		case "Forbidden":
-			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any()).Return(0, errors.New("test err"))
+			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, errors.New("test err"))
 		}
 		tests[i].args.r.AddCookie(&http.Cookie{
 			Name:     "SSID",
@@ -173,6 +199,7 @@ func TestPostHandler_AddLike(t *testing.T) {
 				usecase:           test.fields.usecase,
 				authUsecase:       test.fields.authUsecase,
 				attachmentUsecase: test.fields.attachmentUsecase,
+				logger:            zapSugar,
 			}
 			w := httptest.NewRecorder()
 
@@ -191,9 +218,21 @@ func TestPostHandler_RemoveLike(t *testing.T) {
 	mockPostUsecase := mockPost.NewMockPostUsecase(ctl)
 	mockAttachUsecase := mockAttach.NewMockAttachmentUsecase(ctl)
 
+	logger, err := zap.NewProduction()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	defer func(logger *zap.Logger) {
+		err = logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
 	os.Setenv("TOKEN_SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
-	token, _ := tkn.GetJWTToken(models.User{Login: testUser.Login, Id: uuid.New()})
+	token, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: uuid.New()})
 
 	tests := []struct {
 		name   string
@@ -260,20 +299,20 @@ func TestPostHandler_RemoveLike(t *testing.T) {
 		value := token
 		switch tests[i].name {
 		case "OK":
-			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any()).Return(0, nil)
-			mockPostUsecase.EXPECT().RemoveLike(gomock.Any(), gomock.Any()).Return(models.Like{}, nil)
+			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+			mockPostUsecase.EXPECT().RemoveLike(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Like{}, nil)
 		case "Unauthorized":
 			value = "body"
 		case "InternalServerError":
-			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any()).Return(0, nil)
-			mockPostUsecase.EXPECT().RemoveLike(gomock.Any(), gomock.Any()).Return(models.Like{}, models.InternalError)
+			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+			mockPostUsecase.EXPECT().RemoveLike(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Like{}, models.InternalError)
 		case "BadRequest1":
-			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any()).Return(0, nil)
+			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 		case "BadRequest2":
-			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any()).Return(0, nil)
-			mockPostUsecase.EXPECT().RemoveLike(gomock.Any(), gomock.Any()).Return(models.Like{}, models.WrongData)
+			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+			mockPostUsecase.EXPECT().RemoveLike(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Like{}, models.WrongData)
 		case "Forbidden":
-			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any()).Return(0, errors.New("test err"))
+			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, errors.New("test err"))
 		}
 		tests[i].args.r.AddCookie(&http.Cookie{
 			Name:     "SSID",
@@ -289,6 +328,7 @@ func TestPostHandler_RemoveLike(t *testing.T) {
 				usecase:           test.fields.usecase,
 				authUsecase:       test.fields.authUsecase,
 				attachmentUsecase: test.fields.attachmentUsecase,
+				logger:            zapSugar,
 			}
 			w := httptest.NewRecorder()
 

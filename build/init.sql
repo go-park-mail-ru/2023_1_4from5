@@ -1,5 +1,6 @@
 drop table if exists "like_comment" CASCADE;
 drop table if exists "like_post" CASCADE;
+drop table if exists "donation" CASCADE;
 drop table if exists "user_subscription" CASCADE;
 drop table if exists "user_payments" CASCADE;
 drop table if exists "creator_tag" CASCADE;
@@ -40,7 +41,10 @@ create table creator
     cover_photo     uuid,
     followers_count integer default 0 not null,
     description     varchar(500),
-    posts_count     integer default 0 not null
+    posts_count     integer default 0 not null,
+    aim             varchar(100),
+    money_needed    int     default 0,
+    money_got       int     default 0
 );
 
 create table subscription
@@ -51,7 +55,7 @@ create table subscription
     creator_id      uuid        not null
         constraint subscription_creator_creator_id_fk
             references creator (creator_id),
-    month_cost      int       not null,
+    month_cost      int         not null,
     title           varchar(40) not null,
     description     varchar(200)
 );
@@ -84,7 +88,7 @@ create table post
     creator_id    uuid not null
         constraint post_creator_creator_id_fk
             references creator (creator_id),
-    creation_date date          default now() not null,
+    creation_date timestamp          default now() not null,
     title         varchar(40),
     post_text     varchar(4000),
     likes_count   int  not null default 0
@@ -160,4 +164,16 @@ create table like_comment
         constraint like_comment_user_user_id_fk
             references "user" (user_id)
 );
+create table donation
+(
+    user_id       uuid      not null
+        constraint donation_user_user_id_fk
+            references "user" (user_id),
+    creator_id    uuid      not null
+        constraint donation_creator_creator_id_fk
+            references "creator" (creator_id),
+    money_count   int       not null,
+    donation_date timestamp not null default now()
+)
+
 

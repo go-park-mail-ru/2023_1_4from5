@@ -4,6 +4,7 @@ package models
 
 import (
 	"github.com/google/uuid"
+	"html"
 )
 
 type Subscription struct {
@@ -12,4 +13,9 @@ type Subscription struct {
 	MonthConst  int       `json:"month_const"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
+}
+
+func (subscription *Subscription) Sanitize() {
+	subscription.Title = html.EscapeString(subscription.Title)
+	subscription.Description = html.EscapeString(subscription.Description)
 }

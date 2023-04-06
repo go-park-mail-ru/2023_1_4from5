@@ -4,6 +4,7 @@ package models
 
 import (
 	"github.com/google/uuid"
+	"html"
 	"time"
 )
 
@@ -29,6 +30,21 @@ type PostCreationData struct {
 	AvailableSubscriptions []uuid.UUID
 }
 
+type PostEditData struct {
+	Id                     uuid.UUID
+	Title                  string      `json:"title"`
+	Text                   string      `json:"text"`
+	AvailableSubscriptions []uuid.UUID `json:"available_subscriptions"`
+}
+
 func (post PostCreationData) IsValid() bool {
 	return len(post.Text) != 0 || len(post.Title) != 0 || post.Attachments != nil
+}
+
+func (post *Post) Sanitize() {
+	post.Title = html.EscapeString(post.Title)
+	post.Text = html.EscapeString(post.Text)
+	for i := range post.Subscriptions {
+		post.Subscriptions[i].Sanitize()
+	}
 }

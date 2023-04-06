@@ -1,12 +1,14 @@
 package usecase
 
 import (
+	"context"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	mock "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	"testing"
 )
 
@@ -14,23 +16,45 @@ func TestNewCreatorUsecase(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
 	mockCreatorRepo := mock.NewMockCreatorRepo(ctl)
-	testusecase := NewCreatorUsecase(mockCreatorRepo)
+	logger, err := zap.NewProduction()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	defer func(logger *zap.Logger) {
+		err = logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+	testusecase := NewCreatorUsecase(mockCreatorRepo, zapSugar)
 	if testusecase.repo != mockCreatorRepo {
 		t.Error("bad constructor")
 	}
 }
 
-var testUser models.AccessDetails = models.AccessDetails{Login: "Bashmak1!", Id: uuid.New()}
+var testUser = &models.AccessDetails{Login: "Bashmak1!", Id: uuid.New()}
 
 func TestCreatorUsecase_GetPage(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
+	logger, err := zap.NewProduction()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	defer func(logger *zap.Logger) {
+		err = logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
 
 	mockCreatorRepo := mock.NewMockCreatorRepo(ctl)
 
 	tests := []struct {
 		name               string
-		accessDetails      models.AccessDetails
+		accessDetails      *models.AccessDetails
 		creatorID          string
 		repo               *mock.MockCreatorRepo
 		expectedStatusCode error
@@ -67,26 +91,27 @@ func TestCreatorUsecase_GetPage(t *testing.T) {
 
 	for i := 0; i < len(tests); i++ {
 		if tests[i].expectedStatusCode == nil {
-			tests[i].repo.EXPECT().GetPage(gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, nil)
+			tests[i].repo.EXPECT().GetPage(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, nil)
 			continue
 		}
 		if tests[i].name == "WrongData: wrong creatorUUId" {
 			continue
 		}
 		if tests[i].expectedStatusCode == models.InternalError {
-			tests[i].repo.EXPECT().GetPage(gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, models.InternalError)
+			tests[i].repo.EXPECT().GetPage(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, models.InternalError)
 		} else {
-			tests[i].repo.EXPECT().GetPage(gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, models.WrongData)
+			tests[i].repo.EXPECT().GetPage(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, models.WrongData)
 		}
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			h := &CreatorUsecase{
-				repo: mockCreatorRepo,
+				repo:   mockCreatorRepo,
+				logger: zapSugar,
 			}
 
-			_, code := h.GetPage(&test.accessDetails, test.creatorID)
+			_, code := h.GetPage(context.Background(), test.accessDetails, test.creatorID)
 			require.Equal(t, test.expectedStatusCode, code, fmt.Errorf("%s :  expected %e, got %e,",
 				test.name, test.expectedStatusCode, code))
 		})

@@ -75,12 +75,15 @@ func GetCSRFToken(user models.User) (string, error) {
 	}
 	secretKey, flag := os.LookupEnv("CSRF_SECRET")
 	if !flag {
+		fmt.Println(flag)
+		fmt.Println(secretKey)
 		return "", errors.New("NoSecretKey")
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, tokenModel)
 
 	jwtCookie, err := token.SignedString([]byte(secretKey))
 	if err != nil {
+		fmt.Println(err)
 		return "", errors.New("NoSecretKey")
 	}
 	return jwtCookie, nil

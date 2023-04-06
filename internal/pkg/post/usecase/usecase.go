@@ -64,3 +64,6 @@ func (u *PostUsecase) AddLike(ctx context.Context, userID uuid.UUID, postID uuid
 func (u *PostUsecase) RemoveLike(ctx context.Context, userID uuid.UUID, postID uuid.UUID) (models.Like, error) {
 	return u.repo.RemoveLike(ctx, userID, postID)
 }
+func (u *PostUsecase) EditPost(ctx context.Context, postData models.PostEditData) error {
+	return u.repo.EditPost(ctx, postData)
+}

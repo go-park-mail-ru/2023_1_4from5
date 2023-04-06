@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	mockAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/mocks"
@@ -29,6 +30,7 @@ func TestNewUserHandler(t *testing.T) {
 
 	mockUsecase := mock.NewMockUserUsecase(ctl)
 	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
+
 	testHandler := NewUserHandler(mockUsecase, mockAuthUsecase)
 	if testHandler.usecase != mockUsecase {
 		t.Error("bad constructor")
@@ -41,7 +43,7 @@ func TestGetProfile(t *testing.T) {
 
 	os.Setenv("TOKEN_SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
-	bdy, _ := tkn.GetJWTToken(models.User{Login: testUser.Login, Id: uuid.New()})
+	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: uuid.New()})
 
 	usecaseMock := mock.NewMockUserUsecase(ctl)
 	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
@@ -55,16 +57,16 @@ func TestGetProfile(t *testing.T) {
 		r = httptest.NewRequest("GET", "/user/profile", strings.NewReader(fmt.Sprint()))
 		switch i {
 		case 0:
-			usecaseMock.EXPECT().GetProfile(gomock.Any()).Return(models.UserProfile{}, nil)
+			usecaseMock.EXPECT().GetProfile(gomock.Any(), gomock.Any()).Return(models.UserProfile{}, nil)
 			status = http.StatusOK
 		case 1:
 			value = "body"
 			status = http.StatusUnauthorized
 		case 2:
-			usecaseMock.EXPECT().GetProfile(gomock.Any()).Return(models.UserProfile{}, models.InternalError)
+			usecaseMock.EXPECT().GetProfile(gomock.Any(), gomock.Any()).Return(models.UserProfile{}, models.InternalError)
 			status = http.StatusInternalServerError
 		case 3:
-			usecaseMock.EXPECT().GetProfile(gomock.Any()).Return(models.UserProfile{}, models.NotFound)
+			usecaseMock.EXPECT().GetProfile(gomock.Any(), gomock.Any()).Return(models.UserProfile{}, models.NotFound)
 			status = http.StatusBadRequest
 		}
 		r.AddCookie(&http.Cookie{
@@ -88,7 +90,7 @@ func TestGetHomePage(t *testing.T) {
 
 	os.Setenv("SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
-	bdy, _ := tkn.GetJWTToken(models.User{Login: testUser.Login, Id: uuid.New()})
+	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: uuid.New()})
 
 	usecaseMock := mock.NewMockUserUsecase(ctl)
 	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
@@ -102,16 +104,16 @@ func TestGetHomePage(t *testing.T) {
 		r = httptest.NewRequest("GET", "/user/homePage", strings.NewReader(fmt.Sprint()))
 		switch i {
 		case 0:
-			usecaseMock.EXPECT().GetHomePage(gomock.Any()).Return(models.UserHomePage{}, nil)
+			usecaseMock.EXPECT().GetHomePage(gomock.Any(), gomock.Any()).Return(models.UserHomePage{}, nil)
 			status = http.StatusOK
 		case 1:
 			value = "body"
 			status = http.StatusUnauthorized
 		case 2:
-			usecaseMock.EXPECT().GetHomePage(gomock.Any()).Return(models.UserHomePage{}, models.InternalError)
+			usecaseMock.EXPECT().GetHomePage(gomock.Any(), gomock.Any()).Return(models.UserHomePage{}, models.InternalError)
 			status = http.StatusInternalServerError
 		case 3:
-			usecaseMock.EXPECT().GetHomePage(gomock.Any()).Return(models.UserHomePage{}, models.NotFound)
+			usecaseMock.EXPECT().GetHomePage(gomock.Any(), gomock.Any()).Return(models.UserHomePage{}, models.NotFound)
 			status = http.StatusBadRequest
 		}
 		r.AddCookie(&http.Cookie{
