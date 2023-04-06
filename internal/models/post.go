@@ -5,6 +5,7 @@ package models
 import (
 	"github.com/google/uuid"
 	"github.com/microcosm-cc/bluemonday"
+	"html"
 	"time"
 )
 
@@ -44,7 +45,7 @@ func (post PostCreationData) IsValid() bool {
 func (post *Post) Sanitize() {
 	sanitizer := bluemonday.StrictPolicy()
 	post.Title = sanitizer.Sanitize(post.Title)
-	post.Text = sanitizer.Sanitize(post.Text)
+	post.Text = html.EscapeString(post.Text)
 	for i, _ := range post.Subscriptions {
 		post.Subscriptions[i].Sanitize()
 	}
