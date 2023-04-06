@@ -4,18 +4,21 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
 const (
-	UserProfile        = `SELECT login, display_name, profile_photo, registration_date FROM "user" WHERE user_id=$1;`
-	UserNamePhoto      = `SELECT display_name, profile_photo FROM "user" WHERE user_id=$1;`
-	CheckIfCreator     = `SELECT creator_id FROM "creator" WHERE user_id=$1;`
-	UpdateProfilePhoto = `UPDATE "user" SET profile_photo = $1 WHERE user_id = $2`
-	UpdatePassword     = `UPDATE "user" SET password_hash = $1, user_version = user_version+1 WHERE user_id = $2`
-	UpdateProfileInfo  = `UPDATE "user" SET login = $1, display_name = $2 WHERE user_id = $3`
+	UserProfile          = `SELECT login, display_name, profile_photo, registration_date FROM "user" WHERE user_id=$1;`
+	UserNamePhoto        = `SELECT display_name, profile_photo FROM "user" WHERE user_id=$1;`
+	CheckIfCreator       = `SELECT creator_id FROM "creator" WHERE user_id=$1;`
+	UpdateProfilePhoto   = `UPDATE "user" SET profile_photo = $1 WHERE user_id = $2`
+	UpdatePassword       = `UPDATE "user" SET password_hash = $1, user_version = user_version+1 WHERE user_id = $2`
+	UpdateProfileInfo    = `UPDATE "user" SET login = $1, display_name = $2 WHERE user_id = $3`
+	UpdateAuthorAimMoney = `UPDATE "creator" SET money_got = money_got + $1 WHERE creator_id = $2 RETURNING money_got`
+	AddDonate            = `INSERT INTO "donation"(user_id, creator_id, money_count) VALUES ($1, $2, $3)`
 )
 
 type UserRepo struct {
@@ -88,4 +91,37 @@ func (ur *UserRepo) UpdateProfileInfo(ctx context.Context, profileInfo models.Up
 		return models.InternalError
 	}
 	return nil
+}
+
+func (ur *UserRepo) Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int, error) {
+	tx, err := ur.db.BeginTx(ctx, nil)
+	if err != nil {
+		ur.logger.Error(err)
+		return 0, models.InternalError
+	}
+
+	row := tx.QueryRowContext(ctx, UpdateAuthorAimMoney, donateInfo.MoneyCount, donateInfo.CreatorID)
+	if err != nil {
+		_ = tx.Rollback()
+		ur.logger.Error(err)
+		return 0, models.InternalError
+	}
+	var newMoney int
+	if err = row.Scan(&newMoney); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		fmt.Println(err)
+		_ = tx.Rollback()
+		return 0, models.InternalError
+	} else if errors.Is(sql.ErrNoRows, err) {
+		_ = tx.Rollback()
+		return 0, models.WrongData
+	}
+
+	row = tx.QueryRowContext(ctx, AddDonate, userID, donateInfo.CreatorID, donateInfo.MoneyCount)
+
+	if err = tx.Commit(); err != nil {
+		ur.logger.Error(err)
+		return 0, models.InternalError
+	}
+
+	return newMoney, nil
 }

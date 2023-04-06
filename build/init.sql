@@ -1,5 +1,6 @@
 drop table if exists "like_comment" CASCADE;
 drop table if exists "like_post" CASCADE;
+drop table if exists "donation" CASCADE;
 drop table if exists "user_subscription" CASCADE;
 drop table if exists "user_payments" CASCADE;
 drop table if exists "creator_tag" CASCADE;
@@ -163,4 +164,16 @@ create table like_comment
         constraint like_comment_user_user_id_fk
             references "user" (user_id)
 );
+create table donation
+(
+    user_id       uuid      not null
+        constraint donation_user_user_id_fk
+            references "user" (user_id),
+    creator_id    uuid      not null
+        constraint donation_creator_creator_id_fk
+            references "creator" (creator_id),
+    money_count   int       not null,
+    donation_date timestamp not null default now()
+)
+
 

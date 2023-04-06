@@ -38,6 +38,8 @@ func easyjson7c25d2a6DecodeGithubComGoParkMailRu202314from5InternalModels(in *jl
 		switch key {
 		case "creator_info":
 			(out.CreatorInfo).UnmarshalEasyJSON(in)
+		case "aim":
+			(out.Aim).UnmarshalEasyJSON(in)
 		case "is_my_page":
 			out.IsMyPage = bool(in.Bool())
 		case "posts":
@@ -104,6 +106,11 @@ func easyjson7c25d2a6EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 		const prefix string = ",\"creator_info\":"
 		out.RawString(prefix[1:])
 		(in.CreatorInfo).MarshalEasyJSON(out)
+	}
+	{
+		const prefix string = ",\"aim\":"
+		out.RawString(prefix)
+		(in.Aim).MarshalEasyJSON(out)
 	}
 	{
 		const prefix string = ",\"is_my_page\":"

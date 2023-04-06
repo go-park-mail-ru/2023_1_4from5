@@ -55,3 +55,7 @@ func (uc *UserUsecase) UpdatePassword(ctx context.Context, id uuid.UUID, passwor
 func (uc *UserUsecase) UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error {
 	return uc.repo.UpdateProfileInfo(ctx, profileInfo, id)
 }
+
+func (uc *UserUsecase) Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int, error) {
+	return uc.repo.Donate(ctx, donateInfo, userID)
+}

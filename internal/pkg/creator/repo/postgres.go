@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	CreatorInfo       = `SELECT user_id, name, cover_photo, followers_count, description, posts_count FROM "creator" WHERE creator_id=$1;`
+	CreatorInfo       = `SELECT user_id, name, cover_photo, followers_count, description, posts_count, aim, money_got, money_needed FROM "creator" WHERE creator_id=$1;`
 	CreatorPosts      = `SELECT "post".post_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE creator_id = $1 GROUP BY "post".post_id, creation_date, title, post_text ORDER BY creation_date DESC;`
 	UserSubscriptions = `SELECT array_agg(subscription_id) FROM "user_subscription" WHERE user_id=$1;`
 	IsLiked           = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2`
@@ -55,11 +55,13 @@ func (r *CreatorRepo) IsLiked(ctx context.Context, userID uuid.UUID, postID uuid
 func (r *CreatorRepo) CreatorInfo(ctx context.Context, creatorPage *models.CreatorPage, creatorID uuid.UUID) error {
 	row := r.db.QueryRow(CreatorInfo, creatorID)
 	if err := row.Scan(&creatorPage.CreatorInfo.UserId, &creatorPage.CreatorInfo.Name, &creatorPage.CreatorInfo.CoverPhoto,
-		&creatorPage.CreatorInfo.FollowersCount, &creatorPage.CreatorInfo.Description, &creatorPage.CreatorInfo.PostsCount); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		&creatorPage.CreatorInfo.FollowersCount, &creatorPage.CreatorInfo.Description, &creatorPage.CreatorInfo.PostsCount,
+		&creatorPage.Aim.Description, &creatorPage.Aim.MoneyGot, &creatorPage.Aim.MoneyNeeded); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		return models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
 		return models.NotFound
 	}
+	creatorPage.Aim.Creator = creatorID
 	return nil
 }
 

@@ -66,3 +66,8 @@ type UpdateProfileInfo struct {
 	Login string `json:"login"`
 	Name  string `json:"name"`
 }
+
+type Donate struct {
+	CreatorID  uuid.UUID `json:"creator_id"`
+	MoneyCount int       `json:"money_count"`
+}

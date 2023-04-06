@@ -14,6 +14,7 @@ type UserUsecase interface {
 	UpdatePhoto(ctx context.Context, details models.AccessDetails) (uuid.UUID, error)
 	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
 	UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error
+	Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int, error)
 }
 
 type UserRepo interface {
@@ -22,4 +23,5 @@ type UserRepo interface {
 	UpdateProfilePhoto(ctx context.Context, userID uuid.UUID, path uuid.UUID) error
 	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
 	UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error
+	Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int, error)
 }
