@@ -25,7 +25,7 @@ const (
 	IsLiked                 = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2;`
 	IsPostAvailable         = `SELECT user_id FROM "user_subscription" INNER JOIN "post_subscription" p on "user_subscription".subscription_id = p.subscription_id WHERE user_id = $1 AND post_id = $2 AND expire_date > now()`
 	IsCreator               = `SELECT user_id FROM "creator" WHERE creator_id = $1;`
-	GetPost                 = `SELECT "post".post_id, "post".creator_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE "post".post_id = $1 GROUP BY "post".post_id, creation_date, title, post_text;`
+	GetPost                 = `SELECT "post".post_id, "post".creator_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE "post".post_id = $1 GROUP BY "post".post_id, creation_date, title, post_text;`
 	GetSubInfo              = `SELECT creator_id, month_cost, title, description FROM "subscription" WHERE subscription_id = $1;`
 )
 

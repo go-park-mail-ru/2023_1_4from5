@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
@@ -67,16 +68,19 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, int64(models.MaxFormSize))
 	err = r.ParseMultipartForm(models.MaxFormSize) // maxMemory
 	if err != nil {
+		fmt.Println("Str 69 ", err)
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
 	if len(r.MultipartForm.File["attachments"]) > models.MaxFiles {
+		fmt.Println("Str 75 ")
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
 	for _, headers := range r.MultipartForm.File {
 		for _, header := range headers {
 			if header.Size > int64(models.MaxFileSize) {
+				fmt.Println("Str 69 ", err)
 				utils.Response(w, http.StatusBadRequest, nil)
 				return
 			}
