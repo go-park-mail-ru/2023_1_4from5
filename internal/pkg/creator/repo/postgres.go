@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	CreatorInfo       = `SELECT user_id, name, cover_photo, followers_count, description, posts_count, aim, money_got, money_needed FROM "creator" WHERE creator_id=$1;`
-	GetAllCreators    = `SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count FROM "creator";`
+	CreatorInfo       = `SELECT user_id, name, cover_photo, followers_count, description, posts_count, aim, money_got, money_needed, profile_photo FROM "creator" WHERE creator_id=$1;`
+	GetAllCreators    = `SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM "creator";`
 	CreatorPosts      = `SELECT "post".post_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE creator_id = $1 GROUP BY "post".post_id, creation_date, title, post_text ORDER BY creation_date DESC;`
 	UserSubscriptions = `SELECT array_agg(subscription_id) FROM "user_subscription" WHERE user_id=$1;`
 	IsLiked           = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2`
@@ -58,7 +58,7 @@ func (r *CreatorRepo) CreatorInfo(ctx context.Context, creatorPage *models.Creat
 	var tmpAim sql.NullString
 	if err := row.Scan(&creatorPage.CreatorInfo.UserId, &creatorPage.CreatorInfo.Name, &creatorPage.CreatorInfo.CoverPhoto,
 		&creatorPage.CreatorInfo.FollowersCount, &creatorPage.CreatorInfo.Description, &creatorPage.CreatorInfo.PostsCount,
-		&tmpAim, &creatorPage.Aim.MoneyGot, &creatorPage.Aim.MoneyNeeded); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		&tmpAim, &creatorPage.Aim.MoneyGot, &creatorPage.Aim.MoneyNeeded, &creatorPage.CreatorInfo.ProfilePhoto); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		return models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
 		return models.NotFound
@@ -202,7 +202,7 @@ func (r *CreatorRepo) GetAllCreators(ctx context.Context) ([]models.Creator, err
 		var creator models.Creator
 		var tmpDescr sql.NullString
 		err = rows.Scan(&creator.Id, &creator.UserId, &creator.Name,
-			&creator.CoverPhoto, &creator.FollowersCount, &tmpDescr, &creator.PostsCount)
+			&creator.CoverPhoto, &creator.FollowersCount, &tmpDescr, &creator.PostsCount, &creator.ProfilePhoto)
 		if err != nil {
 			r.logger.Error(err)
 			return nil, models.InternalError

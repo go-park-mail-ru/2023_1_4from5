@@ -208,6 +208,10 @@ func easyjson7c25d2a6DecodeGithubComGoParkMailRu202314from5InternalModels1(in *j
 			if data := in.UnsafeBytes(); in.Ok() {
 				in.AddError((out.CoverPhoto).UnmarshalText(data))
 			}
+		case "profile_photo":
+			if data := in.UnsafeBytes(); in.Ok() {
+				in.AddError((out.ProfilePhoto).UnmarshalText(data))
+			}
 		case "followers_count":
 			out.FollowersCount = int(in.Int())
 		case "description":
@@ -247,6 +251,11 @@ func easyjson7c25d2a6EncodeGithubComGoParkMailRu202314from5InternalModels1(out *
 		const prefix string = ",\"cover_photo\":"
 		out.RawString(prefix)
 		out.RawText((in.CoverPhoto).MarshalText())
+	}
+	{
+		const prefix string = ",\"profile_photo\":"
+		out.RawString(prefix)
+		out.RawText((in.ProfilePhoto).MarshalText())
 	}
 	{
 		const prefix string = ",\"followers_count\":"

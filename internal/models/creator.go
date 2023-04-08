@@ -12,6 +12,7 @@ type Creator struct {
 	UserId         uuid.UUID `json:"user_id"`
 	Name           string    `json:"name"`
 	CoverPhoto     uuid.UUID `json:"cover_photo"`
+	ProfilePhoto   uuid.UUID `json:"profile_photo"`
 	FollowersCount int       `json:"followers_count"`
 	Description    string    `json:"description"`
 	PostsCount     int       `json:"posts_count"`

@@ -39,6 +39,7 @@ create table creator
             references "user" (user_id),
     name            varchar(40)       not null,
     cover_photo     uuid,
+    profile_photo   uuid,
     followers_count integer default 0 not null,
     description     varchar(500),
     posts_count     integer default 0 not null,
@@ -88,7 +89,7 @@ create table post
     creator_id    uuid not null
         constraint post_creator_creator_id_fk
             references creator (creator_id),
-    creation_date timestamp          default now() not null,
+    creation_date timestamp     default now() not null,
     title         varchar(40),
     post_text     varchar(4000),
     likes_count   int  not null default 0
