@@ -23,6 +23,17 @@ func NewCreatorHandler(uc creator.CreatorUsecase, auc auth.AuthUsecase) *Creator
 	}
 }
 
+func (h *CreatorHandler) GetAllCreators(w http.ResponseWriter, r *http.Request) {
+	var creators = make([]models.Creator, 0)
+	creators, err := h.usecase.GetAllCreators(r.Context())
+	if err == models.InternalError {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, creators)
+}
+
 func (h *CreatorHandler) GetPage(w http.ResponseWriter, r *http.Request) {
 	creatorUUID, ok := mux.Vars(r)["creator-uuid"]
 	if !ok {

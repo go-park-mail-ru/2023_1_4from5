@@ -1,0 +1,1 @@
+SELECT user_id, name, cover_photo, followers_count, description, posts_count, aim, money_got, money_needed FROM "creator";

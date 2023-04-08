@@ -185,3 +185,13 @@ func (r *CreatorRepo) CreateAim(ctx context.Context, aimInfo models.Aim) error {
 	}
 	return nil
 }
+
+func (r *CreatorRepo) GetAllCreators(ctx context.Context) ([]models.Creator, error) {
+	var creators = make([]models.Creator, 0)
+	row := r.db.QueryRow(AddAim, aimInfo.Description, aimInfo.MoneyGot, aimInfo.MoneyNeeded, aimInfo.Creator)
+	if err := row.Err(); err != nil {
+		r.logger.Error(err)
+		return models.InternalError
+	}
+	return nil
+}
