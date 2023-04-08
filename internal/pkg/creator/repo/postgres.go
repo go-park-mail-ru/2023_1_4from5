@@ -12,6 +12,7 @@ import (
 
 const (
 	CreatorInfo       = `SELECT user_id, name, cover_photo, followers_count, description, posts_count, aim, money_got, money_needed FROM "creator" WHERE creator_id=$1;`
+	GetAllCreators    = `SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count FROM "creator";`
 	CreatorPosts      = `SELECT "post".post_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE creator_id = $1 GROUP BY "post".post_id, creation_date, title, post_text ORDER BY creation_date DESC;`
 	UserSubscriptions = `SELECT array_agg(subscription_id) FROM "user_subscription" WHERE user_id=$1;`
 	IsLiked           = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2`
@@ -191,10 +192,24 @@ func (r *CreatorRepo) CreateAim(ctx context.Context, aimInfo models.Aim) error {
 
 func (r *CreatorRepo) GetAllCreators(ctx context.Context) ([]models.Creator, error) {
 	var creators = make([]models.Creator, 0)
-	row := r.db.QueryRow(AddAim, aimInfo.Description, aimInfo.MoneyGot, aimInfo.MoneyNeeded, aimInfo.Creator)
-	if err := row.Err(); err != nil {
+	rows, err := r.db.Query(GetAllCreators)
+	if err != nil && !errors.Is(sql.ErrNoRows, err) {
 		r.logger.Error(err)
-		return models.InternalError
+		return nil, models.InternalError
 	}
-	return nil
+	defer rows.Close()
+	for rows.Next() {
+		var creator models.Creator
+		var tmpDescr sql.NullString
+		err = rows.Scan(&creator.Id, &creator.UserId, &creator.Name,
+			&creator.CoverPhoto, &creator.FollowersCount, &tmpDescr, &creator.PostsCount)
+		if err != nil {
+			r.logger.Error(err)
+			return nil, models.InternalError
+		}
+		creator.Description = tmpDescr.String
+		creators = append(creators, creator)
+	}
+
+	return creators, nil
 }
