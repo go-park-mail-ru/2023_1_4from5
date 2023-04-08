@@ -50,6 +50,21 @@ func (mr *MockCreatorUsecaseMockRecorder) CreateAim(ctx, aimInfo interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAim", reflect.TypeOf((*MockCreatorUsecase)(nil).CreateAim), ctx, aimInfo)
 }
 
+// GetAllCreators mocks base method.
+func (m *MockCreatorUsecase) GetAllCreators(ctx context.Context) ([]models.Creator, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllCreators", ctx)
+	ret0, _ := ret[0].([]models.Creator)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllCreators indicates an expected call of GetAllCreators.
+func (mr *MockCreatorUsecaseMockRecorder) GetAllCreators(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCreators", reflect.TypeOf((*MockCreatorUsecase)(nil).GetAllCreators), ctx)
+}
+
 // GetPage mocks base method.
 func (m *MockCreatorUsecase) GetPage(ctx context.Context, details *models.AccessDetails, creatorUUID string) (models.CreatorPage, error) {
 	m.ctrl.T.Helper()
@@ -100,6 +115,21 @@ func (m *MockCreatorRepo) CreateAim(ctx context.Context, aimInfo models.Aim) err
 func (mr *MockCreatorRepoMockRecorder) CreateAim(ctx, aimInfo interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAim", reflect.TypeOf((*MockCreatorRepo)(nil).CreateAim), ctx, aimInfo)
+}
+
+// GetAllCreators mocks base method.
+func (m *MockCreatorRepo) GetAllCreators(ctx context.Context) ([]models.Creator, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllCreators", ctx)
+	ret0, _ := ret[0].([]models.Creator)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllCreators indicates an expected call of GetAllCreators.
+func (mr *MockCreatorRepoMockRecorder) GetAllCreators(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCreators", reflect.TypeOf((*MockCreatorRepo)(nil).GetAllCreators), ctx)
 }
 
 // GetPage mocks base method.

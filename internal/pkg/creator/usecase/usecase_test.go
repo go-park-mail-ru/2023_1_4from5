@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	mock "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/mocks"
@@ -114,6 +115,125 @@ func TestCreatorUsecase_GetPage(t *testing.T) {
 			_, code := h.GetPage(context.Background(), test.accessDetails, test.creatorID)
 			require.Equal(t, test.expectedStatusCode, code, fmt.Errorf("%s :  expected %e, got %e,",
 				test.name, test.expectedStatusCode, code))
+		})
+	}
+}
+
+func TestCreatorUsecase_CreateAim(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	logger, err := zap.NewProduction()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	defer func(logger *zap.Logger) {
+		err = logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	mockCreatorRepo := mock.NewMockCreatorRepo(ctl)
+
+	tests := []struct {
+		name        string
+		mock        func()
+		input       models.Aim
+		expectedErr error
+	}{
+		{
+			name: "OK",
+			mock: func() {
+				mockCreatorRepo.EXPECT().CreateAim(gomock.Any(), gomock.Any()).Return(nil)
+			},
+			input:       models.Aim{},
+			expectedErr: nil,
+		},
+		{
+			name: "Error",
+			mock: func() {
+				mockCreatorRepo.EXPECT().CreateAim(gomock.Any(), gomock.Any()).Return(errors.New("test"))
+			},
+			input:       models.Aim{},
+			expectedErr: errors.New("test"),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &CreatorUsecase{
+				repo:   mockCreatorRepo,
+				logger: zapSugar,
+			}
+			test.mock()
+
+			err := h.CreateAim(context.Background(), test.input)
+			require.Equal(t, test.expectedErr, err, fmt.Errorf("%s :  expected %e, got %e,",
+				test.name, test.expectedErr, err))
+		})
+	}
+}
+
+var creators = make([]models.Creator, 1)
+
+func TestCreatorUsecase_GetAllCreators(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	logger, err := zap.NewProduction()
+	if err != nil {
+		t.Error(err.Error())
+	}
+	defer func(logger *zap.Logger) {
+		err = logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	mockCreatorRepo := mock.NewMockCreatorRepo(ctl)
+
+	tests := []struct {
+		name        string
+		mock        func()
+		input       models.Aim
+		expectedErr error
+		expectedRes []models.Creator
+	}{
+		{
+			name: "OK",
+			mock: func() {
+				mockCreatorRepo.EXPECT().GetAllCreators(gomock.Any()).Return(creators, nil)
+			},
+			input:       models.Aim{},
+			expectedErr: nil,
+			expectedRes: creators,
+		},
+		{
+			name: "Error",
+			mock: func() {
+				mockCreatorRepo.EXPECT().GetAllCreators(gomock.Any()).Return(nil, errors.New("test"))
+			},
+			input:       models.Aim{},
+			expectedErr: errors.New("test"),
+			expectedRes: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &CreatorUsecase{
+				repo:   mockCreatorRepo,
+				logger: zapSugar,
+			}
+			test.mock()
+
+			creators, err := h.GetAllCreators(context.Background())
+			require.Equal(t, test.expectedErr, err, fmt.Errorf("%s :  expected %e, got %e,",
+				test.name, test.expectedErr, err))
+			require.Equal(t, test.expectedRes, creators, fmt.Errorf("%s :  expected %v, got %v,",
+				test.name, test.expectedRes, creators))
 		})
 	}
 }
