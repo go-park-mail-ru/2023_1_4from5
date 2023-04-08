@@ -227,12 +227,14 @@ func (r *PostRepo) AddLike(ctx context.Context, userID uuid.UUID, postID uuid.UU
 	//проверяем, лайкнул ли уже
 	row := r.db.QueryRow(IsLiked, postID, userID)
 	if err := row.Scan(&postUUID, &userUUID); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
 		return models.Like{}, models.InternalError
 	} else if err == nil { // уже есть запись об этом лайке
 		return models.Like{}, models.WrongData
 	}
 	// проверяем, есть ли доступ к этому посту
 	if ok, err := r.IsPostOwner(ctx, userID, postID); err != nil {
+		r.logger.Error(err)
 		return models.Like{}, err
 	} else if !ok {
 		if err := r.IsPostAvailable(ctx, userID, postID); err != nil {
@@ -246,6 +248,7 @@ func (r *PostRepo) AddLike(ctx context.Context, userID uuid.UUID, postID uuid.UU
 	row = r.db.QueryRow(UpdateLikeCount, 1, postID)
 
 	if err := row.Scan(&like.LikesCount); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
 		return models.Like{}, models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
 		return models.Like{}, models.WrongData
@@ -268,6 +271,7 @@ func (r *PostRepo) RemoveLike(ctx context.Context, userID uuid.UUID, postID uuid
 	)
 	row := r.db.QueryRow(IsLiked, postID, userID)
 	if err := row.Scan(&postUUID, &userUUID); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
 		return models.Like{}, models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) { // нет такого лайка
 		return models.Like{}, models.WrongData
