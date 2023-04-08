@@ -55,6 +55,8 @@ func (h *CreatorHandler) GetPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	creatorPage.Sanitize()
+
 	utils.Response(w, http.StatusOK, creatorPage)
 }
 
