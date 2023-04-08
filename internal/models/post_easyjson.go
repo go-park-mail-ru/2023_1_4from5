@@ -172,6 +172,8 @@ func easyjson5a72dc82DecodeGithubComGoParkMailRu202314from5InternalModels1(in *j
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.Creation).UnmarshalJSON(data))
 			}
+		case "likes_count":
+			out.LikesCount = int(in.Int())
 		case "title":
 			out.Title = string(in.String())
 		case "text":
@@ -254,6 +256,11 @@ func easyjson5a72dc82EncodeGithubComGoParkMailRu202314from5InternalModels1(out *
 		const prefix string = ",\"creation_date\":"
 		out.RawString(prefix)
 		out.Raw((in.Creation).MarshalJSON())
+	}
+	{
+		const prefix string = ",\"likes_count\":"
+		out.RawString(prefix)
+		out.Int(int(in.LikesCount))
 	}
 	{
 		const prefix string = ",\"title\":"

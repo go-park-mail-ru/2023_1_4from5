@@ -30,7 +30,9 @@ func (h *CreatorHandler) GetAllCreators(w http.ResponseWriter, r *http.Request) 
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
-
+	for i, _ := range creators {
+		creators[i].Sanitize()
+	}
 	utils.Response(w, http.StatusOK, creators)
 }
 
@@ -89,6 +91,5 @@ func (h *CreatorHandler) CreateAim(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
-
 	utils.Response(w, http.StatusOK, nil)
 }
