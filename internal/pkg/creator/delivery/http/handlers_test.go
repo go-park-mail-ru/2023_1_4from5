@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
+	mockAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/mocks"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
 	mock "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/mocks"
 	"github.com/golang/mock/gomock"
@@ -29,7 +30,8 @@ func TestNewCreatorHandler(t *testing.T) {
 	defer ctl.Finish()
 
 	mockUsecase := mock.NewMockCreatorUsecase(ctl)
-	testHandler := NewCreatorHandler(mockUsecase)
+	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
+	testHandler := NewCreatorHandler(mockUsecase, mockAuthUsecase)
 	if testHandler.usecase != mockUsecase {
 		t.Error("bad constructor")
 	}
@@ -44,8 +46,8 @@ func TestGetPage(t *testing.T) {
 	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: uuid.New()})
 
 	usecaseMock := mock.NewMockCreatorUsecase(ctl)
-
-	handler := NewCreatorHandler(usecaseMock)
+	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
+	handler := NewCreatorHandler(usecaseMock, mockAuthUsecase)
 	var r *http.Request
 	var status int
 	for i := 0; i < 4; i++ {

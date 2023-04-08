@@ -55,6 +55,20 @@ func (mr *MockAttachmentUsecaseMockRecorder) CreateAttaches(ctx interface{}, att
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAttaches", reflect.TypeOf((*MockAttachmentUsecase)(nil).CreateAttaches), varargs...)
 }
 
+// DeleteAttach mocks base method.
+func (m *MockAttachmentUsecase) DeleteAttach(ctx context.Context, attachID, postID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteAttach", ctx, attachID, postID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteAttach indicates an expected call of DeleteAttach.
+func (mr *MockAttachmentUsecaseMockRecorder) DeleteAttach(ctx, attachID, postID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAttach", reflect.TypeOf((*MockAttachmentUsecase)(nil).DeleteAttach), ctx, attachID, postID)
+}
+
 // DeleteAttaches mocks base method.
 func (m *MockAttachmentUsecase) DeleteAttaches(ctx context.Context, attachments ...models.AttachmentData) error {
 	m.ctrl.T.Helper()
@@ -123,6 +137,20 @@ func (m *MockAttachmentRepo) CreateAttach(ctx context.Context, postID, attachID 
 func (mr *MockAttachmentRepoMockRecorder) CreateAttach(ctx, postID, attachID, attachmentType interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAttach", reflect.TypeOf((*MockAttachmentRepo)(nil).CreateAttach), ctx, postID, attachID, attachmentType)
+}
+
+// DeleteAttach mocks base method.
+func (m *MockAttachmentRepo) DeleteAttach(ctx context.Context, attachID, postID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteAttach", ctx, attachID, postID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteAttach indicates an expected call of DeleteAttach.
+func (mr *MockAttachmentRepoMockRecorder) DeleteAttach(ctx, attachID, postID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAttach", reflect.TypeOf((*MockAttachmentRepo)(nil).DeleteAttach), ctx, attachID, postID)
 }
 
 // DeleteAttachesByPostID mocks base method.

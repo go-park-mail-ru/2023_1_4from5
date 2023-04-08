@@ -79,6 +79,20 @@ func (mr *MockPostUsecaseMockRecorder) DeletePost(ctx, postID interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePost", reflect.TypeOf((*MockPostUsecase)(nil).DeletePost), ctx, postID)
 }
 
+// EditPost mocks base method.
+func (m *MockPostUsecase) EditPost(ctx context.Context, postData models.PostEditData) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EditPost", ctx, postData)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EditPost indicates an expected call of EditPost.
+func (mr *MockPostUsecaseMockRecorder) EditPost(ctx, postData interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EditPost", reflect.TypeOf((*MockPostUsecase)(nil).EditPost), ctx, postData)
+}
+
 // GetPost mocks base method.
 func (m *MockPostUsecase) GetPost(ctx context.Context, postID, userID uuid.UUID) (models.Post, error) {
 	m.ctrl.T.Helper()
@@ -203,6 +217,20 @@ func (m *MockPostRepo) DeletePost(ctx context.Context, postID uuid.UUID) error {
 func (mr *MockPostRepoMockRecorder) DeletePost(ctx, postID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePost", reflect.TypeOf((*MockPostRepo)(nil).DeletePost), ctx, postID)
+}
+
+// EditPost mocks base method.
+func (m *MockPostRepo) EditPost(ctx context.Context, postData models.PostEditData) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EditPost", ctx, postData)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EditPost indicates an expected call of EditPost.
+func (mr *MockPostRepoMockRecorder) EditPost(ctx, postData interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EditPost", reflect.TypeOf((*MockPostRepo)(nil).EditPost), ctx, postData)
 }
 
 // GetPost mocks base method.

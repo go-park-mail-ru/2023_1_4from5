@@ -70,6 +70,13 @@ func TestNewAuthUsecase(t *testing.T) {
 	}
 }
 
+func TestNewEncryptor(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	os.Setenv("ENCRYPTER_SECRET", "TESTS")
+
+}
+
 func TestAuthUsecase_SignIn(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()

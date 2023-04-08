@@ -36,6 +36,21 @@ func (m *MockUserUsecase) EXPECT() *MockUserUsecaseMockRecorder {
 	return m.recorder
 }
 
+// Donate mocks base method.
+func (m *MockUserUsecase) Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Donate", ctx, donateInfo, userID)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Donate indicates an expected call of Donate.
+func (mr *MockUserUsecaseMockRecorder) Donate(ctx, donateInfo, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Donate", reflect.TypeOf((*MockUserUsecase)(nil).Donate), ctx, donateInfo, userID)
+}
+
 // GetHomePage mocks base method.
 func (m *MockUserUsecase) GetHomePage(ctx context.Context, details models.AccessDetails) (models.UserHomePage, error) {
 	m.ctrl.T.Helper()
@@ -130,6 +145,21 @@ func NewMockUserRepo(ctrl *gomock.Controller) *MockUserRepo {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockUserRepo) EXPECT() *MockUserRepoMockRecorder {
 	return m.recorder
+}
+
+// Donate mocks base method.
+func (m *MockUserRepo) Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Donate", ctx, donateInfo, userID)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Donate indicates an expected call of Donate.
+func (mr *MockUserRepoMockRecorder) Donate(ctx, donateInfo, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Donate", reflect.TypeOf((*MockUserRepo)(nil).Donate), ctx, donateInfo, userID)
 }
 
 // GetHomePage mocks base method.

@@ -36,6 +36,20 @@ func (m *MockCreatorUsecase) EXPECT() *MockCreatorUsecaseMockRecorder {
 	return m.recorder
 }
 
+// CreateAim mocks base method.
+func (m *MockCreatorUsecase) CreateAim(ctx context.Context, aimInfo models.Aim) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateAim", ctx, aimInfo)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateAim indicates an expected call of CreateAim.
+func (mr *MockCreatorUsecaseMockRecorder) CreateAim(ctx, aimInfo interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAim", reflect.TypeOf((*MockCreatorUsecase)(nil).CreateAim), ctx, aimInfo)
+}
+
 // GetPage mocks base method.
 func (m *MockCreatorUsecase) GetPage(ctx context.Context, details *models.AccessDetails, creatorUUID string) (models.CreatorPage, error) {
 	m.ctrl.T.Helper()
@@ -72,6 +86,20 @@ func NewMockCreatorRepo(ctrl *gomock.Controller) *MockCreatorRepo {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockCreatorRepo) EXPECT() *MockCreatorRepoMockRecorder {
 	return m.recorder
+}
+
+// CreateAim mocks base method.
+func (m *MockCreatorRepo) CreateAim(ctx context.Context, aimInfo models.Aim) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateAim", ctx, aimInfo)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateAim indicates an expected call of CreateAim.
+func (mr *MockCreatorRepoMockRecorder) CreateAim(ctx, aimInfo interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAim", reflect.TypeOf((*MockCreatorRepo)(nil).CreateAim), ctx, aimInfo)
 }
 
 // GetPage mocks base method.
