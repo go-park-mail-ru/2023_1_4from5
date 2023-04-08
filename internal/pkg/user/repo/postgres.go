@@ -116,7 +116,7 @@ func (ur *UserRepo) Donate(ctx context.Context, donateInfo models.Donate, userID
 		return 0, models.WrongData
 	}
 
-	row = tx.QueryRowContext(ctx, AddDonate, userID, donateInfo.CreatorID, donateInfo.MoneyCount)
+	tx.QueryRowContext(ctx, AddDonate, userID, donateInfo.CreatorID, donateInfo.MoneyCount)
 
 	if err = tx.Commit(); err != nil {
 		ur.logger.Error(err)

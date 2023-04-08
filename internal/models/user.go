@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/google/uuid"
+	"html"
 	"time"
 )
 
@@ -70,4 +71,21 @@ type UpdateProfileInfo struct {
 type Donate struct {
 	CreatorID  uuid.UUID `json:"creator_id"`
 	MoneyCount int       `json:"money_count"`
+}
+
+func (user *User) Sanitize() {
+	user.Login = html.EscapeString(user.Login)
+	user.Name = html.EscapeString(user.Name)
+}
+
+func (userProfile *UserProfile) Sanitize() {
+	userProfile.Login = html.EscapeString(userProfile.Login)
+	userProfile.Name = html.EscapeString(userProfile.Name)
+}
+
+func (userHomePage *UserHomePage) Sanitize() {
+	userHomePage.Name = html.EscapeString(userHomePage.Name)
+	for i := range userHomePage.Posts {
+		userHomePage.Posts[i].Sanitize()
+	}
 }

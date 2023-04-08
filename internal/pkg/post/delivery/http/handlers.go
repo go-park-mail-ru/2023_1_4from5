@@ -122,7 +122,6 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	if _, ok := r.MultipartForm.File["attachments"]; ok {
 		if len(r.MultipartForm.File["attachments"]) > models.MaxFiles {
-			fmt.Println("Str 75 ")
 			utils.Response(w, http.StatusBadRequest, nil)
 			return
 		}
@@ -319,7 +318,6 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
-
 	err = h.attachmentUsecase.DeleteAttachesByPostID(r.Context(), postID)
 	if err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
@@ -367,6 +365,8 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
+
+	post.Sanitize()
 
 	utils.Response(w, http.StatusOK, post)
 }

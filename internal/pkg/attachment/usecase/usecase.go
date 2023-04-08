@@ -36,7 +36,7 @@ func NewAttachmentUsecase(repo attachment.AttachmentRepo, logger *zap.SugaredLog
 func (u *AttachmentUsecase) DeleteAttachesByPostID(ctx context.Context, postID uuid.UUID) error {
 	attachs, err := u.repo.DeleteAttachesByPostID(ctx, postID)
 	if err != nil {
-		u.logger.Error(err)
+		//u.logger.Error(err)
 		return err
 	}
 	err = u.DeleteAttaches(ctx, attachs...)
@@ -95,6 +95,7 @@ func deleteAttach(attach models.AttachmentData) error {
 	filename := models.FolderPath + attach.Id.String() + "." + types[attach.Type]
 
 	if err := os.Remove(filename); err != nil {
+		fmt.Println(err)
 		return models.InternalError
 	}
 	return nil

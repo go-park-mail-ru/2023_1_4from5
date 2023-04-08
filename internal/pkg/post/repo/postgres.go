@@ -18,6 +18,7 @@ const (
 	DeletePostSubscriptions = `DELETE FROM "post_subscription" WHERE post_id = $1;`
 	AddSubscriptionsToPost  = `INSERT INTO "post_subscription"(post_id, subscription_id) VALUES($1,$2);`
 	DeletePost              = `DELETE FROM  "post" WHERE post_id = $1;`
+	DeletePostSubscription  = `DELETE FROM "post_subscription" WHERE post_id = $1`
 	GetUserId               = `SELECT user_id FROM "post" JOIN "creator" c on c.creator_id = "post".creator_id WHERE post_id = $1`
 	AddLike                 = `INSERT INTO "like_post"(post_id, user_id) VALUES($1, $2);`
 	RemoveLike              = `DELETE FROM "like_post" WHERE post_id = $1 AND user_id = $2;`
@@ -167,12 +168,39 @@ func (r *PostRepo) IsCreator(ctx context.Context, userID, creatorID uuid.UUID) (
 }
 
 func (r *PostRepo) DeletePost(ctx context.Context, postID uuid.UUID) error {
-	//TODO: delete also in another table (or cascade delete?)
-	row := r.db.QueryRow(DeletePost, postID)
-	if err := row.Err(); err != nil {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
 		r.logger.Error(err)
 		return models.InternalError
 	}
+
+	row, err := tx.QueryContext(ctx, DeletePostSubscription, postID)
+	if err != nil {
+		_ = tx.Rollback()
+		r.logger.Error(err)
+		return models.InternalError
+	}
+	if err = row.Close(); err != nil {
+		r.logger.Error(err)
+		return models.InternalError
+	}
+
+	row, err = tx.QueryContext(ctx, DeletePost, postID)
+	if err != nil {
+		_ = tx.Rollback()
+		r.logger.Error(err)
+		return models.InternalError
+	}
+	if err = row.Close(); err != nil {
+		r.logger.Error(err)
+		return models.InternalError
+	}
+
+	if err = tx.Commit(); err != nil {
+		r.logger.Error(err)
+		return models.InternalError
+	}
+
 	return nil
 }
 
