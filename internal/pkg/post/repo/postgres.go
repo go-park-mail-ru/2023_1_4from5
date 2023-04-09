@@ -237,6 +237,7 @@ func (r *PostRepo) AddLike(ctx context.Context, userID uuid.UUID, postID uuid.UU
 		userUUID uuid.UUID
 		postUUID uuid.UUID
 	)
+	fmt.Println("Add Like")
 	//проверяем, лайкнул ли уже
 	row := r.db.QueryRow(IsLiked, postID, userID)
 	if err := row.Scan(&postUUID, &userUUID); err != nil && !errors.Is(sql.ErrNoRows, err) {
@@ -282,6 +283,7 @@ func (r *PostRepo) RemoveLike(ctx context.Context, userID uuid.UUID, postID uuid
 		userUUID uuid.UUID
 		postUUID uuid.UUID
 	)
+	fmt.Println("Remove Like")
 	row := r.db.QueryRow(IsLiked, postID, userID)
 	if err := row.Scan(&postUUID, &userUUID); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		r.logger.Error(err)

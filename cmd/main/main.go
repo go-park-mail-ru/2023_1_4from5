@@ -54,7 +54,7 @@ func run() error {
 		return err
 	}
 	defer db.Close()
-	db.SetMaxOpenConns(10)
+	//db.SetMaxOpenConns(10)
 
 	tokenGenerator := authUsecase.NewTokenator()
 	encryptor, err := authUsecase.NewEncryptor()

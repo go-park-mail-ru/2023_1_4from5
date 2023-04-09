@@ -194,32 +194,37 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("ADD LIKE HANDLER")
 	userData, err := token.ExtractJWTTokenMetadata(r)
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
-
+	fmt.Println("Before User Version")
 	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userData); err != nil {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
+	fmt.Println("After User Version")
 
 	var like models.Like
 	err = easyjson.UnmarshalFromReader(r.Body, &like)
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-
+	fmt.Println("Body ", like)
+	fmt.Println("Before AddLike")
 	like, err = h.usecase.AddLike(r.Context(), userData.Id, like.PostID)
 	if err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
+	fmt.Println("After AddLike")
+
 	if err == models.InternalError {
-		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -227,6 +232,7 @@ func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PostHandler) RemoveLike(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("REMOVE LIKE HANDLER")
 	userData, err := token.ExtractJWTTokenMetadata(r)
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)

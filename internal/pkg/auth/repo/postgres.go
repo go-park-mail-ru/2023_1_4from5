@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -92,17 +93,19 @@ func (r *AuthRepo) IncUserVersion(ctx context.Context, userId uuid.UUID) (int, e
 }
 
 func (r *AuthRepo) CheckUserVersion(ctx context.Context, details models.AccessDetails) (int, error) {
-	row := r.db.QueryRow(CheckUserVersion, details.Id)
+	fmt.Println("UserVersion repo")
+	row := r.db.QueryRowContext(ctx, CheckUserVersion, details.Id)
 	var userVersion int
-
+	fmt.Println("Alik wants")
 	if err := row.Scan(&userVersion); err != nil {
 		r.logger.Error(err)
 		return 0, models.InternalError
 	}
 
 	if userVersion != details.UserVersion {
+		fmt.Println("HERE")
 		return 0, models.Unauthorized
 	}
-
+	fmt.Println(userVersion, details.UserVersion)
 	return userVersion, nil
 }
