@@ -49,6 +49,11 @@ func (r *PostRepo) IsPostAvailable(ctx context.Context, userID, postID uuid.UUID
 		r.logger.Error(err)
 		return models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
+		if ok, err := r.IsPostOwner(ctx, userID, postID); err == models.InternalError {
+			return models.InternalError
+		} else if ok {
+			return nil
+		}
 		return models.WrongData
 	}
 	return nil
@@ -141,6 +146,7 @@ func (r *PostRepo) GetPost(ctx context.Context, postID, userID uuid.UUID) (model
 		r.logger.Error(err)
 		return models.Post{}, models.InternalError
 	}
+
 	attachs = attachs[:len(attachs)/2] //TODO !!!!!!!!!!!!!!!!
 	post.Attachments = make([]models.Attachment, len(attachs))
 	for i, v := range attachs {
