@@ -160,7 +160,7 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 		utils.Response(w, http.StatusInternalServerError, nil)
 	}
 
-	utils.Response(w, http.StatusOK, nil)
+	utils.Response(w, http.StatusOK, name)
 }
 
 func (h *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
