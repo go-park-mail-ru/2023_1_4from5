@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -120,16 +121,22 @@ func (r *PostRepo) CreatePost(ctx context.Context, postData models.PostCreationD
 }
 
 func (r *PostRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]models.Subscription, error) {
-	subsInfo := make([]models.Subscription, len(subsIDs))
+	subsInfo := make([]models.Subscription, 0)
 	for i, v := range subsIDs {
+		var sub = models.Subscription{}
+		if v == uuid.Nil {
+			subsIDs = append(subsIDs[:i], subsIDs[i+1:]...)
+			continue
+		}
 		row := r.db.QueryRow(GetSubInfo, v)
-		err := row.Scan(&subsInfo[i].Creator, &subsInfo[i].MonthConst, &subsInfo[i].Title,
-			&subsInfo[i].Description)
+		err := row.Scan(&sub.Creator, &sub.MonthConst, &sub.Title,
+			&sub.Description)
 		if err != nil {
 			r.logger.Error(err)
 			return nil, models.InternalError
 		}
-		subsInfo[i].Id = v
+		sub.Id = v
+		subsInfo = append(subsInfo, sub)
 	}
 	return subsInfo, nil
 }
@@ -153,7 +160,7 @@ func (r *PostRepo) GetPost(ctx context.Context, postID, userID uuid.UUID) (model
 		post.Attachments[i].Type = types[i].String
 		post.Attachments[i].Id = v
 	}
-
+	fmt.Println(subs)
 	post.Subscriptions, err = r.GetSubsByID(ctx, subs...)
 	return post, err
 }
