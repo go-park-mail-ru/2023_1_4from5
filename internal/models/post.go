@@ -32,7 +32,7 @@ type PostCreationData struct {
 }
 
 type PostEditData struct {
-	Id                     uuid.UUID
+	Id                     uuid.UUID   `json:"-"`
 	Title                  string      `json:"title"`
 	Text                   string      `json:"text"`
 	AvailableSubscriptions []uuid.UUID `json:"available_subscriptions"`

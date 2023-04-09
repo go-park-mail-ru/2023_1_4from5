@@ -115,10 +115,12 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 	buf, _ := io.ReadAll(file)
 	file.Close()
 	if file, err = fileTmp.Open(); err != nil {
+		fmt.Println(err)
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
 	if http.DetectContentType(buf) != "image/jpeg" && http.DetectContentType(buf) != "image/png" {
+		fmt.Println("wrong content type   ")
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
@@ -127,6 +129,8 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 	var oldName uuid.UUID
 	oldName, err = uuid.Parse(r.PostFormValue("path"))
 	if err != nil {
+		fmt.Println("path   ", err)
+
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
@@ -134,6 +138,8 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 	if oldName != uuid.Nil {
 		err = os.Remove(fmt.Sprintf("%s%s.jpg", models.FolderPath, oldName.String()))
 		if err != nil {
+			fmt.Println(err)
+
 			utils.Response(w, http.StatusBadRequest, nil)
 		}
 	}

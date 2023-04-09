@@ -160,8 +160,8 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 			postData.Attachments[i].Id = uuid.New()
 		}
 
-		if err = h.attachmentUsecase.CreateAttaches(r.Context(), postData.Attachments...); err == models.WrongData {
-			utils.Response(w, http.StatusBadRequest, nil)
+		if err = h.attachmentUsecase.CreateAttaches(r.Context(), postData.Attachments...); err == models.Unsupported {
+			utils.Response(w, http.StatusUnsupportedMediaType, nil)
 			return
 		} else if err != nil {
 			h.logger.Error(err)
@@ -542,8 +542,8 @@ func (h *PostHandler) AddAttach(w http.ResponseWriter, r *http.Request) {
 	attach.Type = http.DetectContentType(buf)
 	attach.Id = uuid.New()
 
-	if err = h.attachmentUsecase.CreateAttaches(r.Context(), attach); err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
+	if err = h.attachmentUsecase.CreateAttaches(r.Context(), attach); err == models.Unsupported {
+		utils.Response(w, http.StatusUnsupportedMediaType, nil)
 		return
 	} else if err != nil {
 		h.logger.Error(err)

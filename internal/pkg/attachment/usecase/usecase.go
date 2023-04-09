@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 type AttachmentUsecase struct {
@@ -22,8 +23,13 @@ var types = map[string]string{
 	"image/webp": "webp",
 	"video/mpeg": "mpeg",
 	"video/mp4":  "mp4",
-	"audio/mp4":  "mp3", //TODO реально?))
+	"audio/mp4":  "mp3",
 	"audio/mpeg": "mp3",
+}
+
+func GetFileExtension(key string) (string, bool) {
+	val, ok := types[key]
+	return val, ok
 }
 
 func NewAttachmentUsecase(repo attachment.AttachmentRepo, logger *zap.SugaredLogger) *AttachmentUsecase {
@@ -36,24 +42,22 @@ func NewAttachmentUsecase(repo attachment.AttachmentRepo, logger *zap.SugaredLog
 func (u *AttachmentUsecase) DeleteAttachesByPostID(ctx context.Context, postID uuid.UUID) error {
 	attachs, err := u.repo.DeleteAttachesByPostID(ctx, postID)
 	if err != nil {
-		//u.logger.Error(err)
 		return err
 	}
-	err = u.DeleteAttaches(ctx, attachs...)
-	return err
+	return u.DeleteAttaches(ctx, attachs...)
 }
 
 func (u *AttachmentUsecase) CreateAttaches(ctx context.Context, attachments ...models.AttachmentData) error {
 	for i, attach := range attachments {
-		attachmentType, ok := types[attach.Type]
+		attachmentType, ok := GetFileExtension(attach.Type)
 		if !ok {
 			if err := u.DeleteAttaches(ctx, attachments[:i]...); err != nil {
 				u.logger.Error(err)
 				return models.InternalError
 			}
-			return models.WrongData
+			return models.Unsupported
 		}
-		f, err := os.Create(fmt.Sprintf("%s%s.%s", models.FolderPath, attach.Id.String(), attachmentType))
+		f, err := os.Create(fmt.Sprintf("%s.%s", filepath.Join(models.FolderPath, attach.Id.String()), attachmentType))
 		if err != nil {
 			if err := u.DeleteAttaches(ctx, attachments[:i]...); err != nil {
 				u.logger.Error(err)
@@ -92,7 +96,11 @@ func (u *AttachmentUsecase) DeleteAttach(ctx context.Context, attachID, postID u
 }
 
 func deleteAttach(attach models.AttachmentData) error {
-	filename := models.FolderPath + attach.Id.String() + "." + types[attach.Type]
+	val, ok := GetFileExtension(attach.Type)
+	if !ok {
+		return models.WrongData
+	}
+	filename := filepath.Join(models.FolderPath, attach.Id.String()) + "." + val
 
 	if err := os.Remove(filename); err != nil {
 		fmt.Println(err)

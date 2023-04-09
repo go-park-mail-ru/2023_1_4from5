@@ -13,4 +13,5 @@ var (
 	WrongData     = errors.New("WrongData")
 	Unauthorized  = errors.New("Unauthorized")
 	Forbbiden     = errors.New("Forbidden")
+	Unsupported   = errors.New("Unsupported")
 )
