@@ -146,13 +146,12 @@ func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId u
 					}
 				}
 				if creatorPage.Posts[i].IsAvailable {
-					if creatorPage.Posts[i].IsLiked, err = r.IsLiked(ctx, userId, creatorPage.Posts[i].Id); err != nil {
-						return models.CreatorPage{}, models.InternalError
-					}
 					break
 				}
 			}
-
+			if creatorPage.Posts[i].IsLiked, err = r.IsLiked(ctx, userId, creatorPage.Posts[i].Id); err != nil {
+				return models.CreatorPage{}, models.InternalError
+			}
 			if !creatorPage.Posts[i].IsAvailable {
 				creatorPage.Posts[i].Text = ""
 				creatorPage.Posts[i].Attachments = nil
