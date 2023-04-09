@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -49,10 +48,8 @@ func (r *CreatorRepo) IsLiked(ctx context.Context, userID uuid.UUID, postID uuid
 		r.logger.Error(err)
 		return false, models.InternalError
 	} else if err == nil {
-		fmt.Println(postID, userID)
 		return true, nil
 	}
-	fmt.Println(postID, userID)
 	return false, nil
 }
 
