@@ -55,8 +55,8 @@ func run() error {
 		return err
 	}
 	defer db.Close()
-	db.SetMaxOpenConns(3)
-	db.SetMaxIdleConns(3)
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(25)
 	db.SetConnMaxLifetime(5 * time.Minute)
 
 	tokenGenerator := authUsecase.NewTokenator()
