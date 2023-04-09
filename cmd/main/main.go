@@ -24,6 +24,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 func main() {
@@ -54,7 +55,9 @@ func run() error {
 		return err
 	}
 	defer db.Close()
-	//db.SetMaxOpenConns(10)
+	db.SetMaxOpenConns(3)
+	db.SetMaxIdleConns(3)
+	db.SetConnMaxLifetime(5 * time.Minute)
 
 	tokenGenerator := authUsecase.NewTokenator()
 	encryptor, err := authUsecase.NewEncryptor()

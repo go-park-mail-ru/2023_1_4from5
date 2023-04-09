@@ -184,7 +184,7 @@ func (r *CreatorRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]
 
 func (r *CreatorRepo) CreateAim(ctx context.Context, aimInfo models.Aim) error {
 	row := r.db.QueryRow(AddAim, aimInfo.Description, aimInfo.MoneyGot, aimInfo.MoneyNeeded, aimInfo.Creator)
-	if err := row.Err(); err != nil {
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		r.logger.Error(err)
 		return models.InternalError
 	}

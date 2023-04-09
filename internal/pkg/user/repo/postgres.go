@@ -68,7 +68,7 @@ func (ur *UserRepo) GetHomePage(ctx context.Context, id uuid.UUID) (models.UserH
 
 func (ur *UserRepo) UpdateProfilePhoto(ctx context.Context, userID uuid.UUID, path uuid.UUID) error {
 	row := ur.db.QueryRow(UpdateProfilePhoto, path, userID)
-	if err := row.Err(); err != nil {
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		ur.logger.Error(err)
 		return models.InternalError
 	}
@@ -77,7 +77,7 @@ func (ur *UserRepo) UpdateProfilePhoto(ctx context.Context, userID uuid.UUID, pa
 
 func (ur *UserRepo) UpdatePassword(ctx context.Context, id uuid.UUID, password string) error {
 	row := ur.db.QueryRow(UpdatePassword, password, id)
-	if err := row.Err(); err != nil {
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		ur.logger.Error(err)
 		return models.InternalError
 	}
@@ -86,7 +86,7 @@ func (ur *UserRepo) UpdatePassword(ctx context.Context, id uuid.UUID, password s
 
 func (ur *UserRepo) UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error {
 	row := ur.db.QueryRow(UpdateProfileInfo, profileInfo.Login, profileInfo.Name, id)
-	if err := row.Err(); err != nil {
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		ur.logger.Error(err)
 		return models.InternalError
 	}

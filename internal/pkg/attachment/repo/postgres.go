@@ -32,7 +32,7 @@ func NewAttachmentRepo(db *sql.DB, logger *zap.SugaredLogger) *AttachmentRepo {
 func (repo *AttachmentRepo) CreateAttach(ctx context.Context, postID uuid.UUID, attachID uuid.UUID, attachmentType string) error {
 	row := repo.db.QueryRow(InsertAttach, attachID, postID, attachmentType)
 
-	if err := row.Err(); err != nil {
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		repo.logger.Error(err)
 		return models.InternalError
 	}

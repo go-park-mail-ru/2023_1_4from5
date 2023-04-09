@@ -270,7 +270,7 @@ func (r *PostRepo) AddLike(ctx context.Context, userID uuid.UUID, postID uuid.UU
 
 	row = r.db.QueryRow(AddLike, postID, userID)
 
-	if err := row.Err(); err != nil {
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		r.logger.Error(err)
 		return models.Like{}, models.InternalError
 	}
@@ -303,7 +303,7 @@ func (r *PostRepo) RemoveLike(ctx context.Context, userID uuid.UUID, postID uuid
 
 	row = r.db.QueryRow(RemoveLike, postID, userID)
 
-	if err := row.Err(); err != nil {
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		r.logger.Error(err)
 		return models.Like{}, models.InternalError
 	}
