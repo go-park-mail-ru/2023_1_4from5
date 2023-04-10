@@ -131,3 +131,52 @@ func TestGetHomePage(t *testing.T) {
 	}
 
 }
+
+func TestUpdatePassword(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	os.Setenv("SECRET", "TEST")
+	os.Setenv("CSRF_SECRET", "TEST")
+	tkn := &usecase.Tokenator{}
+	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: uuid.New()})
+
+	usecaseMock := mock.NewMockUserUsecase(ctl)
+	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
+
+	handler := NewUserHandler(usecaseMock, mockAuthUsecase)
+
+	var r *http.Request
+	var status int
+	for i := 0; i < 4; i++ {
+		value := bdy
+		r = httptest.NewRequest("GET", "/user/homePage", strings.NewReader(fmt.Sprint()))
+		switch i {
+		case 0:
+			usecaseMock.EXPECT().GetHomePage(gomock.Any(), gomock.Any()).Return(models.UserHomePage{}, nil)
+			status = http.StatusOK
+		case 1:
+			value = "body"
+			status = http.StatusUnauthorized
+		case 2:
+			usecaseMock.EXPECT().GetHomePage(gomock.Any(), gomock.Any()).Return(models.UserHomePage{}, models.InternalError)
+			status = http.StatusInternalServerError
+		case 3:
+			usecaseMock.EXPECT().GetHomePage(gomock.Any(), gomock.Any()).Return(models.UserHomePage{}, models.NotFound)
+			status = http.StatusBadRequest
+		}
+		r.AddCookie(&http.Cookie{
+			Name:     "SSID",
+			Value:    value,
+			Expires:  time.Time{},
+			HttpOnly: true,
+		})
+
+		w := httptest.NewRecorder()
+
+		handler.GetHomePage(w, r)
+		require.Equal(t, status, w.Code, fmt.Errorf("expected %d, got %d",
+			status, w.Code))
+	}
+
+}

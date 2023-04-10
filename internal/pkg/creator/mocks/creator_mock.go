@@ -132,6 +132,21 @@ func (mr *MockCreatorRepoMockRecorder) GetAllCreators(ctx interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCreators", reflect.TypeOf((*MockCreatorRepo)(nil).GetAllCreators), ctx)
 }
 
+// GetCreatorSubs mocks base method.
+func (m *MockCreatorRepo) GetCreatorSubs(ctx context.Context, creatorID uuid.UUID) ([]models.Subscription, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCreatorSubs", ctx, creatorID)
+	ret0, _ := ret[0].([]models.Subscription)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCreatorSubs indicates an expected call of GetCreatorSubs.
+func (mr *MockCreatorRepoMockRecorder) GetCreatorSubs(ctx, creatorID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCreatorSubs", reflect.TypeOf((*MockCreatorRepo)(nil).GetCreatorSubs), ctx, creatorID)
+}
+
 // GetPage mocks base method.
 func (m *MockCreatorRepo) GetPage(ctx context.Context, userId, creatorId uuid.UUID) (models.CreatorPage, error) {
 	m.ctrl.T.Helper()

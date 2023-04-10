@@ -15,6 +15,7 @@ type CreatorUsecase interface {
 }
 
 type CreatorRepo interface {
+	GetCreatorSubs(ctx context.Context, creatorID uuid.UUID) ([]models.Subscription, error)
 	GetPage(ctx context.Context, userId uuid.UUID, creatorId uuid.UUID) (models.CreatorPage, error)
 	CreateAim(ctx context.Context, aimInfo models.Aim) error
 	GetAllCreators(ctx context.Context) ([]models.Creator, error)

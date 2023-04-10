@@ -12,6 +12,7 @@ import (
 
 const (
 	CreatorInfo       = `SELECT user_id, name, cover_photo, followers_count, description, posts_count, aim, money_got, money_needed, profile_photo FROM "creator" WHERE creator_id=$1;`
+	GetCreatorSubs    = `SELECT subscription_id, month_cost, title, description FROM "subscription" WHERE creator_id=$1;`
 	GetAllCreators    = `SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM "creator";`
 	CreatorPosts      = `SELECT "post".post_id, creation_date, title, post_text, likes_count, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE creator_id = $1 GROUP BY "post".post_id, creation_date, title, post_text ORDER BY creation_date DESC;`
 	UserSubscriptions = `SELECT array_agg(subscription_id) FROM "user_subscription" WHERE user_id=$1;`
@@ -66,6 +67,31 @@ func (r *CreatorRepo) CreatorInfo(ctx context.Context, creatorPage *models.Creat
 	creatorPage.Aim.Creator = creatorID
 	creatorPage.Aim.Description = tmpAim.String
 	return nil
+}
+
+func (r *CreatorRepo) GetCreatorSubs(ctx context.Context, creatorID uuid.UUID) ([]models.Subscription, error) {
+	subs := make([]models.Subscription, 0)
+	var tmpTitle, tmpDescr sql.NullString
+	rows, err := r.db.Query(GetCreatorSubs, creatorID)
+	if err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
+		return nil, models.InternalError
+	}
+	defer rows.Close()
+	for rows.Next() {
+		tmpSub := models.Subscription{}
+		err = rows.Scan(&tmpSub.Id, &tmpSub.MonthConst, &tmpTitle, &tmpDescr)
+		if err != nil {
+			r.logger.Error(err)
+			return nil, models.InternalError
+		}
+		tmpSub.Title = tmpTitle.String
+		tmpSub.Description = tmpDescr.String
+		tmpSub.Creator = creatorID
+
+		subs = append(subs, tmpSub)
+	}
+	return subs, nil
 }
 
 func (r *CreatorRepo) CreatorPosts(ctx context.Context, creatorId uuid.UUID) ([]models.Post, error) {
@@ -152,6 +178,10 @@ func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId u
 				creatorPage.Posts[i].Text = ""
 				creatorPage.Posts[i].Attachments = nil
 			}
+		}
+
+		if creatorPage.Subscriptions, err = r.GetCreatorSubs(ctx, creatorId); err != nil {
+			return models.CreatorPage{}, err
 		}
 
 		return creatorPage, nil
