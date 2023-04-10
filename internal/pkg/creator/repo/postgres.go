@@ -56,6 +56,7 @@ func (r *CreatorRepo) IsLiked(ctx context.Context, userID uuid.UUID, postID uuid
 
 func (r *CreatorRepo) CreatorInfo(ctx context.Context, creatorPage *models.CreatorPage, creatorID uuid.UUID) error {
 	row := r.db.QueryRow(CreatorInfo, creatorID)
+	creatorPage.CreatorInfo.Id = creatorID
 	var tmpAim sql.NullString
 	if err := row.Scan(&creatorPage.CreatorInfo.UserId, &creatorPage.CreatorInfo.Name, &creatorPage.CreatorInfo.CoverPhoto,
 		&creatorPage.CreatorInfo.FollowersCount, &creatorPage.CreatorInfo.Description, &creatorPage.CreatorInfo.PostsCount,
@@ -133,7 +134,6 @@ func (r *CreatorRepo) CreatorPosts(ctx context.Context, creatorId uuid.UUID) ([]
 
 func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId uuid.UUID) (models.CreatorPage, error) {
 	var creatorPage models.CreatorPage
-	creatorPage.CreatorInfo.Id = creatorId
 	creatorPage.Posts = make([]models.Post, 0)
 	var userSubscriptions []uuid.UUID
 	if err := r.CreatorInfo(ctx, &creatorPage, creatorId); err == models.InternalError {
@@ -143,12 +143,12 @@ func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId u
 			creatorPage.IsMyPage = true
 		} else { // находим подписки пользователя
 			tmp, err := r.GetUserSubscriptions(ctx, userId)
-			userSubscriptions = make([]uuid.UUID, len(tmp))
-			copy(userSubscriptions, tmp)
 			if err != nil {
 				r.logger.Error(err)
 				return models.CreatorPage{}, models.InternalError
 			}
+			userSubscriptions = make([]uuid.UUID, len(tmp))
+			copy(userSubscriptions, tmp)
 		}
 		creatorPage.Posts, err = r.CreatorPosts(ctx, creatorId)
 		if err != nil {
@@ -200,7 +200,7 @@ func (r *CreatorRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]
 			r.logger.Error(err)
 			return nil, models.InternalError
 		} else if errors.Is(err, sql.ErrNoRows) {
-			break
+			continue
 		}
 		sub.Id = v
 		subsInfo = append(subsInfo, sub)

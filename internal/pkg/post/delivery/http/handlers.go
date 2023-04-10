@@ -55,17 +55,13 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
-	if err != nil {
-		utils.Response(w, http.StatusForbidden, nil)
-		return
-	}
-	if *userDataCSRF != *userDataJWT {
+	if err != nil || *userDataCSRF != *userDataJWT {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
 
 	r.Body = http.MaxBytesReader(w, r.Body, int64(models.MaxFormSize))
-	err = r.ParseMultipartForm(models.MaxFormSize) // maxMemory
+	err = r.ParseMultipartForm(models.MaxFormSize)
 	if err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusBadRequest, nil)
@@ -110,6 +106,10 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	postData.Text = postValues["text"][0]
+	if len(postData.Text) > 4000 {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
 
 	_, ok = postValues["title"]
 	if !ok {
@@ -117,6 +117,10 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	postData.Title = postValues["title"][0]
+	if len(postData.Title) > 40 {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
 
 	if _, ok := r.MultipartForm.File["attachments"]; ok {
 		if len(r.MultipartForm.File["attachments"]) > models.MaxFiles {
@@ -441,6 +445,11 @@ func (h *PostHandler) EditPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = easyjson.UnmarshalFromReader(r.Body, &postEditData); err != nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if len(postEditData.Title) > 40 || len(postEditData.Text) > 4000 {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
