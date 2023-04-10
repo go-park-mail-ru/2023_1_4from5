@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -108,7 +107,6 @@ func (ur *UserRepo) Donate(ctx context.Context, donateInfo models.Donate, userID
 	}
 	var newMoney int
 	if err = row.Scan(&newMoney); err != nil && !errors.Is(sql.ErrNoRows, err) {
-		fmt.Println(err)
 		_ = tx.Rollback()
 		return 0, models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {

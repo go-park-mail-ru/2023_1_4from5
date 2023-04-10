@@ -1,10 +1,10 @@
 package models
 
 import (
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/google/uuid"
 	"html"
 	"time"
+	"unicode"
 )
 
 // easyjson -all ./internal/models/user.go
@@ -24,7 +24,20 @@ func (user User) UserLoginIsValid() bool {
 }
 
 func (user User) UserPasswordIsValid() bool {
-	return utils.IsValid(user.PasswordHash)
+	var (
+		hasMinLen = false
+		hasNumber = false
+	)
+	if len(user.PasswordHash) >= 7 {
+		hasMinLen = true
+	}
+	for _, char := range user.PasswordHash {
+		if unicode.IsNumber(char) {
+			hasNumber = true
+		}
+	}
+	return hasMinLen && hasNumber
+
 }
 
 func (user User) UserNameIsValid() bool {

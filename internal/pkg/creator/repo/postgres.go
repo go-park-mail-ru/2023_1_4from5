@@ -124,7 +124,6 @@ func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId u
 				return models.CreatorPage{}, models.InternalError
 			}
 		}
-
 		creatorPage.Posts, err = r.CreatorPosts(ctx, creatorId)
 		if err != nil {
 			return models.CreatorPage{}, err

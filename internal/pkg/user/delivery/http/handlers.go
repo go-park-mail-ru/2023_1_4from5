@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 )
 
 type UserHandler struct {
@@ -130,13 +131,12 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 	oldName, err = uuid.Parse(r.PostFormValue("path"))
 	if err != nil {
 		fmt.Println("path   ", err)
-
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
 
 	if oldName != uuid.Nil {
-		err = os.Remove(fmt.Sprintf("%s%s.jpg", models.FolderPath, oldName.String()))
+		err = os.Remove(filepath.Join(models.FolderPath, fmt.Sprintf("%s.jpg", oldName.String())))
 		if err != nil {
 			fmt.Println(err)
 
@@ -199,7 +199,7 @@ func (h *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 	updPwd := models.UpdatePasswordInfo{}
 
 	err = easyjson.UnmarshalFromReader(r.Body, &updPwd)
-	if err != nil || !utils.IsValid(updPwd.NewPassword) {
+	if err != nil || !(models.User{PasswordHash: updPwd.NewPassword}.UserPasswordIsValid()) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}

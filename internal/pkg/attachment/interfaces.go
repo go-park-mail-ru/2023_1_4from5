@@ -9,14 +9,14 @@ import (
 //go:generate mockgen -source=interfaces.go -destination=./mocks/attachment_mock.go -package=mock
 
 type AttachmentUsecase interface {
-	CreateAttaches(ctx context.Context, attachments ...models.AttachmentData) error
-	DeleteAttaches(ctx context.Context, attachments ...models.AttachmentData) error
-	DeleteAttachesByPostID(ctx context.Context, postID uuid.UUID) error
-	DeleteAttach(ctx context.Context, attachID, postID uuid.UUID) error
+	CreateAttachments(ctx context.Context, attachments ...models.AttachmentData) error
+	DeleteAttachments(attachments ...models.AttachmentData) error
+	DeleteAttachmentsByPostID(ctx context.Context, postID uuid.UUID) error
+	DeleteAttachment(ctx context.Context, attachmentID, postID uuid.UUID) error
 }
 
 type AttachmentRepo interface {
-	CreateAttach(ctx context.Context, postID uuid.UUID, attachID uuid.UUID, attachmentType string) error
-	DeleteAttachesByPostID(ctx context.Context, postID uuid.UUID) ([]models.AttachmentData, error)
-	DeleteAttach(ctx context.Context, attachID, postID uuid.UUID) error
+	CreateAttachment(ctx context.Context, postID uuid.UUID, attachmentID uuid.UUID, attachmentType string) error
+	DeleteAttachmentsByPostID(ctx context.Context, postID uuid.UUID) ([]models.AttachmentData, error)
+	DeleteAttachment(ctx context.Context, attachmentID, postID uuid.UUID) error
 }

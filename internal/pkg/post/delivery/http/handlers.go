@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
@@ -69,7 +68,6 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	err = r.ParseMultipartForm(models.MaxFormSize) // maxMemory
 	if err != nil {
 		h.logger.Error(err)
-		fmt.Println("Str 69 ", err)
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
@@ -128,7 +126,6 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		for _, headers := range r.MultipartForm.File {
 			for _, header := range headers {
 				if header.Size > int64(models.MaxFileSize) {
-					fmt.Println("Str 69 ", err)
 					utils.Response(w, http.StatusBadRequest, nil)
 					return
 				}
@@ -160,7 +157,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 			postData.Attachments[i].Id = uuid.New()
 		}
 
-		if err = h.attachmentUsecase.CreateAttaches(r.Context(), postData.Attachments...); err == models.Unsupported {
+		if err = h.attachmentUsecase.CreateAttachments(r.Context(), postData.Attachments...); err == models.Unsupported {
 			utils.Response(w, http.StatusUnsupportedMediaType, nil)
 			return
 		} else if err != nil {
@@ -184,7 +181,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	postData.Id = uuid.New()
 	if err := h.usecase.CreatePost(r.Context(), postData); err != nil {
-		_ = h.attachmentUsecase.DeleteAttaches(r.Context(), postData.Attachments...)
+		_ = h.attachmentUsecase.DeleteAttachments(postData.Attachments...)
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
@@ -194,19 +191,16 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("ADD LIKE HANDLER")
 	userData, err := token.ExtractJWTTokenMetadata(r)
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
-	fmt.Println("Before User Version")
 	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userData); err != nil {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
-	fmt.Println("After User Version")
 
 	var like models.Like
 	err = easyjson.UnmarshalFromReader(r.Body, &like)
@@ -215,14 +209,22 @@ func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	fmt.Println("Body ", like)
-	fmt.Println("Before AddLike")
+
+	postOwner, err := h.usecase.IsPostOwner(r.Context(), userData.Id, like.PostID)
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if postOwner {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
 	like, err = h.usecase.AddLike(r.Context(), userData.Id, like.PostID)
 	if err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	fmt.Println("After AddLike")
 
 	if err == models.InternalError {
 		utils.Response(w, http.StatusInternalServerError, nil)
@@ -232,7 +234,6 @@ func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PostHandler) RemoveLike(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("REMOVE LIKE HANDLER")
 	userData, err := token.ExtractJWTTokenMetadata(r)
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
@@ -324,7 +325,7 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
-	err = h.attachmentUsecase.DeleteAttachesByPostID(r.Context(), postID)
+	err = h.attachmentUsecase.DeleteAttachmentsByPostID(r.Context(), postID)
 	if err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
@@ -542,7 +543,7 @@ func (h *PostHandler) AddAttach(w http.ResponseWriter, r *http.Request) {
 	attach.Type = http.DetectContentType(buf)
 	attach.Id = uuid.New()
 
-	if err = h.attachmentUsecase.CreateAttaches(r.Context(), attach); err == models.Unsupported {
+	if err = h.attachmentUsecase.CreateAttachments(r.Context(), attach); err == models.Unsupported {
 		utils.Response(w, http.StatusUnsupportedMediaType, nil)
 		return
 	} else if err != nil {
@@ -620,7 +621,7 @@ func (h *PostHandler) DeleteAttach(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.attachmentUsecase.DeleteAttach(r.Context(), attachInfo.Id, postID)
+	err = h.attachmentUsecase.DeleteAttachment(r.Context(), attachInfo.Id, postID)
 	if err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
@@ -631,7 +632,7 @@ func (h *PostHandler) DeleteAttach(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.attachmentUsecase.DeleteAttaches(r.Context(), models.AttachmentData{Id: attachInfo.Id, Type: attachInfo.Type})
+	err = h.attachmentUsecase.DeleteAttachments(models.AttachmentData{Id: attachInfo.Id, Type: attachInfo.Type})
 	if err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return

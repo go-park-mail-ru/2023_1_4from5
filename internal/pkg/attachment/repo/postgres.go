@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -29,8 +28,8 @@ func NewAttachmentRepo(db *sql.DB, logger *zap.SugaredLogger) *AttachmentRepo {
 	}
 }
 
-func (repo *AttachmentRepo) CreateAttach(ctx context.Context, postID uuid.UUID, attachID uuid.UUID, attachmentType string) error {
-	row := repo.db.QueryRow(InsertAttach, attachID, postID, attachmentType)
+func (repo *AttachmentRepo) CreateAttachment(ctx context.Context, postID uuid.UUID, attachmentID uuid.UUID, attachmentType string) error {
+	row := repo.db.QueryRow(InsertAttach, attachmentID, postID, attachmentType)
 
 	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		repo.logger.Error(err)
@@ -40,10 +39,10 @@ func (repo *AttachmentRepo) CreateAttach(ctx context.Context, postID uuid.UUID, 
 	return nil
 }
 
-func (r *AttachmentRepo) DeleteAttach(ctx context.Context, attachID, postID uuid.UUID) error {
-	var attachIDtmp uuid.UUID
-	row := r.db.QueryRow(DeleteAttach, attachID, postID)
-	if err := row.Scan(&attachIDtmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
+func (r *AttachmentRepo) DeleteAttachment(ctx context.Context, attachmentID, postID uuid.UUID) error {
+	var attachmentIDtmp uuid.UUID
+	row := r.db.QueryRow(DeleteAttach, attachmentID, postID)
+	if err := row.Scan(&attachmentIDtmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		r.logger.Error(err)
 		return models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
@@ -52,7 +51,7 @@ func (r *AttachmentRepo) DeleteAttach(ctx context.Context, attachID, postID uuid
 	return nil
 }
 
-func (repo *AttachmentRepo) DeleteAttachByID(ctx context.Context, attachID uuid.UUID) error {
+func (repo *AttachmentRepo) DeleteAttachmentByID(ctx context.Context, attachID uuid.UUID) error {
 	row := repo.db.QueryRow(DeleteAttachByID, attachID)
 
 	if err := row.Err(); err != nil {
@@ -63,7 +62,7 @@ func (repo *AttachmentRepo) DeleteAttachByID(ctx context.Context, attachID uuid.
 	return nil
 }
 
-func (repo *AttachmentRepo) DeleteAttachesByPostID(ctx context.Context, postID uuid.UUID) ([]models.AttachmentData, error) {
+func (repo *AttachmentRepo) DeleteAttachmentsByPostID(ctx context.Context, postID uuid.UUID) ([]models.AttachmentData, error) {
 	resultAttachs := make([]models.AttachmentData, 0)
 	rows, err := repo.db.Query(DeleteAttachByPostID, postID)
 	if err != nil {
@@ -76,7 +75,6 @@ func (repo *AttachmentRepo) DeleteAttachesByPostID(ctx context.Context, postID u
 		if err := rows.Scan(&tmp.Id, &tmp.Type); err != nil {
 			return nil, models.InternalError
 		}
-		fmt.Println(tmp)
 		resultAttachs = append(resultAttachs, tmp)
 
 	}

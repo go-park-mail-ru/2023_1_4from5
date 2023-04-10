@@ -147,6 +147,15 @@ func TestPostHandler_AddLike(t *testing.T) {
 			},
 		},
 		{
+			name:   "BadRequest3",
+			fields: fields{mockPostUsecase, mockAuthUsecase, mockAttachUsecase},
+			args: args{
+				r: httptest.NewRequest("PUT", "/api/post/addLike",
+					bytes.NewReader(bodyPrepare(models.Like{}))),
+				expectedResponse: http.StatusBadRequest,
+			},
+		},
+		{
 			name:   "Forbidden",
 			fields: fields{mockPostUsecase, mockAuthUsecase, mockAttachUsecase},
 			args: args{
@@ -164,6 +173,15 @@ func TestPostHandler_AddLike(t *testing.T) {
 				expectedResponse: http.StatusInternalServerError,
 			},
 		},
+		{
+			name:   "InternalServerError2",
+			fields: fields{mockPostUsecase, mockAuthUsecase, mockAttachUsecase},
+			args: args{
+				r: httptest.NewRequest("PUT", "/api/post/addLike",
+					bytes.NewReader(bodyPrepare(models.Like{}))),
+				expectedResponse: http.StatusInternalServerError,
+			},
+		},
 	}
 
 	for i := 0; i < len(tests); i++ {
@@ -171,17 +189,26 @@ func TestPostHandler_AddLike(t *testing.T) {
 		switch tests[i].name {
 		case "OK":
 			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+			mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil)
 			mockPostUsecase.EXPECT().AddLike(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Like{}, nil)
 		case "Unauthorized":
 			value = "body"
 		case "InternalServerError":
 			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+			mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil)
 			mockPostUsecase.EXPECT().AddLike(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Like{}, models.InternalError)
+		case "InternalServerError2":
+			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+			mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, models.InternalError)
 		case "BadRequest1":
 			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 		case "BadRequest2":
 			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+			mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil)
 			mockPostUsecase.EXPECT().AddLike(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Like{}, models.WrongData)
+		case "BadRequest3":
+			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+			mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
 		case "Forbidden":
 			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, errors.New("test err"))
 		}
