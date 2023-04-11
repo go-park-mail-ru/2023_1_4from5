@@ -39,12 +39,10 @@ var testUser = &models.AccessDetails{Login: "Bashmak1!", Id: uuid.New()}
 func TestCreatorUsecase_GetPage(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	logger := zap.NewNop()
+
 	defer func(logger *zap.Logger) {
-		err = logger.Sync()
+		err := logger.Sync()
 		if err != nil {
 			return
 		}
@@ -122,12 +120,9 @@ func TestCreatorUsecase_GetPage(t *testing.T) {
 func TestCreatorUsecase_CreateAim(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	logger := zap.NewNop()
 	defer func(logger *zap.Logger) {
-		err = logger.Sync()
+		err := logger.Sync()
 		if err != nil {
 			return
 		}
@@ -180,12 +175,10 @@ var creators = make([]models.Creator, 1)
 func TestCreatorUsecase_GetAllCreators(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	logger := zap.NewNop()
+
 	defer func(logger *zap.Logger) {
-		err = logger.Sync()
+		err := logger.Sync()
 		if err != nil {
 			return
 		}

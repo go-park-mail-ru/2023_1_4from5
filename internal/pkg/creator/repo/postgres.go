@@ -115,7 +115,6 @@ func (r *CreatorRepo) CreatorPosts(ctx context.Context, creatorId uuid.UUID) ([]
 			r.logger.Error(err)
 			return nil, models.InternalError
 		}
-
 		post.Subscriptions = make([]models.Subscription, len(availableSubscriptions))
 		if post.Subscriptions, err = r.GetSubsByID(ctx, availableSubscriptions...); err != nil {
 			r.logger.Error(err)

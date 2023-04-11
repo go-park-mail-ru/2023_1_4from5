@@ -37,10 +37,7 @@ func TestCreatorRepo_GetUserSubscriptions(t *testing.T) {
 	}
 	defer db.Close()
 
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	logger := zap.NewNop()
 	defer func(logger *zap.Logger) {
 		err = logger.Sync()
 		if err != nil {
@@ -101,10 +98,7 @@ func TestCreatorRepo_CreatorPosts(t *testing.T) {
 	}
 	defer db.Close()
 
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	logger := zap.NewNop()
 	defer func(logger *zap.Logger) {
 		err = logger.Sync()
 		if err != nil {
@@ -206,10 +200,7 @@ func TestCreatorRepo_GetSubsByID(t *testing.T) {
 	}
 	defer db.Close()
 
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	logger := zap.NewNop()
 	defer func(logger *zap.Logger) {
 		err = logger.Sync()
 		if err != nil {
@@ -281,10 +272,7 @@ func TestCreatorRepo_IsLiked(t *testing.T) {
 	}
 	defer db.Close()
 
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	logger := zap.NewNop()
 	defer func(logger *zap.Logger) {
 		err = logger.Sync()
 		if err != nil {
@@ -361,10 +349,7 @@ func TestCreatorRepo_CreatorInfo(t *testing.T) {
 	}
 	defer db.Close()
 
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	logger := zap.NewNop()
 	defer func(logger *zap.Logger) {
 		err = logger.Sync()
 		if err != nil {
@@ -441,10 +426,7 @@ func TestCreatorRepo_GetCreatorSubs(t *testing.T) {
 	}
 	defer db.Close()
 
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	logger := zap.NewNop()
 	defer func(logger *zap.Logger) {
 		err = logger.Sync()
 		if err != nil {
@@ -526,10 +508,7 @@ func TestCreatorRepo_CreateAim(t *testing.T) {
 	}
 	defer db.Close()
 
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	logger := zap.NewNop()
 	defer func(logger *zap.Logger) {
 		err = logger.Sync()
 		if err != nil {
@@ -584,10 +563,7 @@ func TestCreatorRepo_GetAllCreators(t *testing.T) {
 	}
 	defer db.Close()
 
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	logger := zap.NewNop()
 	defer func(logger *zap.Logger) {
 		err = logger.Sync()
 		if err != nil {
@@ -664,10 +640,7 @@ func TestCreatorRepo_GetPage(t *testing.T) {
 	}
 	defer db.Close()
 
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	logger := zap.NewNop()
 	defer func(logger *zap.Logger) {
 		err = logger.Sync()
 		if err != nil {

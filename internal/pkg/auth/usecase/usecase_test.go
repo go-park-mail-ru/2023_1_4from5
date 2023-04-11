@@ -44,12 +44,9 @@ func TestNewAuthUsecase(t *testing.T) {
 	mockTokenGen := mock.NewMockTokenGenerator(ctl)
 	mockEncrypter := mock.NewMockEncrypter(ctl)
 
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	logger := zap.NewNop()
 	defer func(logger *zap.Logger) {
-		err = logger.Sync()
+		err := logger.Sync()
 		if err != nil {
 			return
 		}
