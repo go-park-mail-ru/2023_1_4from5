@@ -24,7 +24,7 @@ func (user User) UserLoginIsValid() bool {
 		return false
 	}
 	for _, c := range user.Login {
-		if !unicode.IsLetter(c) && !unicode.IsDigit(c) && !unicode.IsPunct(c) && !unicode.IsSpace(c) {
+		if !unicode.IsLetter(c) && !unicode.IsDigit(c) && !unicode.IsPunct(c) {
 			return false
 		}
 	}
@@ -36,7 +36,7 @@ func (user User) UserPasswordIsValid() bool {
 		return false
 	}
 	for _, c := range user.PasswordHash {
-		if !unicode.IsLetter(c) && !unicode.IsDigit(c) && !unicode.IsPunct(c) && !unicode.IsSpace(c) {
+		if !unicode.IsLetter(c) && !unicode.IsDigit(c) && !unicode.IsPunct(c) {
 			return false
 		}
 	}
