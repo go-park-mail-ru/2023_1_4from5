@@ -87,7 +87,7 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 			utils.Response(w, http.StatusUnauthorized, nil)
 			return
 		}
-		utils.Cookie(w, tokenCSRF, "X-CSRF-Token")
+		utils.ResponseWithCSRF(w, tokenCSRF)
 		return
 	}
 	// check CSRF token
@@ -173,7 +173,7 @@ func (h *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 			utils.Response(w, http.StatusUnauthorized, nil)
 			return
 		}
-		utils.Cookie(w, tokenCSRF, "X-CSRF-Token")
+		utils.ResponseWithCSRF(w, tokenCSRF)
 		return
 	}
 	// check CSRF token
@@ -242,7 +242,7 @@ func (h *UserHandler) Donate(w http.ResponseWriter, r *http.Request) {
 			utils.Response(w, http.StatusUnauthorized, nil)
 			return
 		}
-		utils.Cookie(w, tokenCSRF, "X-CSRF-Token")
+		utils.ResponseWithCSRF(w, tokenCSRF)
 		utils.Response(w, http.StatusOK, nil)
 		return
 	}
@@ -291,7 +291,7 @@ func (h *UserHandler) UpdateData(w http.ResponseWriter, r *http.Request) {
 			utils.Response(w, http.StatusUnauthorized, nil)
 			return
 		}
-		utils.Cookie(w, tokenCSRF, "X-CSRF-Token")
+		utils.ResponseWithCSRF(w, tokenCSRF)
 		return
 	}
 
@@ -336,7 +336,7 @@ func (h *UserHandler) BecomeCreator(w http.ResponseWriter, r *http.Request) {
 			utils.Response(w, http.StatusUnauthorized, nil)
 			return
 		}
-		utils.Cookie(w, tokenCSRF, "X-CSRF-Token")
+		utils.ResponseWithCSRF(w, tokenCSRF)
 		return
 	}
 

@@ -24,7 +24,7 @@ func (user User) UserLoginIsValid() bool {
 		return false
 	}
 	for _, c := range user.Login {
-		if !unicode.IsLetter(c) && !unicode.IsDigit(c) && !(c == '.') && !(c == '_') {
+		if !unicode.IsLetter(c) && !unicode.IsDigit(c) && !(c == '.') && !(c == '_') && !(c == '-') {
 			return false
 		}
 	}
