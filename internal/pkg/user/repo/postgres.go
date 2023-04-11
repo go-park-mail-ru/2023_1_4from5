@@ -140,7 +140,7 @@ func (ur *UserRepo) CheckIfCreator(ctx context.Context, userId uuid.UUID) (bool,
 func (ur *UserRepo) BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error) {
 	creatorId := uuid.New()
 	row := ur.db.QueryRowContext(ctx, BecameCreator, creatorId, userId, creatorInfo.Name, creatorInfo.Description)
-	if err := row.Scan(); err != nil {
+	if err := row.Scan(); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		ur.logger.Error(err)
 		return uuid.Nil, models.InternalError
 	}
