@@ -35,7 +35,7 @@ func NewCreatorRepo(db *sql.DB, logger *zap.SugaredLogger) *CreatorRepo {
 
 func (r *CreatorRepo) GetUserSubscriptions(ctx context.Context, userId uuid.UUID) ([]uuid.UUID, error) {
 	userSubscriptions := make([]uuid.UUID, 0)
-	row := r.db.QueryRow(UserSubscriptions, userId)
+	row := r.db.QueryRowContext(ctx, UserSubscriptions, userId)
 	if err := row.Scan(pq.Array(&userSubscriptions)); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		r.logger.Error(err)
 		return nil, models.InternalError
@@ -44,7 +44,7 @@ func (r *CreatorRepo) GetUserSubscriptions(ctx context.Context, userId uuid.UUID
 }
 
 func (r *CreatorRepo) IsLiked(ctx context.Context, userID uuid.UUID, postID uuid.UUID) (bool, error) {
-	row := r.db.QueryRow(IsLiked, postID, userID)
+	row := r.db.QueryRowContext(ctx, IsLiked, postID, userID)
 	if err := row.Scan(&postID, &userID); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		r.logger.Error(err)
 		return false, models.InternalError
@@ -55,7 +55,7 @@ func (r *CreatorRepo) IsLiked(ctx context.Context, userID uuid.UUID, postID uuid
 }
 
 func (r *CreatorRepo) CreatorInfo(ctx context.Context, creatorPage *models.CreatorPage, creatorID uuid.UUID) error {
-	row := r.db.QueryRow(CreatorInfo, creatorID)
+	row := r.db.QueryRowContext(ctx, CreatorInfo, creatorID)
 	creatorPage.CreatorInfo.Id = creatorID
 	var tmpAim sql.NullString
 	if err := row.Scan(&creatorPage.CreatorInfo.UserId, &creatorPage.CreatorInfo.Name, &creatorPage.CreatorInfo.CoverPhoto,
@@ -192,7 +192,7 @@ func (r *CreatorRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]
 	subsInfo := make([]models.Subscription, 0)
 	var sub models.Subscription
 	for _, v := range subsIDs {
-		row := r.db.QueryRow(GetSubInfo, v)
+		row := r.db.QueryRowContext(ctx, GetSubInfo, v)
 		err := row.Scan(&sub.Creator, &sub.MonthConst, &sub.Title,
 			&sub.Description)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
@@ -208,7 +208,7 @@ func (r *CreatorRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]
 }
 
 func (r *CreatorRepo) CreateAim(ctx context.Context, aimInfo models.Aim) error {
-	row := r.db.QueryRow(AddAim, aimInfo.Description, aimInfo.MoneyGot, aimInfo.MoneyNeeded, aimInfo.Creator)
+	row := r.db.QueryRowContext(ctx, AddAim, aimInfo.Description, aimInfo.MoneyGot, aimInfo.MoneyNeeded, aimInfo.Creator)
 	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		r.logger.Error(err)
 		return models.InternalError

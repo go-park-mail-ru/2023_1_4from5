@@ -30,7 +30,7 @@ func NewAuthRepo(db *sql.DB, logger *zap.SugaredLogger) *AuthRepo {
 
 func (r *AuthRepo) CreateUser(ctx context.Context, user models.User) (models.User, error) {
 	var id uuid.UUID
-	row := r.db.QueryRow(AddUser, user.Id, user.Login, user.Name, user.ProfilePhoto, user.PasswordHash)
+	row := r.db.QueryRowContext(ctx, AddUser, user.Id, user.Login, user.Name, user.ProfilePhoto, user.PasswordHash)
 
 	if err := row.Scan(&id); err != nil {
 		r.logger.Error(err)
@@ -56,7 +56,7 @@ func (r *AuthRepo) CheckUser(ctx context.Context, user models.User) (models.User
 		id           uuid.UUID
 	)
 
-	row := r.db.QueryRow(UserAccessDetails, user.Login) // Ищем пользователя с таким логином и берем его пароль и id и юзерверсию
+	row := r.db.QueryRowContext(ctx, UserAccessDetails, user.Login) // Ищем пользователя с таким логином и берем его пароль и id и юзерверсию
 	if err := row.Scan(&id, &passwordHash, &userVersion); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		r.logger.Error(err)
 		return models.User{}, models.InternalError
@@ -80,7 +80,7 @@ func (r *AuthRepo) CheckUser(ctx context.Context, user models.User) (models.User
 }
 
 func (r *AuthRepo) IncUserVersion(ctx context.Context, userId uuid.UUID) (int, error) {
-	row := r.db.QueryRow(IncUserVersion, userId)
+	row := r.db.QueryRowContext(ctx, IncUserVersion, userId)
 	var userVersion int
 
 	if err := row.Scan(&userVersion); err != nil {

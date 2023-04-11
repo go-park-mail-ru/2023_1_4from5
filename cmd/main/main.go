@@ -35,14 +35,10 @@ func main() {
 }
 
 func run() error {
-	logger, err := zap.NewProduction()
-
-	if err != nil {
-		return err
-	}
+	logger := utils.FileLogger("log.txt")
 
 	defer func(logger *zap.Logger) {
-		err = logger.Sync()
+		err := logger.Sync()
 		if err != nil {
 			log.Print(err)
 		}
@@ -78,16 +74,16 @@ func run() error {
 	userUse := userUsecase.NewUserUsecase(userRepo, zapSugar)
 	userHandler := userDelivery.NewUserHandler(userUse, authUse)
 
-	creatorRepo := creatorRepository.NewCreatorRepo(db, zapSugar)
-	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo, zapSugar)
-	creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse, authUse)
-
 	attachmentRepo := attachmentRepository.NewAttachmentRepo(db, zapSugar)
 	attachmentUse := attachmentUsecase.NewAttachmentUsecase(attachmentRepo, zapSugar)
 
 	postRepo := postRepository.NewPostRepo(db, zapSugar)
 	postUse := postUsecase.NewPostUsecase(postRepo, zapSugar)
 	postHandler := postDelivery.NewPostHandler(postUse, authUse, attachmentUse, zapSugar)
+
+	creatorRepo := creatorRepository.NewCreatorRepo(db, zapSugar)
+	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo, zapSugar)
+	creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse, authUse, postUse)
 
 	logMw := middleware.NewLoggerMiddleware(zapSugar)
 	r := mux.NewRouter().PathPrefix("/api").Subrouter()

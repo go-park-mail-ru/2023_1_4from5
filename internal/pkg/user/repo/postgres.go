@@ -35,7 +35,7 @@ func NewUserRepo(db *sql.DB, logger *zap.SugaredLogger) *UserRepo {
 func (ur *UserRepo) GetUserProfile(ctx context.Context, id uuid.UUID) (models.UserProfile, error) {
 	var profile models.UserProfile
 
-	row := ur.db.QueryRow(UserProfile, id)
+	row := ur.db.QueryRowContext(ctx, UserProfile, id)
 	if err := row.Scan(&profile.Login, &profile.Name, &profile.ProfilePhoto, &profile.Registration); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		ur.logger.Error(err)
 		return models.UserProfile{}, models.InternalError
@@ -48,14 +48,14 @@ func (ur *UserRepo) GetUserProfile(ctx context.Context, id uuid.UUID) (models.Us
 func (ur *UserRepo) GetHomePage(ctx context.Context, id uuid.UUID) (models.UserHomePage, error) {
 	var page models.UserHomePage
 
-	row := ur.db.QueryRow(UserNamePhoto, id)
+	row := ur.db.QueryRowContext(ctx, UserNamePhoto, id)
 	if err := row.Scan(&page.Name, &page.ProfilePhoto); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		ur.logger.Error(err)
 		return models.UserHomePage{}, models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
 		return models.UserHomePage{}, models.NotFound
 	}
-	row = ur.db.QueryRow(CheckIfCreator, id)
+	row = ur.db.QueryRowContext(ctx, CheckIfCreator, id)
 	if err := row.Scan(&page.CreatorId); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		ur.logger.Error(err)
 		return models.UserHomePage{}, models.InternalError
@@ -66,7 +66,7 @@ func (ur *UserRepo) GetHomePage(ctx context.Context, id uuid.UUID) (models.UserH
 }
 
 func (ur *UserRepo) UpdateProfilePhoto(ctx context.Context, userID uuid.UUID, path uuid.UUID) error {
-	row := ur.db.QueryRow(UpdateProfilePhoto, path, userID)
+	row := ur.db.QueryRowContext(ctx, UpdateProfilePhoto, path, userID)
 	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		ur.logger.Error(err)
 		return models.InternalError
@@ -75,7 +75,7 @@ func (ur *UserRepo) UpdateProfilePhoto(ctx context.Context, userID uuid.UUID, pa
 }
 
 func (ur *UserRepo) UpdatePassword(ctx context.Context, id uuid.UUID, password string) error {
-	row := ur.db.QueryRow(UpdatePassword, password, id)
+	row := ur.db.QueryRowContext(ctx, UpdatePassword, password, id)
 	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		ur.logger.Error(err)
 		return models.InternalError
@@ -84,7 +84,7 @@ func (ur *UserRepo) UpdatePassword(ctx context.Context, id uuid.UUID, password s
 }
 
 func (ur *UserRepo) UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error {
-	row := ur.db.QueryRow(UpdateProfileInfo, profileInfo.Login, profileInfo.Name, id)
+	row := ur.db.QueryRowContext(ctx, UpdateProfileInfo, profileInfo.Login, profileInfo.Name, id)
 	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		ur.logger.Error(err)
 		return models.InternalError
