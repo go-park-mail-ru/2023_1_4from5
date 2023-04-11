@@ -348,7 +348,7 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
-	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+	userDataJWT, _ := token.ExtractJWTTokenMetadata(r)
 
 	postIDtmp, ok := mux.Vars(r)["post-uuid"]
 	if !ok {
@@ -495,7 +495,16 @@ func (h *PostHandler) AddAttach(w http.ResponseWriter, r *http.Request) {
 	}
 
 	postIDtmp, ok := mux.Vars(r)["post-uuid"]
+	if !ok {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
 	postID, err := uuid.Parse(postIDtmp)
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
 
 	ok, err = h.usecase.IsPostOwner(r.Context(), (*userDataJWT).Id, postID)
 	if err == models.WrongData {

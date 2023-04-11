@@ -369,5 +369,4 @@ func (h *UserHandler) BecomeCreator(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.Response(w, http.StatusOK, creatorId)
-	return
 }
