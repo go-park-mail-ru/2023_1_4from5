@@ -20,10 +20,27 @@ type User struct {
 }
 
 func (user User) UserLoginIsValid() bool {
-	return len(user.Login) >= 7 && len(user.Login) < 40
+	if !(len(user.Login) >= 7 && len(user.Login) < 40) {
+		return false
+	}
+	for _, c := range user.Login {
+		if !unicode.IsLetter(c) && !unicode.IsDigit(c) && !unicode.IsPunct(c) {
+			return false
+		}
+	}
+	return true
 }
 
 func (user User) UserPasswordIsValid() bool {
+	if len(user.PasswordHash) >= 40 {
+		return false
+	}
+	for _, c := range user.PasswordHash {
+		if !unicode.IsLetter(c) && !unicode.IsDigit(c) && !unicode.IsPunct(c) {
+			return false
+		}
+	}
+
 	var (
 		hasMinLen = false
 		hasNumber = false
@@ -31,6 +48,7 @@ func (user User) UserPasswordIsValid() bool {
 	if len(user.PasswordHash) >= 7 {
 		hasMinLen = true
 	}
+
 	for _, char := range user.PasswordHash {
 		if unicode.IsNumber(char) {
 			hasNumber = true

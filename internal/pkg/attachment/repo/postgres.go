@@ -29,7 +29,7 @@ func NewAttachmentRepo(db *sql.DB, logger *zap.SugaredLogger) *AttachmentRepo {
 }
 
 func (repo *AttachmentRepo) CreateAttachment(ctx context.Context, postID uuid.UUID, attachmentID uuid.UUID, attachmentType string) error {
-	row := repo.db.QueryRow(InsertAttach, attachmentID, postID, attachmentType)
+	row := repo.db.QueryRowContext(ctx, InsertAttach, attachmentID, postID, attachmentType)
 
 	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		repo.logger.Error(err)
@@ -41,7 +41,7 @@ func (repo *AttachmentRepo) CreateAttachment(ctx context.Context, postID uuid.UU
 
 func (r *AttachmentRepo) DeleteAttachment(ctx context.Context, attachmentID, postID uuid.UUID) error {
 	var attachmentIDtmp uuid.UUID
-	row := r.db.QueryRow(DeleteAttach, attachmentID, postID)
+	row := r.db.QueryRowContext(ctx, DeleteAttach, attachmentID, postID)
 	if err := row.Scan(&attachmentIDtmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		r.logger.Error(err)
 		return models.InternalError
@@ -52,7 +52,7 @@ func (r *AttachmentRepo) DeleteAttachment(ctx context.Context, attachmentID, pos
 }
 
 func (repo *AttachmentRepo) DeleteAttachmentByID(ctx context.Context, attachID uuid.UUID) error {
-	row := repo.db.QueryRow(DeleteAttachByID, attachID)
+	row := repo.db.QueryRowContext(ctx, DeleteAttachByID, attachID)
 
 	if err := row.Err(); err != nil {
 		repo.logger.Error(err)

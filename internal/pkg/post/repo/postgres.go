@@ -46,7 +46,7 @@ func NewPostRepo(db *sql.DB, logger *zap.SugaredLogger) *PostRepo {
 
 func (r *PostRepo) IsPostAvailable(ctx context.Context, userID, postID uuid.UUID) error {
 	var userIDtmp uuid.UUID
-	row := r.db.QueryRow(IsPostAvailable, userID, postID)
+	row := r.db.QueryRowContext(ctx, IsPostAvailable, userID, postID)
 	if err := row.Scan(&userIDtmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		r.logger.Error(err)
 		return models.InternalError
@@ -129,7 +129,7 @@ func (r *PostRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]mod
 			subsIDs = append(subsIDs[:i], subsIDs[i+1:]...)
 			continue
 		}
-		row := r.db.QueryRow(GetSubInfo, v)
+		row := r.db.QueryRowContext(ctx, GetSubInfo, v)
 		err := row.Scan(&sub.Creator, &sub.MonthConst, &sub.Title,
 			&sub.Description)
 		if err != nil {
@@ -147,7 +147,7 @@ func (r *PostRepo) GetPost(ctx context.Context, postID, userID uuid.UUID) (model
 	attachs := make([]uuid.UUID, 0)
 	types := make([]sql.NullString, 0)
 	subs := make([]uuid.UUID, 0)
-	row := r.db.QueryRow(GetPost, postID)
+	row := r.db.QueryRowContext(ctx, GetPost, postID)
 	err := row.Scan(&post.Id, &post.Creator, &post.Creation, &post.Title,
 		&post.Text, pq.Array(&attachs), pq.Array(&types), pq.Array(&subs)) //подписки, при которыз пост доступен
 	if err != nil {
@@ -168,7 +168,7 @@ func (r *PostRepo) GetPost(ctx context.Context, postID, userID uuid.UUID) (model
 
 func (r *PostRepo) IsCreator(ctx context.Context, userID, creatorID uuid.UUID) (bool, error) {
 	var userIdtmp uuid.UUID
-	row := r.db.QueryRow(IsCreator, creatorID)
+	row := r.db.QueryRowContext(ctx, IsCreator, creatorID)
 	if err := row.Scan(&userIdtmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		r.logger.Error(err)
 		return false, models.InternalError
@@ -230,11 +230,12 @@ func (r *PostRepo) DeletePost(ctx context.Context, postID uuid.UUID) error {
 
 func (r *PostRepo) IsPostOwner(ctx context.Context, userId uuid.UUID, postId uuid.UUID) (bool, error) {
 	var userIdtmp uuid.UUID
-	row := r.db.QueryRow(GetUserId, postId)
+	row := r.db.QueryRowContext(ctx, GetUserId, postId)
 	if err := row.Scan(&userIdtmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		r.logger.Error(err)
 		return false, models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
 		return false, models.WrongData
 	}
 	if userIdtmp != userId {
@@ -248,9 +249,8 @@ func (r *PostRepo) AddLike(ctx context.Context, userID uuid.UUID, postID uuid.UU
 		userUUID uuid.UUID
 		postUUID uuid.UUID
 	)
-	fmt.Println("Add Like")
 	//проверяем, лайкнул ли уже
-	row := r.db.QueryRow(IsLiked, postID, userID)
+	row := r.db.QueryRowContext(ctx, IsLiked, postID, userID)
 	if err := row.Scan(&postUUID, &userUUID); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		r.logger.Error(err)
 		return models.Like{}, models.InternalError
@@ -270,7 +270,7 @@ func (r *PostRepo) AddLike(ctx context.Context, userID uuid.UUID, postID uuid.UU
 	// обновляем кол-во лайков, заодно смотрим, есть ли вообще такой пост
 	var like models.Like
 	like.PostID = postID
-	row = r.db.QueryRow(UpdateLikeCount, 1, postID)
+	row = r.db.QueryRowContext(ctx, UpdateLikeCount, 1, postID)
 
 	if err := row.Scan(&like.LikesCount); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		r.logger.Error(err)
@@ -279,7 +279,7 @@ func (r *PostRepo) AddLike(ctx context.Context, userID uuid.UUID, postID uuid.UU
 		return models.Like{}, models.WrongData
 	}
 
-	row = r.db.QueryRow(AddLike, postID, userID)
+	row = r.db.QueryRowContext(ctx, AddLike, postID, userID)
 
 	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		r.logger.Error(err)
@@ -295,7 +295,7 @@ func (r *PostRepo) RemoveLike(ctx context.Context, userID uuid.UUID, postID uuid
 		postUUID uuid.UUID
 	)
 	fmt.Println("Remove Like")
-	row := r.db.QueryRow(IsLiked, postID, userID)
+	row := r.db.QueryRowContext(ctx, IsLiked, postID, userID)
 	if err := row.Scan(&postUUID, &userUUID); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		r.logger.Error(err)
 		return models.Like{}, models.InternalError
@@ -305,14 +305,14 @@ func (r *PostRepo) RemoveLike(ctx context.Context, userID uuid.UUID, postID uuid
 
 	var like models.Like
 	like.PostID = postID
-	row = r.db.QueryRow(UpdateLikeCount, -1, postID)
+	row = r.db.QueryRowContext(ctx, UpdateLikeCount, -1, postID)
 
 	if err := row.Scan(&like.LikesCount); err != nil {
 		r.logger.Error(err)
 		return models.Like{}, models.InternalError
 	}
 
-	row = r.db.QueryRow(RemoveLike, postID, userID)
+	row = r.db.QueryRowContext(ctx, RemoveLike, postID, userID)
 
 	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		r.logger.Error(err)

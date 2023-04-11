@@ -10,6 +10,7 @@ import (
 	mockAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/mocks"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
 	mock "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/mocks"
+	mockPost "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/mocks"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -35,7 +36,8 @@ func TestNewCreatorHandler(t *testing.T) {
 
 	mockUsecase := mock.NewMockCreatorUsecase(ctl)
 	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
-	testHandler := NewCreatorHandler(mockUsecase, mockAuthUsecase)
+	mockPostUsecase := mockPost.NewMockPostUsecase(ctl)
+	testHandler := NewCreatorHandler(mockUsecase, mockAuthUsecase, mockPostUsecase)
 	if testHandler.usecase != mockUsecase {
 		t.Error("bad constructor")
 	}
@@ -51,7 +53,8 @@ func TestCreatorHandler_GetPage(t *testing.T) {
 
 	usecaseMock := mock.NewMockCreatorUsecase(ctl)
 	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
-	handler := NewCreatorHandler(usecaseMock, mockAuthUsecase)
+	mockPostUsecase := mockPost.NewMockPostUsecase(ctl)
+	handler := NewCreatorHandler(usecaseMock, mockAuthUsecase, mockPostUsecase)
 	var r *http.Request
 	var status int
 	for i := 0; i < 4; i++ {
@@ -116,6 +119,7 @@ func TestCreatorHandler_CreateAim(t *testing.T) {
 
 	usecaseMock := mock.NewMockCreatorUsecase(ctl)
 	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
+	mockPostUsecase := mockPost.NewMockPostUsecase(ctl)
 
 	tests := []struct {
 		name           string
@@ -136,6 +140,7 @@ func TestCreatorHandler_CreateAim(t *testing.T) {
 				})
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
 				usecaseMock.EXPECT().CreateAim(gomock.Any(), gomock.Any()).Return(nil)
 				return r
 			},
@@ -224,7 +229,7 @@ func TestCreatorHandler_CreateAim(t *testing.T) {
 					Expires:  time.Time{},
 					HttpOnly: true,
 				})
-
+				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				usecaseMock.EXPECT().CreateAim(gomock.Any(), gomock.Any()).Return(models.InternalError)
 				return r
@@ -238,6 +243,7 @@ func TestCreatorHandler_CreateAim(t *testing.T) {
 			h := &CreatorHandler{
 				usecase:     usecaseMock,
 				authUsecase: mockAuthUsecase,
+				postUsecase: mockPostUsecase,
 			}
 			w := httptest.NewRecorder()
 			r := test.mock()

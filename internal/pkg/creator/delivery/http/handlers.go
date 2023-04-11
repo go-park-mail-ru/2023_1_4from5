@@ -4,6 +4,7 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/gorilla/mux"
@@ -14,12 +15,14 @@ import (
 type CreatorHandler struct {
 	usecase     creator.CreatorUsecase
 	authUsecase auth.AuthUsecase
+	postUsecase post.PostUsecase
 }
 
-func NewCreatorHandler(uc creator.CreatorUsecase, auc auth.AuthUsecase) *CreatorHandler {
+func NewCreatorHandler(uc creator.CreatorUsecase, auc auth.AuthUsecase, puc post.PostUsecase) *CreatorHandler {
 	return &CreatorHandler{
 		usecase:     uc,
 		authUsecase: auc,
+		postUsecase: puc,
 	}
 }
 
@@ -82,6 +85,23 @@ func (h *CreatorHandler) CreateAim(w http.ResponseWriter, r *http.Request) {
 
 	if len(aimInfo.Description) > 100 {
 		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	isCreator, err := h.postUsecase.IsCreator(r.Context(), userDataJWT.Id, aimInfo.Creator)
+
+	if err == models.WrongData {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if !isCreator {
+		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
 
