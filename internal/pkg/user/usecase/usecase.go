@@ -22,22 +22,12 @@ func NewUserUsecase(repo user.UserRepo, logger *zap.SugaredLogger) *UserUsecase 
 
 func (uc *UserUsecase) GetProfile(ctx context.Context, details models.AccessDetails) (models.UserProfile, error) {
 	userId := details.Id
-	userProfile, err := uc.repo.GetUserProfile(ctx, userId)
-	if err != nil {
-		return models.UserProfile{}, err
-	}
-
-	return userProfile, nil
+	return uc.repo.GetUserProfile(ctx, userId)
 }
 
 func (uc *UserUsecase) GetHomePage(ctx context.Context, details models.AccessDetails) (models.UserHomePage, error) {
 	userId := details.Id
-	homePage, err := uc.repo.GetHomePage(ctx, userId)
-	if err != nil {
-		return models.UserHomePage{}, err
-	}
-
-	return homePage, nil
+	return uc.repo.GetHomePage(ctx, userId)
 }
 
 func (uc *UserUsecase) UpdatePhoto(ctx context.Context, details models.AccessDetails) (uuid.UUID, error) {

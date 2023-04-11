@@ -53,12 +53,10 @@ func TestNewUserUsecase(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
 	mockUserRepo := mock.NewMockUserRepo(ctl)
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	logger := zap.NewNop()
+
 	defer func(logger *zap.Logger) {
-		err = logger.Sync()
+		err := logger.Sync()
 		if err != nil {
 			return
 		}
@@ -121,6 +119,93 @@ func TestUserUsecase_GetHomePage(t *testing.T) {
 			_, code := h.GetHomePage(context.Background(), test.accessDetails)
 			require.Equal(t, test.expectedStatusCode, code, fmt.Errorf("%s :  expected %e, got %e,",
 				test.name, test.expectedStatusCode, code))
+		})
+	}
+}
+
+func TestUserUsecase_UpdatePhoto(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	mockUserRepo := mock.NewMockUserRepo(ctl)
+
+	testsUpdatePhoto := []struct {
+		name               string
+		accessDetails      models.AccessDetails
+		mock               func()
+		expectedStatusCode error
+	}{
+		{
+			name:          "OK",
+			accessDetails: testUser,
+			mock: func() {
+				mockUserRepo.EXPECT().UpdateProfilePhoto(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+			},
+			expectedStatusCode: nil,
+		},
+		{
+			name:          "Internal Error",
+			accessDetails: testUser,
+			mock: func() {
+				mockUserRepo.EXPECT().UpdateProfilePhoto(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.InternalError)
+			},
+			expectedStatusCode: models.InternalError,
+		},
+	}
+
+	for _, test := range testsUpdatePhoto {
+		t.Run(test.name, func(t *testing.T) {
+			h := &UserUsecase{
+				repo: mockUserRepo,
+			}
+			test.mock()
+			_, code := h.UpdatePhoto(context.Background(), test.accessDetails)
+			require.Equal(t, test.expectedStatusCode, code, fmt.Errorf("%s :  expected %e, got %e,",
+				test.name, test.expectedStatusCode, code))
+		})
+	}
+}
+
+func TestUserUsecase_UpdatePassword(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	mockUserRepo := mock.NewMockUserRepo(ctl)
+
+	testsUpdatePhoto := []struct {
+		name               string
+		id                 uuid.UUID
+		password           string
+		mock               func()
+		expectedStatusCode error
+	}{
+		{
+			name:     "OK",
+			id:       uuid.New(),
+			password: "1234567aa",
+			mock: func() {
+				mockUserRepo.EXPECT().UpdatePassword(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+			},
+			expectedStatusCode: nil,
+		},
+		{
+			name:     "Internal Error",
+			id:       uuid.New(),
+			password: "1234567aa",
+			mock: func() {
+				mockUserRepo.EXPECT().UpdatePassword(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.InternalError)
+			},
+			expectedStatusCode: models.InternalError,
+		},
+	}
+
+	for _, test := range testsUpdatePhoto {
+		t.Run(test.name, func(t *testing.T) {
+			h := &UserUsecase{
+				repo: mockUserRepo,
+			}
+			test.mock()
+			err := h.UpdatePassword(context.Background(), test.id, test.password)
+			require.Equal(t, test.expectedStatusCode, err, fmt.Errorf("%s :  expected %e, got %e,",
+				test.name, test.expectedStatusCode, err))
 		})
 	}
 }

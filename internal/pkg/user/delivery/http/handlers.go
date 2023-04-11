@@ -92,11 +92,7 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 	}
 	// check CSRF token
 	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
-	if err != nil {
-		utils.Response(w, http.StatusForbidden, nil)
-		return
-	}
-	if *userDataCSRF != *userDataJWT {
+	if err != nil || *userDataCSRF != *userDataJWT {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -116,12 +112,10 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 	buf, _ := io.ReadAll(file)
 	file.Close()
 	if file, err = fileTmp.Open(); err != nil {
-		fmt.Println(err)
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
 	if http.DetectContentType(buf) != "image/jpeg" && http.DetectContentType(buf) != "image/png" {
-		fmt.Println("wrong content type   ")
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
@@ -130,7 +124,6 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 	var oldName uuid.UUID
 	oldName, err = uuid.Parse(r.PostFormValue("path"))
 	if err != nil {
-		fmt.Println("path   ", err)
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
@@ -138,8 +131,6 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 	if oldName != uuid.Nil {
 		err = os.Remove(filepath.Join(models.FolderPath, fmt.Sprintf("%s.jpg", oldName.String())))
 		if err != nil {
-			fmt.Println(err)
-
 			utils.Response(w, http.StatusBadRequest, nil)
 		}
 	}
@@ -187,11 +178,7 @@ func (h *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 	}
 	// check CSRF token
 	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
-	if err != nil {
-		utils.Response(w, http.StatusForbidden, nil)
-		return
-	}
-	if *userDataCSRF != *userDataJWT {
+	if err != nil || *userDataCSRF != *userDataJWT {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -244,7 +231,7 @@ func (h *UserHandler) Donate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	if _, err = h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -256,15 +243,11 @@ func (h *UserHandler) Donate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		utils.Cookie(w, tokenCSRF, "X-CSRF-Token")
+		utils.Response(w, http.StatusOK, nil)
 		return
 	}
-	// check CSRF token
 	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
-	if err != nil {
-		utils.Response(w, http.StatusForbidden, nil)
-		return
-	}
-	if *userDataCSRF != *userDataJWT {
+	if err != nil || *userDataCSRF != *userDataJWT {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -286,9 +269,7 @@ func (h *UserHandler) Donate(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
-
 	utils.Response(w, http.StatusOK, newMoneyCount)
-
 }
 
 func (h *UserHandler) UpdateData(w http.ResponseWriter, r *http.Request) {
@@ -313,13 +294,9 @@ func (h *UserHandler) UpdateData(w http.ResponseWriter, r *http.Request) {
 		utils.Cookie(w, tokenCSRF, "X-CSRF-Token")
 		return
 	}
-	// check CSRF token
+
 	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
-	if err != nil {
-		utils.Response(w, http.StatusForbidden, nil)
-		return
-	}
-	if *userDataCSRF != *userDataJWT {
+	if err != nil || *userDataCSRF != *userDataJWT {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
