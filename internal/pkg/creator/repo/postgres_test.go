@@ -21,9 +21,9 @@ var subsIDs = []uuid.UUID{uuid.New(), uuid.New()}
 var testSubscriptionId = []uuid.UUID{subsIDs[0]}
 var id = subsIDs[0].String()
 var attachTypes = []string{"test1", "test2"}
-var attachs = []models.Attachment{models.Attachment{Id: attachsIDs[0], Type: attachTypes[0]}, models.Attachment{Id: attachsIDs[1], Type: attachTypes[1]}}
-var subs = []models.Subscription{models.Subscription{Id: subsIDs[0], Creator: creatorId, MonthConst: 100, Title: "test", Description: "TEST"}, models.Subscription{Id: subsIDs[1], Creator: creatorId, MonthConst: 100}}
-var posts = []models.Post{models.Post{Id: uuid.New(), Creator: creatorId, LikesCount: 4, Title: "test", Text: "TEST", Attachments: attachs, Subscriptions: subs}, models.Post{Id: uuid.New(), Creator: creatorId, LikesCount: 15, Title: "test1", Text: "TEST1", Attachments: attachs, Subscriptions: subs}}
+var attachments = []models.Attachment{{Id: attachsIDs[0], Type: attachTypes[0]}, {Id: attachsIDs[1], Type: attachTypes[1]}}
+var subs = []models.Subscription{{Id: subsIDs[0], Creator: creatorId, MonthConst: 100, Title: "test", Description: "TEST"}, {Id: subsIDs[1], Creator: creatorId, MonthConst: 100}}
+var posts = []models.Post{{Id: uuid.New(), Creator: creatorId, LikesCount: 4, Title: "test", Text: "TEST", Attachments: attachments, Subscriptions: subs}, {Id: uuid.New(), Creator: creatorId, LikesCount: 15, Title: "test1", Text: "TEST1", Attachments: attachments, Subscriptions: subs}}
 var creatorInfo = models.Creator{Id: creatorId, UserId: uuid.New(), Name: "testName", FollowersCount: 5, Description: "test", PostsCount: 10}
 var creatorAim = models.Aim{MoneyGot: 100, MoneyNeeded: 200, Description: "testAim", Creator: creatorId}
 var creatorPageRes = models.CreatorPage{CreatorInfo: creatorInfo, Aim: creatorAim}
@@ -153,7 +153,6 @@ func TestCreatorRepo_CreatorPosts(t *testing.T) {
 				mock.ExpectQuery(`SELECT "post"\.post_id, creation_date, title, post_text, likes_count, array_agg\(attachment_id\), array_agg\(attachment_type\), array_agg\(DISTINCT subscription_id\) FROM "post" LEFT JOIN "attachment" a on "post"\.post_id \= a\.post_id LEFT JOIN "post_subscription" ps on "post"\.post_id \= ps\.post_id WHERE`).
 					WithArgs(creatorId).WillReturnRows(rows)
 
-				rows = sqlmock.NewRows([]string{"creator_id", "month_cost", "title", "description"}).AddRow(subs[0].Creator, subs[0].MonthConst, subs[0].Title, subs[0].Description)
 				mock.ExpectQuery(`SELECT creator_id, month_cost, title, description FROM "subscription" WHERE`).WithArgs(subsIDs[0]).WillReturnError(models.InternalError)
 
 			},
@@ -757,7 +756,6 @@ func TestCreatorRepo_GetPage(t *testing.T) {
 					mock.ExpectQuery(`SELECT creator_id, month_cost, title, description FROM "subscription" WHERE`).WithArgs(subsIDs[i%2]).WillReturnRows(rows)
 				}
 
-				rows = sqlmock.NewRows([]string{"post_id", "user_id"}).AddRow(postId, userId)
 				mock.ExpectQuery(`SELECT post_id, user_id FROM "like_post" WHERE`).
 					WithArgs(posts[0].Id, userId).WillReturnError(errors.New("test"))
 

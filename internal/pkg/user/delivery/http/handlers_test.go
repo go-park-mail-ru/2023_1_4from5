@@ -52,6 +52,7 @@ func TestGetProfile(t *testing.T) {
 
 	os.Setenv("TOKEN_SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
+	const body = "body"
 	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: uuid.New()})
 
 	usecaseMock := mock.NewMockUserUsecase(ctl)
@@ -69,7 +70,7 @@ func TestGetProfile(t *testing.T) {
 			usecaseMock.EXPECT().GetProfile(gomock.Any(), gomock.Any()).Return(models.UserProfile{}, nil)
 			status = http.StatusOK
 		case 1:
-			value = "body"
+			value = body
 			status = http.StatusUnauthorized
 		case 2:
 			usecaseMock.EXPECT().GetProfile(gomock.Any(), gomock.Any()).Return(models.UserProfile{}, models.InternalError)
@@ -217,8 +218,8 @@ func TestUserHandler_UpdateProfilePhoto(t *testing.T) {
 
 				defer writer.Close()
 
-				partPath, err := writer.CreateFormField("path")
-				_, err = partPath.Write([]byte(uuid.Nil.String()))
+				partPath, _ := writer.CreateFormField("path")
+				_, err := partPath.Write([]byte(uuid.Nil.String()))
 				if err != nil {
 					t.Error(err)
 				}
@@ -417,8 +418,8 @@ func TestUserHandler_UpdateProfilePhoto(t *testing.T) {
 				go func() {
 					defer writer.Close()
 
-					partPath, err := writer.CreateFormField("path")
-					_, err = partPath.Write([]byte(uuid.Nil.String()))
+					partPath, _ := writer.CreateFormField("path")
+					_, err := partPath.Write([]byte(uuid.Nil.String()))
 					if err != nil {
 						t.Error(err)
 					}
@@ -457,8 +458,8 @@ func TestUserHandler_UpdateProfilePhoto(t *testing.T) {
 
 				defer writer.Close()
 
-				partPath, err := writer.CreateFormField("path")
-				_, err = partPath.Write([]byte("111"))
+				partPath, _ := writer.CreateFormField("path")
+				_, err := partPath.Write([]byte("111"))
 				if err != nil {
 					t.Error(err)
 				}

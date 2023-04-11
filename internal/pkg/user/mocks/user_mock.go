@@ -36,6 +36,36 @@ func (m *MockUserUsecase) EXPECT() *MockUserUsecaseMockRecorder {
 	return m.recorder
 }
 
+// BecomeCreator mocks base method.
+func (m *MockUserUsecase) BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BecomeCreator", ctx, creatorInfo, userId)
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BecomeCreator indicates an expected call of BecomeCreator.
+func (mr *MockUserUsecaseMockRecorder) BecomeCreator(ctx, creatorInfo, userId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BecomeCreator", reflect.TypeOf((*MockUserUsecase)(nil).BecomeCreator), ctx, creatorInfo, userId)
+}
+
+// CheckIfCreator mocks base method.
+func (m *MockUserUsecase) CheckIfCreator(ctx context.Context, userId uuid.UUID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckIfCreator", ctx, userId)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckIfCreator indicates an expected call of CheckIfCreator.
+func (mr *MockUserUsecaseMockRecorder) CheckIfCreator(ctx, userId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckIfCreator", reflect.TypeOf((*MockUserUsecase)(nil).CheckIfCreator), ctx, userId)
+}
+
 // Donate mocks base method.
 func (m *MockUserUsecase) Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int, error) {
 	m.ctrl.T.Helper()
@@ -145,6 +175,36 @@ func NewMockUserRepo(ctrl *gomock.Controller) *MockUserRepo {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockUserRepo) EXPECT() *MockUserRepoMockRecorder {
 	return m.recorder
+}
+
+// BecomeCreator mocks base method.
+func (m *MockUserRepo) BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BecomeCreator", ctx, creatorInfo, userId)
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BecomeCreator indicates an expected call of BecomeCreator.
+func (mr *MockUserRepoMockRecorder) BecomeCreator(ctx, creatorInfo, userId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BecomeCreator", reflect.TypeOf((*MockUserRepo)(nil).BecomeCreator), ctx, creatorInfo, userId)
+}
+
+// CheckIfCreator mocks base method.
+func (m *MockUserRepo) CheckIfCreator(ctx context.Context, userId uuid.UUID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckIfCreator", ctx, userId)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckIfCreator indicates an expected call of CheckIfCreator.
+func (mr *MockUserRepoMockRecorder) CheckIfCreator(ctx, userId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckIfCreator", reflect.TypeOf((*MockUserRepo)(nil).CheckIfCreator), ctx, userId)
 }
 
 // Donate mocks base method.

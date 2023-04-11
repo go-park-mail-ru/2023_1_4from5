@@ -27,13 +27,12 @@ func NewCreatorHandler(uc creator.CreatorUsecase, auc auth.AuthUsecase, puc post
 }
 
 func (h *CreatorHandler) GetAllCreators(w http.ResponseWriter, r *http.Request) {
-	var creators = make([]models.Creator, 0)
 	creators, err := h.usecase.GetAllCreators(r.Context())
 	if err == models.InternalError {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
-	for i, _ := range creators {
+	for i := range creators {
 		creators[i].Sanitize()
 	}
 	utils.Response(w, http.StatusOK, creators)
