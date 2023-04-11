@@ -105,6 +105,7 @@ func run() error {
 		user.HandleFunc("/updateData", userHandler.UpdateData).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/homePage", userHandler.GetHomePage).Methods(http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/updateProfilePhoto", userHandler.UpdateProfilePhoto).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
+		user.HandleFunc("/becameCreator", userHandler.BecomeCreator).Methods(http.MethodPost, http.MethodOptions, http.MethodGet)
 	}
 
 	creator := r.PathPrefix("/creator").Subrouter()

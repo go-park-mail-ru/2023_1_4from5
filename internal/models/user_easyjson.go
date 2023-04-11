@@ -646,3 +646,76 @@ func (v *Donate) UnmarshalJSON(data []byte) error {
 func (v *Donate) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels6(l, v)
 }
+func easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels7(in *jlexer.Lexer, out *BecameCreatorInfo) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "name":
+			out.Name = string(in.String())
+		case "description":
+			out.Description = string(in.String())
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels7(out *jwriter.Writer, in BecameCreatorInfo) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	{
+		const prefix string = ",\"name\":"
+		out.RawString(prefix[1:])
+		out.String(string(in.Name))
+	}
+	{
+		const prefix string = ",\"description\":"
+		out.RawString(prefix)
+		out.String(string(in.Description))
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v BecameCreatorInfo) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels7(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v BecameCreatorInfo) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels7(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *BecameCreatorInfo) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels7(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *BecameCreatorInfo) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels7(l, v)
+}
