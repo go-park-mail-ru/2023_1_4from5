@@ -13,11 +13,12 @@ const (
 	UserProfile          = `SELECT login, display_name, profile_photo, registration_date FROM "user" WHERE user_id=$1;`
 	UserNamePhoto        = `SELECT display_name, profile_photo FROM "user" WHERE user_id=$1;`
 	CheckIfCreator       = `SELECT creator_id FROM "creator" WHERE user_id=$1;`
-	UpdateProfilePhoto   = `UPDATE "user" SET profile_photo = $1 WHERE user_id = $2`
-	UpdatePassword       = `UPDATE "user" SET password_hash = $1, user_version = user_version+1 WHERE user_id = $2`
-	UpdateProfileInfo    = `UPDATE "user" SET login = $1, display_name = $2 WHERE user_id = $3`
-	UpdateAuthorAimMoney = `UPDATE "creator" SET money_got = money_got + $1 WHERE creator_id = $2 RETURNING money_got`
-	AddDonate            = `INSERT INTO "donation"(user_id, creator_id, money_count) VALUES ($1, $2, $3)`
+	UpdateProfilePhoto   = `UPDATE "user" SET profile_photo = $1 WHERE user_id = $2;`
+	UpdatePassword       = `UPDATE "user" SET password_hash = $1, user_version = user_version+1 WHERE user_id = $2;`
+	UpdateProfileInfo    = `UPDATE "user" SET login = $1, display_name = $2 WHERE user_id = $3;`
+	UpdateAuthorAimMoney = `UPDATE "creator" SET money_got = money_got + $1 WHERE creator_id = $2 RETURNING money_got;`
+	AddDonate            = `INSERT INTO "donation"(user_id, creator_id, money_count) VALUES ($1, $2, $3);`
+	BecameCreator        = `INSERT INTO "creator"(creator_id, user_id, name, description) VALUES ($1, $2, $3, $4);`
 )
 
 type UserRepo struct {
@@ -122,4 +123,26 @@ func (ur *UserRepo) Donate(ctx context.Context, donateInfo models.Donate, userID
 	}
 
 	return newMoney, nil
+}
+
+func (ur *UserRepo) CheckIfCreator(ctx context.Context, userId uuid.UUID) (bool, error) {
+	idTmp := uuid.UUID{}
+	row := ur.db.QueryRowContext(ctx, CheckIfCreator, userId)
+	if err := row.Scan(&idTmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		ur.logger.Error(err)
+		return false, models.InternalError
+	} else if err == nil {
+		return true, nil
+	}
+	return false, nil
+}
+
+func (ur *UserRepo) BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error) {
+	creatorId := uuid.New()
+	row := ur.db.QueryRowContext(ctx, BecameCreator, creatorId, userId, creatorInfo.Name, creatorInfo.Description)
+	if err := row.Scan(); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		ur.logger.Error(err)
+		return uuid.Nil, models.InternalError
+	}
+	return creatorId, nil
 }

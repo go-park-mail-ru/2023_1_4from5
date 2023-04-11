@@ -90,6 +90,11 @@ type UserHomePage struct {
 	CreatorId    uuid.UUID `json:"creator_id"`
 }
 
+type BecameCreatorInfo struct {
+	Name        string `json:"name" example:"Danila Polyakov"`
+	Description string `json:"description"`
+}
+
 type UpdatePasswordInfo struct {
 	NewPassword string `json:"new_password"`
 	OldPassword string `json:"old_password"`
@@ -102,6 +107,10 @@ type UpdateProfileInfo struct {
 type Donate struct {
 	CreatorID  uuid.UUID `json:"creator_id"`
 	MoneyCount int       `json:"money_count"`
+}
+
+func (creatorInfo *BecameCreatorInfo) IsValid() bool {
+	return (len(creatorInfo.Name) > 0 && len(creatorInfo.Name) < 40) && (len(creatorInfo.Name) > 0 && len(creatorInfo.Name) < 500)
 }
 
 func (user *User) Sanitize() {

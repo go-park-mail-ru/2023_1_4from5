@@ -20,6 +20,10 @@ func NewUserUsecase(repo user.UserRepo, logger *zap.SugaredLogger) *UserUsecase 
 	}
 }
 
+func (uc *UserUsecase) CheckIfCreator(ctx context.Context, userId uuid.UUID) (bool, error) {
+	return uc.repo.CheckIfCreator(ctx, userId)
+}
+
 func (uc *UserUsecase) GetProfile(ctx context.Context, details models.AccessDetails) (models.UserProfile, error) {
 	userId := details.Id
 	return uc.repo.GetUserProfile(ctx, userId)
@@ -42,10 +46,15 @@ func (uc *UserUsecase) UpdatePhoto(ctx context.Context, details models.AccessDet
 func (uc *UserUsecase) UpdatePassword(ctx context.Context, id uuid.UUID, password string) error {
 	return uc.repo.UpdatePassword(ctx, id, password)
 }
+
 func (uc *UserUsecase) UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error {
 	return uc.repo.UpdateProfileInfo(ctx, profileInfo, id)
 }
 
 func (uc *UserUsecase) Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int, error) {
 	return uc.repo.Donate(ctx, donateInfo, userID)
+}
+
+func (uc *UserUsecase) BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error) {
+	return uc.repo.BecomeCreator(ctx, creatorInfo, userId)
 }
