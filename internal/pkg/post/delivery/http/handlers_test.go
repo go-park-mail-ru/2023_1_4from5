@@ -14,10 +14,13 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post"
 	mockPost "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/mocks"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -25,7 +28,7 @@ import (
 	"time"
 )
 
-func bodyPrepare(like models.Like) []byte {
+func bodyPrepare(like interface{}) []byte {
 	userjson, err := json.Marshal(&like)
 	if err != nil {
 		return nil
@@ -89,12 +92,9 @@ func TestPostHandler_AddLike(t *testing.T) {
 	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
 	mockPostUsecase := mockPost.NewMockPostUsecase(ctl)
 	mockAttachUsecase := mockAttach.NewMockAttachmentUsecase(ctl)
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	logger := zap.NewNop()
 	defer func(logger *zap.Logger) {
-		err = logger.Sync()
+		err := logger.Sync()
 		if err != nil {
 			return
 		}
@@ -147,6 +147,15 @@ func TestPostHandler_AddLike(t *testing.T) {
 			},
 		},
 		{
+			name:   "BadRequest3",
+			fields: fields{mockPostUsecase, mockAuthUsecase, mockAttachUsecase},
+			args: args{
+				r: httptest.NewRequest("PUT", "/api/post/addLike",
+					bytes.NewReader(bodyPrepare(models.Like{}))),
+				expectedResponse: http.StatusBadRequest,
+			},
+		},
+		{
 			name:   "Forbidden",
 			fields: fields{mockPostUsecase, mockAuthUsecase, mockAttachUsecase},
 			args: args{
@@ -164,6 +173,15 @@ func TestPostHandler_AddLike(t *testing.T) {
 				expectedResponse: http.StatusInternalServerError,
 			},
 		},
+		{
+			name:   "InternalServerError2",
+			fields: fields{mockPostUsecase, mockAuthUsecase, mockAttachUsecase},
+			args: args{
+				r: httptest.NewRequest("PUT", "/api/post/addLike",
+					bytes.NewReader(bodyPrepare(models.Like{}))),
+				expectedResponse: http.StatusInternalServerError,
+			},
+		},
 	}
 
 	for i := 0; i < len(tests); i++ {
@@ -171,17 +189,26 @@ func TestPostHandler_AddLike(t *testing.T) {
 		switch tests[i].name {
 		case "OK":
 			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+			mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil)
 			mockPostUsecase.EXPECT().AddLike(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Like{}, nil)
 		case "Unauthorized":
 			value = "body"
 		case "InternalServerError":
 			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+			mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil)
 			mockPostUsecase.EXPECT().AddLike(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Like{}, models.InternalError)
+		case "InternalServerError2":
+			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+			mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, models.InternalError)
 		case "BadRequest1":
 			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 		case "BadRequest2":
 			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+			mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil)
 			mockPostUsecase.EXPECT().AddLike(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Like{}, models.WrongData)
+		case "BadRequest3":
+			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+			mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
 		case "Forbidden":
 			mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, errors.New("test err"))
 		}
@@ -218,12 +245,9 @@ func TestPostHandler_RemoveLike(t *testing.T) {
 	mockPostUsecase := mockPost.NewMockPostUsecase(ctl)
 	mockAttachUsecase := mockAttach.NewMockAttachmentUsecase(ctl)
 
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	logger := zap.NewNop()
 	defer func(logger *zap.Logger) {
-		err = logger.Sync()
+		err := logger.Sync()
 		if err != nil {
 			return
 		}
@@ -335,6 +359,1049 @@ func TestPostHandler_RemoveLike(t *testing.T) {
 			h.RemoveLike(w, test.args.r)
 			require.Equal(t, test.args.expectedResponse, w.Code, fmt.Errorf("%s :  expected %d, got %d",
 				test.name, test.args.expectedResponse, w.Code))
+		})
+	}
+}
+
+func TestPostHandler_CreatePost(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	os.Setenv("TOKEN_SECRET", "TEST")
+	os.Setenv("CSRF_SECRET", "TEST")
+	tkn := &usecase.Tokenator{}
+	id := uuid.New()
+	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: id})
+	tokenCSRF, _ := token.GetCSRFToken(models.User{Login: testUser.Login, Id: id})
+
+	logger := zap.NewNop()
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
+	mockPostUsecase := mockPost.NewMockPostUsecase(ctl)
+	mockAttachUsecase := mockAttach.NewMockAttachmentUsecase(ctl)
+
+	tests := []struct {
+		name           string
+		mock           func() *http.Request
+		expectedStatus int
+	}{
+		{
+			name: "Unauthorized",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/create",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    "111",
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				return r
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "Forbidden",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/create",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, errors.New("test"))
+
+				return r
+			},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name: "Get CSRF",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/post/create",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+
+				return r
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "Forbidden",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/create",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r.AddCookie(&http.Cookie{
+					Name:     "X-CSRF-Token",
+					Value:    "111",
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+
+				return r
+			},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name: "Wrong data type",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/create",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r.AddCookie(&http.Cookie{
+					Name:     "X-CSRF-Token",
+					Value:    tokenCSRF,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				os.Setenv("CSRF_SECRET", "TEST")
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Wrong Multipart Fields",
+			mock: func() *http.Request {
+				body := new(bytes.Buffer)
+
+				writer := multipart.NewWriter(body)
+
+				defer writer.Close()
+
+				partPath, _ := writer.CreateFormField("path")
+				_, err := partPath.Write([]byte(uuid.Nil.String()))
+				if err != nil {
+					t.Error(err)
+				}
+
+				r := httptest.NewRequest("POST", "/post/create",
+					body)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r.AddCookie(&http.Cookie{
+					Name:     "X-CSRF-Token",
+					Value:    tokenCSRF,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				r.Header.Add("Content-Type", writer.FormDataContentType())
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Wrong data type for creator_id",
+			mock: func() *http.Request {
+				body := new(bytes.Buffer)
+
+				writer := multipart.NewWriter(body)
+
+				defer writer.Close()
+
+				partPath, _ := writer.CreateFormField("creator")
+				_, err := partPath.Write([]byte("1323"))
+				if err != nil {
+					t.Error(err)
+				}
+
+				r := httptest.NewRequest("POST", "/post/create",
+					body)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r.AddCookie(&http.Cookie{
+					Name:     "X-CSRF-Token",
+					Value:    tokenCSRF,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				r.Header.Add("Content-Type", writer.FormDataContentType())
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Is creator wrong data",
+			mock: func() *http.Request {
+				body := new(bytes.Buffer)
+
+				writer := multipart.NewWriter(body)
+
+				defer writer.Close()
+
+				partPath, _ := writer.CreateFormField("creator")
+				_, err := partPath.Write([]byte(uuid.New().String()))
+				if err != nil {
+					t.Error(err)
+				}
+
+				r := httptest.NewRequest("POST", "/post/create",
+					body)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r.AddCookie(&http.Cookie{
+					Name:     "X-CSRF-Token",
+					Value:    tokenCSRF,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, models.WrongData)
+				r.Header.Add("Content-Type", writer.FormDataContentType())
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+
+		{
+			name: "Is creator internal",
+			mock: func() *http.Request {
+				body := new(bytes.Buffer)
+
+				writer := multipart.NewWriter(body)
+
+				defer writer.Close()
+
+				partPath, _ := writer.CreateFormField("creator")
+				_, err := partPath.Write([]byte(uuid.New().String()))
+				if err != nil {
+					t.Error(err)
+				}
+
+				r := httptest.NewRequest("POST", "/post/create",
+					body)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r.AddCookie(&http.Cookie{
+					Name:     "X-CSRF-Token",
+					Value:    tokenCSRF,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, models.InternalError)
+				r.Header.Add("Content-Type", writer.FormDataContentType())
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Is creator false",
+			mock: func() *http.Request {
+				body := new(bytes.Buffer)
+
+				writer := multipart.NewWriter(body)
+
+				defer writer.Close()
+
+				partPath, _ := writer.CreateFormField("creator")
+				_, err := partPath.Write([]byte(uuid.New().String()))
+				if err != nil {
+					t.Error(err)
+				}
+
+				r := httptest.NewRequest("POST", "/post/create",
+					body)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r.AddCookie(&http.Cookie{
+					Name:     "X-CSRF-Token",
+					Value:    tokenCSRF,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil)
+				r.Header.Add("Content-Type", writer.FormDataContentType())
+				return r
+			},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name: "No text field in multipart",
+			mock: func() *http.Request {
+				body := new(bytes.Buffer)
+
+				writer := multipart.NewWriter(body)
+
+				defer writer.Close()
+
+				partPath, _ := writer.CreateFormField("creator")
+				_, err := partPath.Write([]byte(uuid.New().String()))
+				if err != nil {
+					t.Error(err)
+				}
+
+				r := httptest.NewRequest("POST", "/post/create",
+					body)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r.AddCookie(&http.Cookie{
+					Name:     "X-CSRF-Token",
+					Value:    tokenCSRF,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+				r.Header.Add("Content-Type", writer.FormDataContentType())
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "No title field in multipart",
+			mock: func() *http.Request {
+				body := new(bytes.Buffer)
+
+				writer := multipart.NewWriter(body)
+
+				defer writer.Close()
+
+				partPath, _ := writer.CreateFormField("creator")
+				_, err := partPath.Write([]byte(uuid.New().String()))
+				if err != nil {
+					t.Error(err)
+				}
+				partText, _ := writer.CreateFormField("text")
+				_, err = partText.Write([]byte(uuid.New().String()))
+				if err != nil {
+					t.Error(err)
+				}
+
+				r := httptest.NewRequest("POST", "/post/create",
+					body)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r.AddCookie(&http.Cookie{
+					Name:     "X-CSRF-Token",
+					Value:    tokenCSRF,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+				r.Header.Add("Content-Type", writer.FormDataContentType())
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "No title field in multipart",
+			mock: func() *http.Request {
+				body := new(bytes.Buffer)
+
+				writer := multipart.NewWriter(body)
+
+				defer writer.Close()
+
+				partPath, _ := writer.CreateFormField("creator")
+				_, err := partPath.Write([]byte(uuid.New().String()))
+				if err != nil {
+					t.Error(err)
+				}
+				partText, _ := writer.CreateFormField("text")
+				_, err = partText.Write([]byte(uuid.New().String()))
+				if err != nil {
+					t.Error(err)
+				}
+
+				r := httptest.NewRequest("POST", "/post/create",
+					body)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r.AddCookie(&http.Cookie{
+					Name:     "X-CSRF-Token",
+					Value:    tokenCSRF,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+				r.Header.Add("Content-Type", writer.FormDataContentType())
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &PostHandler{
+				usecase:           mockPostUsecase,
+				authUsecase:       mockAuthUsecase,
+				attachmentUsecase: mockAttachUsecase,
+				logger:            zapSugar,
+			}
+			w := httptest.NewRecorder()
+			r := test.mock()
+			h.CreatePost(w, r)
+			require.Equal(t, test.expectedStatus, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
+				" for test:%s", test.name, test.expectedStatus, w.Code, test.name))
+		})
+	}
+}
+
+var newPostErr = models.PostEditData{Title: "testavbjkwkjebojweabkvsn;awlvmnbjerkvjawlvnkaoeibr aelsvjoerbjvkas,zjfonwileabuv", Text: "testtest"}
+var newPost = models.PostEditData{Title: "test", Text: "testtest"}
+
+func TestPostHandler_EditPost(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	os.Setenv("TOKEN_SECRET", "TEST")
+	os.Setenv("CSRF_SECRET", "TEST")
+	tkn := &usecase.Tokenator{}
+	id := uuid.New()
+	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: id})
+	tokenCSRF, _ := token.GetCSRFToken(models.User{Login: testUser.Login, Id: id})
+
+	logger := zap.NewNop()
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
+	mockPostUsecase := mockPost.NewMockPostUsecase(ctl)
+	mockAttachUsecase := mockAttach.NewMockAttachmentUsecase(ctl)
+
+	tests := []struct {
+		name           string
+		mock           func() *http.Request
+		expectedStatus int
+	}{
+		{
+			name: "Unauthorized",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/post/edit/{post-uuid}",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    "111",
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				return r
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "Forbidden",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "//post/edit/{post-uuid}",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, errors.New("test"))
+
+				return r
+			},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name: "Get CSRF",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/post/edit/{post-uuid}",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+
+				return r
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "Forbidden",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/post/edit/{post-uuid}",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r.AddCookie(&http.Cookie{
+					Name:     "X-CSRF-Token",
+					Value:    "111",
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+
+				return r
+			},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name: "Wrong data type",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/post/edit/{post-uuid}",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r.AddCookie(&http.Cookie{
+					Name:     "X-CSRF-Token",
+					Value:    tokenCSRF,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				os.Setenv("CSRF_SECRET", "TEST")
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Wrong post id",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
+					bytes.NewReader(bodyPrepare(newPost)))
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r.AddCookie(&http.Cookie{
+					Name:     "X-CSRF-Token",
+					Value:    tokenCSRF,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r = mux.SetURLVars(r, map[string]string{
+					"post-uuid": "123",
+				})
+
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Is post owner wrong data",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
+					bytes.NewReader(bodyPrepare(newPost)))
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r.AddCookie(&http.Cookie{
+					Name:     "X-CSRF-Token",
+					Value:    tokenCSRF,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r = mux.SetURLVars(r, map[string]string{
+					"post-uuid": uuid.NewString(),
+				})
+
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, models.WrongData)
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Is post owner internal error",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
+					bytes.NewReader(bodyPrepare(newPost)))
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r.AddCookie(&http.Cookie{
+					Name:     "X-CSRF-Token",
+					Value:    tokenCSRF,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r = mux.SetURLVars(r, map[string]string{
+					"post-uuid": uuid.NewString(),
+				})
+
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, models.InternalError)
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Is post owner forbidden",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
+					bytes.NewReader(bodyPrepare(newPost)))
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r.AddCookie(&http.Cookie{
+					Name:     "X-CSRF-Token",
+					Value:    tokenCSRF,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r = mux.SetURLVars(r, map[string]string{
+					"post-uuid": uuid.NewString(),
+				})
+
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil)
+				return r
+			},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name: "Wrong data in body",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
+					bytes.NewReader([]byte("111")))
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r.AddCookie(&http.Cookie{
+					Name:     "X-CSRF-Token",
+					Value:    tokenCSRF,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r = mux.SetURLVars(r, map[string]string{
+					"post-uuid": uuid.NewString(),
+				})
+
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Wrong length for text or title",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
+					bytes.NewReader(bodyPrepare(newPostErr)))
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r.AddCookie(&http.Cookie{
+					Name:     "X-CSRF-Token",
+					Value:    tokenCSRF,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r = mux.SetURLVars(r, map[string]string{
+					"post-uuid": uuid.NewString(),
+				})
+
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Wrong length for text or title",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
+					bytes.NewReader(bodyPrepare(newPost)))
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r.AddCookie(&http.Cookie{
+					Name:     "X-CSRF-Token",
+					Value:    tokenCSRF,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r = mux.SetURLVars(r, map[string]string{
+					"post-uuid": uuid.NewString(),
+				})
+
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+				mockPostUsecase.EXPECT().EditPost(gomock.Any(), gomock.Any()).Return(models.InternalError)
+
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Wrong length for text or title",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
+					bytes.NewReader(bodyPrepare(newPost)))
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r.AddCookie(&http.Cookie{
+					Name:     "X-CSRF-Token",
+					Value:    tokenCSRF,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r = mux.SetURLVars(r, map[string]string{
+					"post-uuid": uuid.NewString(),
+				})
+
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+				mockPostUsecase.EXPECT().EditPost(gomock.Any(), gomock.Any()).Return(nil)
+
+				return r
+			},
+			expectedStatus: http.StatusOK,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &PostHandler{
+				usecase:           mockPostUsecase,
+				authUsecase:       mockAuthUsecase,
+				attachmentUsecase: mockAttachUsecase,
+				logger:            zapSugar,
+			}
+			w := httptest.NewRecorder()
+			r := test.mock()
+			h.EditPost(w, r)
+			require.Equal(t, test.expectedStatus, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
+				" for test:%s", test.name, test.expectedStatus, w.Code, test.name))
+		})
+	}
+}
+
+func TestPostHandler_GetPost(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	os.Setenv("TOKEN_SECRET", "TEST")
+	tkn := &usecase.Tokenator{}
+	id := uuid.New()
+	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: id})
+
+	logger := zap.NewNop()
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
+	mockPostUsecase := mockPost.NewMockPostUsecase(ctl)
+	mockAttachUsecase := mockAttach.NewMockAttachmentUsecase(ctl)
+
+	tests := []struct {
+		name           string
+		mock           func() *http.Request
+		expectedStatus int
+	}{
+		{
+			name: "OK",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/get/{post-uuid}",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r = mux.SetURLVars(r, map[string]string{
+					"post-uuid": uuid.NewString(),
+				})
+
+				mockPostUsecase.EXPECT().GetPost(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Post{}, nil)
+
+				return r
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "No postId",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/get/{post-uuid}",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Wrong uuid",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/get/{post-uuid}",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r = mux.SetURLVars(r, map[string]string{
+					"post-uuid": "111",
+				})
+
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Forbidden",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/get/{post-uuid}",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r = mux.SetURLVars(r, map[string]string{
+					"post-uuid": uuid.NewString(),
+				})
+
+				mockPostUsecase.EXPECT().GetPost(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Post{}, models.Forbbiden)
+
+				return r
+			},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name: "Wrong Data",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/get/{post-uuid}",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r = mux.SetURLVars(r, map[string]string{
+					"post-uuid": uuid.NewString(),
+				})
+
+				mockPostUsecase.EXPECT().GetPost(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Post{}, models.WrongData)
+
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Internal Error",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/get/{post-uuid}",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r = mux.SetURLVars(r, map[string]string{
+					"post-uuid": uuid.NewString(),
+				})
+
+				mockPostUsecase.EXPECT().GetPost(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Post{}, models.InternalError)
+
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &PostHandler{
+				usecase:           mockPostUsecase,
+				authUsecase:       mockAuthUsecase,
+				attachmentUsecase: mockAttachUsecase,
+				logger:            zapSugar,
+			}
+			w := httptest.NewRecorder()
+			r := test.mock()
+			h.GetPost(w, r)
+			require.Equal(t, test.expectedStatus, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
+				" for test:%s", test.name, test.expectedStatus, w.Code, test.name))
 		})
 	}
 }

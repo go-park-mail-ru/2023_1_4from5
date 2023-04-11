@@ -15,6 +15,8 @@ type UserUsecase interface {
 	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
 	UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error
 	Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int, error)
+	CheckIfCreator(ctx context.Context, userId uuid.UUID) (bool, error)
+	BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error)
 }
 
 type UserRepo interface {
@@ -24,4 +26,6 @@ type UserRepo interface {
 	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
 	UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error
 	Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int, error)
+	CheckIfCreator(ctx context.Context, userId uuid.UUID) (bool, error)
+	BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error)
 }

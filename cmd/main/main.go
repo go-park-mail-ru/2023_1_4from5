@@ -24,6 +24,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 func main() {
@@ -34,9 +35,10 @@ func main() {
 }
 
 func run() error {
-	logger, err := zap.NewProduction()
+	logger := utils.FileLogger("log.txt")
+
 	defer func(logger *zap.Logger) {
-		err = logger.Sync()
+		err := logger.Sync()
 		if err != nil {
 			log.Print(err)
 		}
@@ -54,7 +56,9 @@ func run() error {
 		return err
 	}
 	defer db.Close()
-	db.SetMaxOpenConns(10)
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(25)
+	db.SetConnMaxLifetime(5 * time.Minute)
 
 	tokenGenerator := authUsecase.NewTokenator()
 	encryptor, err := authUsecase.NewEncryptor()
@@ -70,16 +74,16 @@ func run() error {
 	userUse := userUsecase.NewUserUsecase(userRepo, zapSugar)
 	userHandler := userDelivery.NewUserHandler(userUse, authUse)
 
-	creatorRepo := creatorRepository.NewCreatorRepo(db, zapSugar)
-	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo, zapSugar)
-	creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse, authUse)
-
 	attachmentRepo := attachmentRepository.NewAttachmentRepo(db, zapSugar)
 	attachmentUse := attachmentUsecase.NewAttachmentUsecase(attachmentRepo, zapSugar)
 
 	postRepo := postRepository.NewPostRepo(db, zapSugar)
 	postUse := postUsecase.NewPostUsecase(postRepo, zapSugar)
 	postHandler := postDelivery.NewPostHandler(postUse, authUse, attachmentUse, zapSugar)
+
+	creatorRepo := creatorRepository.NewCreatorRepo(db, zapSugar)
+	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo, zapSugar)
+	creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse, authUse, postUse)
 
 	logMw := middleware.NewLoggerMiddleware(zapSugar)
 	r := mux.NewRouter().PathPrefix("/api").Subrouter()
@@ -98,13 +102,15 @@ func run() error {
 		user.HandleFunc("/profile", userHandler.GetProfile).Methods(http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/donate", userHandler.Donate).Methods(http.MethodPost, http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/updatePassword", userHandler.UpdatePassword).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
-		user.HandleFunc("/updateData", userHandler.UpdateData).Methods(http.MethodPatch, http.MethodGet, http.MethodOptions)
+		user.HandleFunc("/updateData", userHandler.UpdateData).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/homePage", userHandler.GetHomePage).Methods(http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/updateProfilePhoto", userHandler.UpdateProfilePhoto).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
+		user.HandleFunc("/becameCreator", userHandler.BecomeCreator).Methods(http.MethodPost, http.MethodOptions, http.MethodGet)
 	}
 
 	creator := r.PathPrefix("/creator").Subrouter()
 	{
+		creator.HandleFunc("/list", creatorHandler.GetAllCreators).Methods(http.MethodGet, http.MethodOptions)
 		creator.HandleFunc("/page/{creator-uuid}", creatorHandler.GetPage).Methods(http.MethodGet, http.MethodOptions)
 		creator.HandleFunc("/aim/create", creatorHandler.CreateAim).Methods(http.MethodPost, http.MethodOptions)
 	}

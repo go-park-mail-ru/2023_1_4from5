@@ -1,10 +1,10 @@
 package models
 
 import (
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/google/uuid"
 	"html"
 	"time"
+	"unicode"
 )
 
 // easyjson -all ./internal/models/user.go
@@ -20,11 +20,42 @@ type User struct {
 }
 
 func (user User) UserLoginIsValid() bool {
-	return len(user.Login) >= 7 && len(user.Login) < 40
+	if !(len(user.Login) >= 7 && len(user.Login) < 40) {
+		return false
+	}
+	for _, c := range user.Login {
+		if !unicode.IsLetter(c) && !unicode.IsDigit(c) && !unicode.IsPunct(c) {
+			return false
+		}
+	}
+	return true
 }
 
 func (user User) UserPasswordIsValid() bool {
-	return utils.IsValid(user.PasswordHash)
+	if len(user.PasswordHash) >= 40 {
+		return false
+	}
+	for _, c := range user.PasswordHash {
+		if !unicode.IsLetter(c) && !unicode.IsDigit(c) && !unicode.IsPunct(c) {
+			return false
+		}
+	}
+
+	var (
+		hasMinLen = false
+		hasNumber = false
+	)
+	if len(user.PasswordHash) >= 7 {
+		hasMinLen = true
+	}
+
+	for _, char := range user.PasswordHash {
+		if unicode.IsNumber(char) {
+			hasNumber = true
+		}
+	}
+	return hasMinLen && hasNumber
+
 }
 
 func (user User) UserNameIsValid() bool {
@@ -59,6 +90,11 @@ type UserHomePage struct {
 	CreatorId    uuid.UUID `json:"creator_id"`
 }
 
+type BecameCreatorInfo struct {
+	Name        string `json:"name" example:"Danila Polyakov"`
+	Description string `json:"description"`
+}
+
 type UpdatePasswordInfo struct {
 	NewPassword string `json:"new_password"`
 	OldPassword string `json:"old_password"`
@@ -71,6 +107,10 @@ type UpdateProfileInfo struct {
 type Donate struct {
 	CreatorID  uuid.UUID `json:"creator_id"`
 	MoneyCount int       `json:"money_count"`
+}
+
+func (creatorInfo *BecameCreatorInfo) IsValid() bool {
+	return (len(creatorInfo.Name) > 0 && len(creatorInfo.Name) < 40) && (len(creatorInfo.Name) > 0 && len(creatorInfo.Name) < 500)
 }
 
 func (user *User) Sanitize() {

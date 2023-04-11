@@ -12,6 +12,7 @@ type Post struct {
 	Id            uuid.UUID      `json:"id"`
 	Creator       uuid.UUID      `json:"creator"`
 	Creation      time.Time      `json:"creation_date"`
+	LikesCount    int            `json:"likes_count"`
 	Title         string         `json:"title"`
 	Text          string         `json:"text"`
 	IsAvailable   bool           `json:"is_available"`
@@ -31,7 +32,7 @@ type PostCreationData struct {
 }
 
 type PostEditData struct {
-	Id                     uuid.UUID
+	Id                     uuid.UUID   `json:"-"`
 	Title                  string      `json:"title"`
 	Text                   string      `json:"text"`
 	AvailableSubscriptions []uuid.UUID `json:"available_subscriptions"`

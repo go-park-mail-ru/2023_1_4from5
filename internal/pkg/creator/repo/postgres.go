@@ -11,8 +11,10 @@ import (
 )
 
 const (
-	CreatorInfo       = `SELECT user_id, name, cover_photo, followers_count, description, posts_count, aim, money_got, money_needed FROM "creator" WHERE creator_id=$1;`
-	CreatorPosts      = `SELECT "post".post_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE creator_id = $1 GROUP BY "post".post_id, creation_date, title, post_text ORDER BY creation_date DESC;`
+	CreatorInfo       = `SELECT user_id, name, cover_photo, followers_count, description, posts_count, aim, money_got, money_needed, profile_photo FROM "creator" WHERE creator_id=$1;`
+	GetCreatorSubs    = `SELECT subscription_id, month_cost, title, description FROM "subscription" WHERE creator_id=$1;`
+	GetAllCreators    = `SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM "creator";`
+	CreatorPosts      = `SELECT "post".post_id, creation_date, title, post_text, likes_count, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE creator_id = $1 GROUP BY "post".post_id, creation_date, title, post_text ORDER BY creation_date DESC;`
 	UserSubscriptions = `SELECT array_agg(subscription_id) FROM "user_subscription" WHERE user_id=$1;`
 	IsLiked           = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2`
 	GetSubInfo        = `SELECT creator_id, month_cost, title, description FROM "subscription" WHERE subscription_id = $1;`
@@ -33,7 +35,7 @@ func NewCreatorRepo(db *sql.DB, logger *zap.SugaredLogger) *CreatorRepo {
 
 func (r *CreatorRepo) GetUserSubscriptions(ctx context.Context, userId uuid.UUID) ([]uuid.UUID, error) {
 	userSubscriptions := make([]uuid.UUID, 0)
-	row := r.db.QueryRow(UserSubscriptions, userId)
+	row := r.db.QueryRowContext(ctx, UserSubscriptions, userId)
 	if err := row.Scan(pq.Array(&userSubscriptions)); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		r.logger.Error(err)
 		return nil, models.InternalError
@@ -42,7 +44,7 @@ func (r *CreatorRepo) GetUserSubscriptions(ctx context.Context, userId uuid.UUID
 }
 
 func (r *CreatorRepo) IsLiked(ctx context.Context, userID uuid.UUID, postID uuid.UUID) (bool, error) {
-	row := r.db.QueryRow(IsLiked, postID, userID)
+	row := r.db.QueryRowContext(ctx, IsLiked, postID, userID)
 	if err := row.Scan(&postID, &userID); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		r.logger.Error(err)
 		return false, models.InternalError
@@ -53,11 +55,12 @@ func (r *CreatorRepo) IsLiked(ctx context.Context, userID uuid.UUID, postID uuid
 }
 
 func (r *CreatorRepo) CreatorInfo(ctx context.Context, creatorPage *models.CreatorPage, creatorID uuid.UUID) error {
-	row := r.db.QueryRow(CreatorInfo, creatorID)
+	row := r.db.QueryRowContext(ctx, CreatorInfo, creatorID)
+	creatorPage.CreatorInfo.Id = creatorID
 	var tmpAim sql.NullString
 	if err := row.Scan(&creatorPage.CreatorInfo.UserId, &creatorPage.CreatorInfo.Name, &creatorPage.CreatorInfo.CoverPhoto,
 		&creatorPage.CreatorInfo.FollowersCount, &creatorPage.CreatorInfo.Description, &creatorPage.CreatorInfo.PostsCount,
-		&tmpAim, &creatorPage.Aim.MoneyGot, &creatorPage.Aim.MoneyNeeded); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		&tmpAim, &creatorPage.Aim.MoneyGot, &creatorPage.Aim.MoneyNeeded, &creatorPage.CreatorInfo.ProfilePhoto); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		return models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
 		return models.NotFound
@@ -65,6 +68,31 @@ func (r *CreatorRepo) CreatorInfo(ctx context.Context, creatorPage *models.Creat
 	creatorPage.Aim.Creator = creatorID
 	creatorPage.Aim.Description = tmpAim.String
 	return nil
+}
+
+func (r *CreatorRepo) GetCreatorSubs(ctx context.Context, creatorID uuid.UUID) ([]models.Subscription, error) {
+	subs := make([]models.Subscription, 0)
+	var tmpTitle, tmpDescr sql.NullString
+	rows, err := r.db.Query(GetCreatorSubs, creatorID)
+	if err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
+		return nil, models.InternalError
+	}
+	defer rows.Close()
+	for rows.Next() {
+		tmpSub := models.Subscription{}
+		err = rows.Scan(&tmpSub.Id, &tmpSub.MonthConst, &tmpTitle, &tmpDescr)
+		if err != nil {
+			r.logger.Error(err)
+			return nil, models.InternalError
+		}
+		tmpSub.Title = tmpTitle.String
+		tmpSub.Description = tmpDescr.String
+		tmpSub.Creator = creatorID
+
+		subs = append(subs, tmpSub)
+	}
+	return subs, nil
 }
 
 func (r *CreatorRepo) CreatorPosts(ctx context.Context, creatorId uuid.UUID) ([]models.Post, error) {
@@ -82,12 +110,11 @@ func (r *CreatorRepo) CreatorPosts(ctx context.Context, creatorId uuid.UUID) ([]
 		attachs := make([]uuid.UUID, 0)
 		types := make([]sql.NullString, 0)
 		err = rows.Scan(&post.Id, &post.Creation, &post.Title,
-			&post.Text, pq.Array(&attachs), pq.Array(&types), pq.Array(&availableSubscriptions)) //подписки, при которыз пост доступен
+			&post.Text, &post.LikesCount, pq.Array(&attachs), pq.Array(&types), pq.Array(&availableSubscriptions)) //подписки, при которыз пост доступен
 		if err != nil {
 			r.logger.Error(err)
 			return nil, models.InternalError
 		}
-
 		post.Subscriptions = make([]models.Subscription, len(availableSubscriptions))
 		if post.Subscriptions, err = r.GetSubsByID(ctx, availableSubscriptions...); err != nil {
 			r.logger.Error(err)
@@ -106,7 +133,6 @@ func (r *CreatorRepo) CreatorPosts(ctx context.Context, creatorId uuid.UUID) ([]
 
 func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId uuid.UUID) (models.CreatorPage, error) {
 	var creatorPage models.CreatorPage
-	creatorPage.CreatorInfo.Id = creatorId
 	creatorPage.Posts = make([]models.Post, 0)
 	var userSubscriptions []uuid.UUID
 	if err := r.CreatorInfo(ctx, &creatorPage, creatorId); err == models.InternalError {
@@ -116,14 +142,13 @@ func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId u
 			creatorPage.IsMyPage = true
 		} else { // находим подписки пользователя
 			tmp, err := r.GetUserSubscriptions(ctx, userId)
-			userSubscriptions = make([]uuid.UUID, len(tmp))
-			copy(userSubscriptions, tmp)
 			if err != nil {
 				r.logger.Error(err)
 				return models.CreatorPage{}, models.InternalError
 			}
+			userSubscriptions = make([]uuid.UUID, len(tmp))
+			copy(userSubscriptions, tmp)
 		}
-
 		creatorPage.Posts, err = r.CreatorPosts(ctx, creatorId)
 		if err != nil {
 			return models.CreatorPage{}, err
@@ -138,10 +163,6 @@ func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId u
 				for _, userSubscription := range userSubscriptions {
 					if availableSubscription.Id == userSubscription {
 						creatorPage.Posts[i].IsAvailable = true
-						//проверяем, лайкнул ли его пользователь
-						if creatorPage.Posts[i].IsLiked, err = r.IsLiked(ctx, userId, creatorPage.Posts[i].Id); err != nil {
-							return models.CreatorPage{}, models.InternalError
-						}
 						break
 					}
 				}
@@ -149,11 +170,17 @@ func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId u
 					break
 				}
 			}
-
+			if creatorPage.Posts[i].IsLiked, err = r.IsLiked(ctx, userId, creatorPage.Posts[i].Id); err != nil {
+				return models.CreatorPage{}, models.InternalError
+			}
 			if !creatorPage.Posts[i].IsAvailable {
 				creatorPage.Posts[i].Text = ""
 				creatorPage.Posts[i].Attachments = nil
 			}
+		}
+
+		if creatorPage.Subscriptions, err = r.GetCreatorSubs(ctx, creatorId); err != nil {
+			return models.CreatorPage{}, err
 		}
 
 		return creatorPage, nil
@@ -165,7 +192,7 @@ func (r *CreatorRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]
 	subsInfo := make([]models.Subscription, 0)
 	var sub models.Subscription
 	for _, v := range subsIDs {
-		row := r.db.QueryRow(GetSubInfo, v)
+		row := r.db.QueryRowContext(ctx, GetSubInfo, v)
 		err := row.Scan(&sub.Creator, &sub.MonthConst, &sub.Title,
 			&sub.Description)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
@@ -181,10 +208,34 @@ func (r *CreatorRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]
 }
 
 func (r *CreatorRepo) CreateAim(ctx context.Context, aimInfo models.Aim) error {
-	row := r.db.QueryRow(AddAim, aimInfo.Description, aimInfo.MoneyGot, aimInfo.MoneyNeeded, aimInfo.Creator)
-	if err := row.Err(); err != nil {
+	row := r.db.QueryRowContext(ctx, AddAim, aimInfo.Description, aimInfo.MoneyGot, aimInfo.MoneyNeeded, aimInfo.Creator)
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		r.logger.Error(err)
 		return models.InternalError
 	}
 	return nil
+}
+
+func (r *CreatorRepo) GetAllCreators(ctx context.Context) ([]models.Creator, error) {
+	var creators = make([]models.Creator, 0)
+	rows, err := r.db.Query(GetAllCreators)
+	if err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
+		return nil, models.InternalError
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var creator models.Creator
+		var tmpDescr sql.NullString
+		err = rows.Scan(&creator.Id, &creator.UserId, &creator.Name,
+			&creator.CoverPhoto, &creator.FollowersCount, &tmpDescr, &creator.PostsCount, &creator.ProfilePhoto)
+		if err != nil {
+			r.logger.Error(err)
+			return nil, models.InternalError
+		}
+		creator.Description = tmpDescr.String
+		creators = append(creators, creator)
+	}
+
+	return creators, nil
 }

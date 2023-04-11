@@ -6,7 +6,6 @@ import (
 	"go.uber.org/zap"
 	"math/rand"
 	"net/http"
-	"time"
 )
 
 type ContextKey string
@@ -29,16 +28,11 @@ func (m *LoggerMiddleware) LogRequest(next http.Handler) http.Handler {
 		reqId := fmt.Sprintf("%016x", rand.Int())[:10]
 		ctx = context.WithValue(ctx, ContextKey(ReqID), reqId)
 
-		start := time.Now()
 		next.ServeHTTP(w, r.WithContext(ctx))
 
 		m.logger.Info(r.URL.Path,
-			zap.String("reqId:", reqId),
 			zap.String("method", r.Method),
 			zap.String("remote_addr", r.RemoteAddr),
-			zap.String("url", r.URL.Path),
-			zap.Time("start", start),
-			zap.Duration("work_time", time.Since(start)),
 		)
 	})
 }

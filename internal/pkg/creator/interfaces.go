@@ -11,9 +11,12 @@ import (
 type CreatorUsecase interface {
 	GetPage(ctx context.Context, details *models.AccessDetails, creatorUUID string) (models.CreatorPage, error)
 	CreateAim(ctx context.Context, aimInfo models.Aim) error
+	GetAllCreators(ctx context.Context) ([]models.Creator, error)
 }
 
 type CreatorRepo interface {
+	GetCreatorSubs(ctx context.Context, creatorID uuid.UUID) ([]models.Subscription, error)
 	GetPage(ctx context.Context, userId uuid.UUID, creatorId uuid.UUID) (models.CreatorPage, error)
 	CreateAim(ctx context.Context, aimInfo models.Aim) error
+	GetAllCreators(ctx context.Context) ([]models.Creator, error)
 }

@@ -66,6 +66,20 @@ func (mr *MockAuthUsecaseMockRecorder) CheckUserVersion(ctx, details interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUserVersion", reflect.TypeOf((*MockAuthUsecase)(nil).CheckUserVersion), ctx, details)
 }
 
+// EncryptPwd mocks base method.
+func (m *MockAuthUsecase) EncryptPwd(ctx context.Context, pwd string) string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EncryptPwd", ctx, pwd)
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// EncryptPwd indicates an expected call of EncryptPwd.
+func (mr *MockAuthUsecaseMockRecorder) EncryptPwd(ctx, pwd interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EncryptPwd", reflect.TypeOf((*MockAuthUsecase)(nil).EncryptPwd), ctx, pwd)
+}
+
 // IncUserVersion mocks base method.
 func (m *MockAuthUsecase) IncUserVersion(ctx context.Context, details models.AccessDetails) (int, error) {
 	m.ctrl.T.Helper()

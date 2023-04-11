@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 )
 
 type UserHandler struct {
@@ -91,11 +92,7 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 	}
 	// check CSRF token
 	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
-	if err != nil {
-		utils.Response(w, http.StatusForbidden, nil)
-		return
-	}
-	if *userDataCSRF != *userDataJWT {
+	if err != nil || *userDataCSRF != *userDataJWT {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -132,7 +129,7 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 	}
 
 	if oldName != uuid.Nil {
-		err = os.Remove(fmt.Sprintf("%s%s.jpg", models.FolderPath, oldName.String()))
+		err = os.Remove(filepath.Join(models.FolderPath, fmt.Sprintf("%s.jpg", oldName.String())))
 		if err != nil {
 			utils.Response(w, http.StatusBadRequest, nil)
 		}
@@ -154,7 +151,7 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 		utils.Response(w, http.StatusInternalServerError, nil)
 	}
 
-	utils.Response(w, http.StatusOK, nil)
+	utils.Response(w, http.StatusOK, name)
 }
 
 func (h *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
@@ -181,11 +178,7 @@ func (h *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 	}
 	// check CSRF token
 	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
-	if err != nil {
-		utils.Response(w, http.StatusForbidden, nil)
-		return
-	}
-	if *userDataCSRF != *userDataJWT {
+	if err != nil || *userDataCSRF != *userDataJWT {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -193,7 +186,7 @@ func (h *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 	updPwd := models.UpdatePasswordInfo{}
 
 	err = easyjson.UnmarshalFromReader(r.Body, &updPwd)
-	if err != nil || !utils.IsValid(updPwd.NewPassword) {
+	if err != nil || !(models.User{PasswordHash: updPwd.NewPassword}.UserPasswordIsValid()) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
@@ -238,7 +231,7 @@ func (h *UserHandler) Donate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	if _, err = h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -250,15 +243,11 @@ func (h *UserHandler) Donate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		utils.Cookie(w, tokenCSRF, "X-CSRF-Token")
+		utils.Response(w, http.StatusOK, nil)
 		return
 	}
-	// check CSRF token
 	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
-	if err != nil {
-		utils.Response(w, http.StatusForbidden, nil)
-		return
-	}
-	if *userDataCSRF != *userDataJWT {
+	if err != nil || *userDataCSRF != *userDataJWT {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -280,9 +269,7 @@ func (h *UserHandler) Donate(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
-
 	utils.Response(w, http.StatusOK, newMoneyCount)
-
 }
 
 func (h *UserHandler) UpdateData(w http.ResponseWriter, r *http.Request) {
@@ -307,13 +294,9 @@ func (h *UserHandler) UpdateData(w http.ResponseWriter, r *http.Request) {
 		utils.Cookie(w, tokenCSRF, "X-CSRF-Token")
 		return
 	}
-	// check CSRF token
+
 	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
-	if err != nil {
-		utils.Response(w, http.StatusForbidden, nil)
-		return
-	}
-	if *userDataCSRF != *userDataJWT {
+	if err != nil || *userDataCSRF != *userDataJWT {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -332,4 +315,58 @@ func (h *UserHandler) UpdateData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.Response(w, http.StatusOK, nil)
+}
+
+func (h *UserHandler) BecomeCreator(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+		utils.Cookie(w, "", "SSID")
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+	if r.Method == http.MethodGet {
+		tokenCSRF, err := token.GetCSRFToken(models.User{Login: userDataJWT.Login, Id: userDataJWT.Id, UserVersion: userDataJWT.UserVersion})
+		if err != nil {
+			utils.Response(w, http.StatusUnauthorized, nil)
+			return
+		}
+		utils.Cookie(w, tokenCSRF, "X-CSRF-Token")
+		return
+	}
+
+	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
+	if err != nil || *userDataCSRF != *userDataJWT {
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+
+	if isAlsoCreator, err := h.usecase.CheckIfCreator(r.Context(), userDataJWT.Id); err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	} else if isAlsoCreator {
+		utils.Response(w, http.StatusConflict, nil)
+		return
+	}
+
+	authorInfo := models.BecameCreatorInfo{}
+
+	err = easyjson.UnmarshalFromReader(r.Body, &authorInfo)
+	if err != nil || !(authorInfo.IsValid()) {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	creatorId, err := h.usecase.BecomeCreator(r.Context(), authorInfo, userDataJWT.Id)
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, creatorId)
 }

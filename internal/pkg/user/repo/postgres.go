@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -14,11 +13,12 @@ const (
 	UserProfile          = `SELECT login, display_name, profile_photo, registration_date FROM "user" WHERE user_id=$1;`
 	UserNamePhoto        = `SELECT display_name, profile_photo FROM "user" WHERE user_id=$1;`
 	CheckIfCreator       = `SELECT creator_id FROM "creator" WHERE user_id=$1;`
-	UpdateProfilePhoto   = `UPDATE "user" SET profile_photo = $1 WHERE user_id = $2`
-	UpdatePassword       = `UPDATE "user" SET password_hash = $1, user_version = user_version+1 WHERE user_id = $2`
-	UpdateProfileInfo    = `UPDATE "user" SET login = $1, display_name = $2 WHERE user_id = $3`
-	UpdateAuthorAimMoney = `UPDATE "creator" SET money_got = money_got + $1 WHERE creator_id = $2 RETURNING money_got`
-	AddDonate            = `INSERT INTO "donation"(user_id, creator_id, money_count) VALUES ($1, $2, $3)`
+	UpdateProfilePhoto   = `UPDATE "user" SET profile_photo = $1 WHERE user_id = $2;`
+	UpdatePassword       = `UPDATE "user" SET password_hash = $1, user_version = user_version+1 WHERE user_id = $2;`
+	UpdateProfileInfo    = `UPDATE "user" SET login = $1, display_name = $2 WHERE user_id = $3;`
+	UpdateAuthorAimMoney = `UPDATE "creator" SET money_got = money_got + $1 WHERE creator_id = $2 RETURNING money_got;`
+	AddDonate            = `INSERT INTO "donation"(user_id, creator_id, money_count) VALUES ($1, $2, $3);`
+	BecameCreator        = `INSERT INTO "creator"(creator_id, user_id, name, description) VALUES ($1, $2, $3, $4);`
 )
 
 type UserRepo struct {
@@ -36,7 +36,7 @@ func NewUserRepo(db *sql.DB, logger *zap.SugaredLogger) *UserRepo {
 func (ur *UserRepo) GetUserProfile(ctx context.Context, id uuid.UUID) (models.UserProfile, error) {
 	var profile models.UserProfile
 
-	row := ur.db.QueryRow(UserProfile, id)
+	row := ur.db.QueryRowContext(ctx, UserProfile, id)
 	if err := row.Scan(&profile.Login, &profile.Name, &profile.ProfilePhoto, &profile.Registration); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		ur.logger.Error(err)
 		return models.UserProfile{}, models.InternalError
@@ -49,14 +49,14 @@ func (ur *UserRepo) GetUserProfile(ctx context.Context, id uuid.UUID) (models.Us
 func (ur *UserRepo) GetHomePage(ctx context.Context, id uuid.UUID) (models.UserHomePage, error) {
 	var page models.UserHomePage
 
-	row := ur.db.QueryRow(UserNamePhoto, id)
+	row := ur.db.QueryRowContext(ctx, UserNamePhoto, id)
 	if err := row.Scan(&page.Name, &page.ProfilePhoto); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		ur.logger.Error(err)
 		return models.UserHomePage{}, models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
 		return models.UserHomePage{}, models.NotFound
 	}
-	row = ur.db.QueryRow(CheckIfCreator, id)
+	row = ur.db.QueryRowContext(ctx, CheckIfCreator, id)
 	if err := row.Scan(&page.CreatorId); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		ur.logger.Error(err)
 		return models.UserHomePage{}, models.InternalError
@@ -67,8 +67,8 @@ func (ur *UserRepo) GetHomePage(ctx context.Context, id uuid.UUID) (models.UserH
 }
 
 func (ur *UserRepo) UpdateProfilePhoto(ctx context.Context, userID uuid.UUID, path uuid.UUID) error {
-	row := ur.db.QueryRow(UpdateProfilePhoto, path, userID)
-	if err := row.Err(); err != nil {
+	row := ur.db.QueryRowContext(ctx, UpdateProfilePhoto, path, userID)
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		ur.logger.Error(err)
 		return models.InternalError
 	}
@@ -76,8 +76,8 @@ func (ur *UserRepo) UpdateProfilePhoto(ctx context.Context, userID uuid.UUID, pa
 }
 
 func (ur *UserRepo) UpdatePassword(ctx context.Context, id uuid.UUID, password string) error {
-	row := ur.db.QueryRow(UpdatePassword, password, id)
-	if err := row.Err(); err != nil {
+	row := ur.db.QueryRowContext(ctx, UpdatePassword, password, id)
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		ur.logger.Error(err)
 		return models.InternalError
 	}
@@ -85,8 +85,8 @@ func (ur *UserRepo) UpdatePassword(ctx context.Context, id uuid.UUID, password s
 }
 
 func (ur *UserRepo) UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error {
-	row := ur.db.QueryRow(UpdateProfileInfo, profileInfo.Login, profileInfo.Name, id)
-	if err := row.Err(); err != nil {
+	row := ur.db.QueryRowContext(ctx, UpdateProfileInfo, profileInfo.Login, profileInfo.Name, id)
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		ur.logger.Error(err)
 		return models.InternalError
 	}
@@ -108,7 +108,6 @@ func (ur *UserRepo) Donate(ctx context.Context, donateInfo models.Donate, userID
 	}
 	var newMoney int
 	if err = row.Scan(&newMoney); err != nil && !errors.Is(sql.ErrNoRows, err) {
-		fmt.Println(err)
 		_ = tx.Rollback()
 		return 0, models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
@@ -124,4 +123,26 @@ func (ur *UserRepo) Donate(ctx context.Context, donateInfo models.Donate, userID
 	}
 
 	return newMoney, nil
+}
+
+func (ur *UserRepo) CheckIfCreator(ctx context.Context, userId uuid.UUID) (bool, error) {
+	idTmp := uuid.UUID{}
+	row := ur.db.QueryRowContext(ctx, CheckIfCreator, userId)
+	if err := row.Scan(&idTmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		ur.logger.Error(err)
+		return false, models.InternalError
+	} else if err == nil {
+		return true, nil
+	}
+	return false, nil
+}
+
+func (ur *UserRepo) BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error) {
+	creatorId := uuid.New()
+	row := ur.db.QueryRowContext(ctx, BecameCreator, creatorId, userId, creatorInfo.Name, creatorInfo.Description)
+	if err := row.Scan(); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		ur.logger.Error(err)
+		return uuid.Nil, models.InternalError
+	}
+	return creatorId, nil
 }

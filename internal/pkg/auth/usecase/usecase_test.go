@@ -44,12 +44,9 @@ func TestNewAuthUsecase(t *testing.T) {
 	mockTokenGen := mock.NewMockTokenGenerator(ctl)
 	mockEncrypter := mock.NewMockEncrypter(ctl)
 
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	logger := zap.NewNop()
 	defer func(logger *zap.Logger) {
-		err = logger.Sync()
+		err := logger.Sync()
 		if err != nil {
 			return
 		}
@@ -68,6 +65,18 @@ func TestNewAuthUsecase(t *testing.T) {
 	if testusecase.encrypter != mockEncrypter {
 		t.Error("bad constructor")
 	}
+}
+
+func TestNewEncryptor(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	os.Setenv("ENCRYPTER_SECRET", "TESTS")
+
+	enc, err := NewEncryptor()
+	require.Equal(t, "TESTS", enc.salt, fmt.Errorf("expected %s, got %s",
+		"TESTS", enc.salt))
+	require.Equal(t, nil, err, fmt.Errorf("error wasnt expected, got %s",
+		err))
 }
 
 func TestAuthUsecase_SignIn(t *testing.T) {
@@ -273,4 +282,72 @@ func TestAuthUsecase_CheckUserVersion(t *testing.T) {
 				test.name, test.expectedStatusCode, code))
 		})
 	}
+}
+
+func TestAuthUsecase_CheckUser(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	mockAuthRepo := mock.NewMockAuthRepo(ctl)
+	mockTokenGen := mock.NewMockTokenGenerator(ctl)
+	mockEncrypter := mock.NewMockEncrypter(ctl)
+
+	tests := []struct {
+		name               string
+		fields             testUsecase
+		expectedStatusCode error
+	}{
+		{
+			name:               "Nil err",
+			fields:             testUsecase{mockAuthRepo, mockTokenGen, mockEncrypter},
+			expectedStatusCode: nil,
+		},
+		{
+			name:               "InternalErr",
+			fields:             testUsecase{mockAuthRepo, mockTokenGen, mockEncrypter},
+			expectedStatusCode: models.InternalError,
+		},
+	}
+
+	for i := 0; i < len(tests); i++ {
+		mockEncrypter.EXPECT().EncryptPswd(gomock.Any(), gomock.Any()).Return("testPasswordHash")
+		if tests[i].expectedStatusCode == nil {
+			mockAuthRepo.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(models.User{}, nil)
+		} else {
+			mockAuthRepo.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(models.User{}, models.InternalError)
+		}
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &AuthUsecase{
+				repo:      mockAuthRepo,
+				tokenator: mockTokenGen,
+				encrypter: mockEncrypter,
+			}
+
+			_, code := h.CheckUser(context.Background(), models.User{})
+			require.Equal(t, test.expectedStatusCode, code, fmt.Errorf("%s :  expected %d, got %d,",
+				test.name, test.expectedStatusCode, code))
+		})
+	}
+}
+
+func TestAuthUsecase_EncryptPwd(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	mockAuthRepo := mock.NewMockAuthRepo(ctl)
+	mockTokenGen := mock.NewMockTokenGenerator(ctl)
+	mockEncrypter := mock.NewMockEncrypter(ctl)
+
+	mockEncrypter.EXPECT().EncryptPswd(gomock.Any(), gomock.Any()).Return("testPasswordHash")
+
+	h := &AuthUsecase{
+		repo:      mockAuthRepo,
+		tokenator: mockTokenGen,
+		encrypter: mockEncrypter,
+	}
+
+	res := h.EncryptPwd(context.Background(), "test")
+	require.Equal(t, "testPasswordHash", res, fmt.Errorf("expected %s, got %s",
+		"testPasswordHash", res))
 }

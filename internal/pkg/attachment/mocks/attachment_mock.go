@@ -36,56 +36,69 @@ func (m *MockAttachmentUsecase) EXPECT() *MockAttachmentUsecaseMockRecorder {
 	return m.recorder
 }
 
-// CreateAttaches mocks base method.
-func (m *MockAttachmentUsecase) CreateAttaches(ctx context.Context, attachments ...models.AttachmentData) error {
+// CreateAttachments mocks base method.
+func (m *MockAttachmentUsecase) CreateAttachments(ctx context.Context, attachments ...models.AttachmentData) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx}
 	for _, a := range attachments {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "CreateAttaches", varargs...)
+	ret := m.ctrl.Call(m, "CreateAttachments", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// CreateAttaches indicates an expected call of CreateAttaches.
-func (mr *MockAttachmentUsecaseMockRecorder) CreateAttaches(ctx interface{}, attachments ...interface{}) *gomock.Call {
+// CreateAttachments indicates an expected call of CreateAttachments.
+func (mr *MockAttachmentUsecaseMockRecorder) CreateAttachments(ctx interface{}, attachments ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx}, attachments...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAttaches", reflect.TypeOf((*MockAttachmentUsecase)(nil).CreateAttaches), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAttachments", reflect.TypeOf((*MockAttachmentUsecase)(nil).CreateAttachments), varargs...)
 }
 
-// DeleteAttaches mocks base method.
-func (m *MockAttachmentUsecase) DeleteAttaches(ctx context.Context, attachments ...models.AttachmentData) error {
+// DeleteAttachment mocks base method.
+func (m *MockAttachmentUsecase) DeleteAttachment(ctx context.Context, attachmentID, postID uuid.UUID) error {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{ctx}
+	ret := m.ctrl.Call(m, "DeleteAttachment", ctx, attachmentID, postID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteAttachment indicates an expected call of DeleteAttachment.
+func (mr *MockAttachmentUsecaseMockRecorder) DeleteAttachment(ctx, attachmentID, postID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAttachment", reflect.TypeOf((*MockAttachmentUsecase)(nil).DeleteAttachment), ctx, attachmentID, postID)
+}
+
+// DeleteAttachments mocks base method.
+func (m *MockAttachmentUsecase) DeleteAttachments(attachments ...models.AttachmentData) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
 	for _, a := range attachments {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "DeleteAttaches", varargs...)
+	ret := m.ctrl.Call(m, "DeleteAttachments", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// DeleteAttaches indicates an expected call of DeleteAttaches.
-func (mr *MockAttachmentUsecaseMockRecorder) DeleteAttaches(ctx interface{}, attachments ...interface{}) *gomock.Call {
+// DeleteAttachments indicates an expected call of DeleteAttachments.
+func (mr *MockAttachmentUsecaseMockRecorder) DeleteAttachments(attachments ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{ctx}, attachments...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAttaches", reflect.TypeOf((*MockAttachmentUsecase)(nil).DeleteAttaches), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAttachments", reflect.TypeOf((*MockAttachmentUsecase)(nil).DeleteAttachments), attachments...)
 }
 
-// DeleteAttachesByPostID mocks base method.
-func (m *MockAttachmentUsecase) DeleteAttachesByPostID(ctx context.Context, postID uuid.UUID) error {
+// DeleteAttachmentsByPostID mocks base method.
+func (m *MockAttachmentUsecase) DeleteAttachmentsByPostID(ctx context.Context, postID uuid.UUID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteAttachesByPostID", ctx, postID)
+	ret := m.ctrl.Call(m, "DeleteAttachmentsByPostID", ctx, postID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// DeleteAttachesByPostID indicates an expected call of DeleteAttachesByPostID.
-func (mr *MockAttachmentUsecaseMockRecorder) DeleteAttachesByPostID(ctx, postID interface{}) *gomock.Call {
+// DeleteAttachmentsByPostID indicates an expected call of DeleteAttachmentsByPostID.
+func (mr *MockAttachmentUsecaseMockRecorder) DeleteAttachmentsByPostID(ctx, postID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAttachesByPostID", reflect.TypeOf((*MockAttachmentUsecase)(nil).DeleteAttachesByPostID), ctx, postID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAttachmentsByPostID", reflect.TypeOf((*MockAttachmentUsecase)(nil).DeleteAttachmentsByPostID), ctx, postID)
 }
 
 // MockAttachmentRepo is a mock of AttachmentRepo interface.
@@ -111,31 +124,45 @@ func (m *MockAttachmentRepo) EXPECT() *MockAttachmentRepoMockRecorder {
 	return m.recorder
 }
 
-// CreateAttach mocks base method.
-func (m *MockAttachmentRepo) CreateAttach(ctx context.Context, postID, attachID uuid.UUID, attachmentType string) error {
+// CreateAttachment mocks base method.
+func (m *MockAttachmentRepo) CreateAttachment(ctx context.Context, postID, attachmentID uuid.UUID, attachmentType string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateAttach", ctx, postID, attachID, attachmentType)
+	ret := m.ctrl.Call(m, "CreateAttachment", ctx, postID, attachmentID, attachmentType)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// CreateAttach indicates an expected call of CreateAttach.
-func (mr *MockAttachmentRepoMockRecorder) CreateAttach(ctx, postID, attachID, attachmentType interface{}) *gomock.Call {
+// CreateAttachment indicates an expected call of CreateAttachment.
+func (mr *MockAttachmentRepoMockRecorder) CreateAttachment(ctx, postID, attachmentID, attachmentType interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAttach", reflect.TypeOf((*MockAttachmentRepo)(nil).CreateAttach), ctx, postID, attachID, attachmentType)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAttachment", reflect.TypeOf((*MockAttachmentRepo)(nil).CreateAttachment), ctx, postID, attachmentID, attachmentType)
 }
 
-// DeleteAttachesByPostID mocks base method.
-func (m *MockAttachmentRepo) DeleteAttachesByPostID(ctx context.Context, postID uuid.UUID) ([]models.AttachmentData, error) {
+// DeleteAttachment mocks base method.
+func (m *MockAttachmentRepo) DeleteAttachment(ctx context.Context, attachmentID, postID uuid.UUID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteAttachesByPostID", ctx, postID)
+	ret := m.ctrl.Call(m, "DeleteAttachment", ctx, attachmentID, postID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteAttachment indicates an expected call of DeleteAttachment.
+func (mr *MockAttachmentRepoMockRecorder) DeleteAttachment(ctx, attachmentID, postID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAttachment", reflect.TypeOf((*MockAttachmentRepo)(nil).DeleteAttachment), ctx, attachmentID, postID)
+}
+
+// DeleteAttachmentsByPostID mocks base method.
+func (m *MockAttachmentRepo) DeleteAttachmentsByPostID(ctx context.Context, postID uuid.UUID) ([]models.AttachmentData, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteAttachmentsByPostID", ctx, postID)
 	ret0, _ := ret[0].([]models.AttachmentData)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// DeleteAttachesByPostID indicates an expected call of DeleteAttachesByPostID.
-func (mr *MockAttachmentRepoMockRecorder) DeleteAttachesByPostID(ctx, postID interface{}) *gomock.Call {
+// DeleteAttachmentsByPostID indicates an expected call of DeleteAttachmentsByPostID.
+func (mr *MockAttachmentRepoMockRecorder) DeleteAttachmentsByPostID(ctx, postID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAttachesByPostID", reflect.TypeOf((*MockAttachmentRepo)(nil).DeleteAttachesByPostID), ctx, postID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAttachmentsByPostID", reflect.TypeOf((*MockAttachmentRepo)(nil).DeleteAttachmentsByPostID), ctx, postID)
 }

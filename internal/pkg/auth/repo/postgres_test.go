@@ -21,10 +21,7 @@ func TestAuthRepo_CheckUser(t *testing.T) {
 	}
 	defer db.Close()
 
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	logger := zap.NewNop()
 	defer func(logger *zap.Logger) {
 		err = logger.Sync()
 		if err != nil {
@@ -107,10 +104,7 @@ func TestAuthRepo_CreateUser(t *testing.T) {
 	}
 	defer db.Close()
 
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	logger := zap.NewNop()
 	defer func(logger *zap.Logger) {
 		err = logger.Sync()
 		if err != nil {
@@ -173,10 +167,7 @@ func TestAuthRepo_CheckUserVersion(t *testing.T) {
 	}
 	defer db.Close()
 
-	logger, err := zap.NewProduction()
-	if err != nil {
-		t.Error(err.Error())
-	}
+	logger := zap.NewNop()
 	defer func(logger *zap.Logger) {
 		err = logger.Sync()
 		if err != nil {

@@ -39,3 +39,7 @@ func (uc *CreatorUsecase) GetPage(ctx context.Context, details *models.AccessDet
 func (uc *CreatorUsecase) CreateAim(ctx context.Context, aimInfo models.Aim) error {
 	return uc.repo.CreateAim(ctx, aimInfo)
 }
+
+func (uc *CreatorUsecase) GetAllCreators(ctx context.Context) ([]models.Creator, error) {
+	return uc.repo.GetAllCreators(ctx)
+}

@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
@@ -56,20 +55,15 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
-	if err != nil {
-		utils.Response(w, http.StatusForbidden, nil)
-		return
-	}
-	if *userDataCSRF != *userDataJWT {
+	if err != nil || *userDataCSRF != *userDataJWT {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
 
 	r.Body = http.MaxBytesReader(w, r.Body, int64(models.MaxFormSize))
-	err = r.ParseMultipartForm(models.MaxFormSize) // maxMemory
+	err = r.ParseMultipartForm(models.MaxFormSize)
 	if err != nil {
 		h.logger.Error(err)
-		fmt.Println("Str 69 ", err)
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
@@ -112,6 +106,10 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	postData.Text = postValues["text"][0]
+	if len(postData.Text) > 4000 {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
 
 	_, ok = postValues["title"]
 	if !ok {
@@ -119,6 +117,10 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	postData.Title = postValues["title"][0]
+	if len(postData.Title) > 40 {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
 
 	if _, ok := r.MultipartForm.File["attachments"]; ok {
 		if len(r.MultipartForm.File["attachments"]) > models.MaxFiles {
@@ -128,7 +130,6 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		for _, headers := range r.MultipartForm.File {
 			for _, header := range headers {
 				if header.Size > int64(models.MaxFileSize) {
-					fmt.Println("Str 69 ", err)
 					utils.Response(w, http.StatusBadRequest, nil)
 					return
 				}
@@ -160,8 +161,8 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 			postData.Attachments[i].Id = uuid.New()
 		}
 
-		if err = h.attachmentUsecase.CreateAttaches(r.Context(), postData.Attachments...); err == models.WrongData {
-			utils.Response(w, http.StatusBadRequest, nil)
+		if err = h.attachmentUsecase.CreateAttachments(r.Context(), postData.Attachments...); err == models.Unsupported {
+			utils.Response(w, http.StatusUnsupportedMediaType, nil)
 			return
 		} else if err != nil {
 			h.logger.Error(err)
@@ -184,7 +185,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	postData.Id = uuid.New()
 	if err := h.usecase.CreatePost(r.Context(), postData); err != nil {
-		_ = h.attachmentUsecase.DeleteAttaches(r.Context(), postData.Attachments...)
+		_ = h.attachmentUsecase.DeleteAttachments(postData.Attachments...)
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
@@ -199,7 +200,6 @@ func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
-
 	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userData); err != nil {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
@@ -209,6 +209,17 @@ func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
 	var like models.Like
 	err = easyjson.UnmarshalFromReader(r.Body, &like)
 	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	postOwner, err := h.usecase.IsPostOwner(r.Context(), userData.Id, like.PostID)
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if postOwner {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
@@ -218,8 +229,8 @@ func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
+
 	if err == models.InternalError {
-		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -318,7 +329,7 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
-	err = h.attachmentUsecase.DeleteAttachesByPostID(r.Context(), postID)
+	err = h.attachmentUsecase.DeleteAttachmentsByPostID(r.Context(), postID)
 	if err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
@@ -337,7 +348,7 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
-	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+	userDataJWT, _ := token.ExtractJWTTokenMetadata(r)
 
 	postIDtmp, ok := mux.Vars(r)["post-uuid"]
 	if !ok {
@@ -394,11 +405,7 @@ func (h *PostHandler) EditPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
-	if err != nil {
-		utils.Response(w, http.StatusForbidden, nil)
-		return
-	}
-	if *userDataCSRF != *userDataJWT {
+	if err != nil || *userDataCSRF != *userDataJWT {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -434,6 +441,11 @@ func (h *PostHandler) EditPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = easyjson.UnmarshalFromReader(r.Body, &postEditData); err != nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if len(postEditData.Title) > 40 || len(postEditData.Text) > 4000 {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
@@ -479,7 +491,16 @@ func (h *PostHandler) AddAttach(w http.ResponseWriter, r *http.Request) {
 	}
 
 	postIDtmp, ok := mux.Vars(r)["post-uuid"]
+	if !ok {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
 	postID, err := uuid.Parse(postIDtmp)
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
 
 	ok, err = h.usecase.IsPostOwner(r.Context(), (*userDataJWT).Id, postID)
 	if err == models.WrongData {
@@ -536,8 +557,8 @@ func (h *PostHandler) AddAttach(w http.ResponseWriter, r *http.Request) {
 	attach.Type = http.DetectContentType(buf)
 	attach.Id = uuid.New()
 
-	if err = h.attachmentUsecase.CreateAttaches(r.Context(), attach); err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
+	if err = h.attachmentUsecase.CreateAttachments(r.Context(), attach); err == models.Unsupported {
+		utils.Response(w, http.StatusUnsupportedMediaType, nil)
 		return
 	} else if err != nil {
 		h.logger.Error(err)
@@ -614,7 +635,7 @@ func (h *PostHandler) DeleteAttach(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.attachmentUsecase.DeleteAttach(r.Context(), attachInfo.Id, postID)
+	err = h.attachmentUsecase.DeleteAttachment(r.Context(), attachInfo.Id, postID)
 	if err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
@@ -625,7 +646,7 @@ func (h *PostHandler) DeleteAttach(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.attachmentUsecase.DeleteAttaches(r.Context(), models.AttachmentData{Id: attachInfo.Id, Type: attachInfo.Type})
+	err = h.attachmentUsecase.DeleteAttachments(models.AttachmentData{Id: attachInfo.Id, Type: attachInfo.Type})
 	if err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
