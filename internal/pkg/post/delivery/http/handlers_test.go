@@ -505,8 +505,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 
 				defer writer.Close()
 
-				partPath, err := writer.CreateFormField("path")
-				_, err = partPath.Write([]byte(uuid.Nil.String()))
+				partPath, _ := writer.CreateFormField("path")
+				_, err := partPath.Write([]byte(uuid.Nil.String()))
 				if err != nil {
 					t.Error(err)
 				}
@@ -543,8 +543,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 
 				defer writer.Close()
 
-				partPath, err := writer.CreateFormField("creator")
-				_, err = partPath.Write([]byte("1323"))
+				partPath, _ := writer.CreateFormField("creator")
+				_, err := partPath.Write([]byte("1323"))
 				if err != nil {
 					t.Error(err)
 				}
@@ -581,8 +581,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 
 				defer writer.Close()
 
-				partPath, err := writer.CreateFormField("creator")
-				_, err = partPath.Write([]byte(uuid.New().String()))
+				partPath, _ := writer.CreateFormField("creator")
+				_, err := partPath.Write([]byte(uuid.New().String()))
 				if err != nil {
 					t.Error(err)
 				}
@@ -621,8 +621,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 
 				defer writer.Close()
 
-				partPath, err := writer.CreateFormField("creator")
-				_, err = partPath.Write([]byte(uuid.New().String()))
+				partPath, _ := writer.CreateFormField("creator")
+				_, err := partPath.Write([]byte(uuid.New().String()))
 				if err != nil {
 					t.Error(err)
 				}
@@ -660,8 +660,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 
 				defer writer.Close()
 
-				partPath, err := writer.CreateFormField("creator")
-				_, err = partPath.Write([]byte(uuid.New().String()))
+				partPath, _ := writer.CreateFormField("creator")
+				_, err := partPath.Write([]byte(uuid.New().String()))
 				if err != nil {
 					t.Error(err)
 				}
@@ -699,8 +699,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 
 				defer writer.Close()
 
-				partPath, err := writer.CreateFormField("creator")
-				_, err = partPath.Write([]byte(uuid.New().String()))
+				partPath, _ := writer.CreateFormField("creator")
+				_, err := partPath.Write([]byte(uuid.New().String()))
 				if err != nil {
 					t.Error(err)
 				}
@@ -738,12 +738,12 @@ func TestPostHandler_CreatePost(t *testing.T) {
 
 				defer writer.Close()
 
-				partPath, err := writer.CreateFormField("creator")
-				_, err = partPath.Write([]byte(uuid.New().String()))
+				partPath, _ := writer.CreateFormField("creator")
+				_, err := partPath.Write([]byte(uuid.New().String()))
 				if err != nil {
 					t.Error(err)
 				}
-				partText, err := writer.CreateFormField("text")
+				partText, _ := writer.CreateFormField("text")
 				_, err = partText.Write([]byte(uuid.New().String()))
 				if err != nil {
 					t.Error(err)
@@ -782,12 +782,12 @@ func TestPostHandler_CreatePost(t *testing.T) {
 
 				defer writer.Close()
 
-				partPath, err := writer.CreateFormField("creator")
-				_, err = partPath.Write([]byte(uuid.New().String()))
+				partPath, _ := writer.CreateFormField("creator")
+				_, err := partPath.Write([]byte(uuid.New().String()))
 				if err != nil {
 					t.Error(err)
 				}
-				partText, err := writer.CreateFormField("text")
+				partText, _ := writer.CreateFormField("text")
 				_, err = partText.Write([]byte(uuid.New().String()))
 				if err != nil {
 					t.Error(err)
