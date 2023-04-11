@@ -1231,3 +1231,177 @@ func TestPostHandler_EditPost(t *testing.T) {
 		})
 	}
 }
+
+func TestPostHandler_GetPost(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	os.Setenv("TOKEN_SECRET", "TEST")
+	tkn := &usecase.Tokenator{}
+	id := uuid.New()
+	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: id})
+
+	logger := zap.NewNop()
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
+	mockPostUsecase := mockPost.NewMockPostUsecase(ctl)
+	mockAttachUsecase := mockAttach.NewMockAttachmentUsecase(ctl)
+
+	tests := []struct {
+		name           string
+		mock           func() *http.Request
+		expectedStatus int
+	}{
+		{
+			name: "OK",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/get/{post-uuid}",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r = mux.SetURLVars(r, map[string]string{
+					"post-uuid": uuid.NewString(),
+				})
+
+				mockPostUsecase.EXPECT().GetPost(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Post{}, nil)
+
+				return r
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "No postId",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/get/{post-uuid}",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Wrong uuid",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/get/{post-uuid}",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r = mux.SetURLVars(r, map[string]string{
+					"post-uuid": "111",
+				})
+
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Forbidden",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/get/{post-uuid}",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r = mux.SetURLVars(r, map[string]string{
+					"post-uuid": uuid.NewString(),
+				})
+
+				mockPostUsecase.EXPECT().GetPost(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Post{}, models.Forbbiden)
+
+				return r
+			},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name: "Wrong Data",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/get/{post-uuid}",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r = mux.SetURLVars(r, map[string]string{
+					"post-uuid": uuid.NewString(),
+				})
+
+				mockPostUsecase.EXPECT().GetPost(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Post{}, models.WrongData)
+
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Internal Error",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/get/{post-uuid}",
+					nil)
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				r = mux.SetURLVars(r, map[string]string{
+					"post-uuid": uuid.NewString(),
+				})
+
+				mockPostUsecase.EXPECT().GetPost(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Post{}, models.InternalError)
+
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &PostHandler{
+				usecase:           mockPostUsecase,
+				authUsecase:       mockAuthUsecase,
+				attachmentUsecase: mockAttachUsecase,
+				logger:            zapSugar,
+			}
+			w := httptest.NewRecorder()
+			r := test.mock()
+			h.GetPost(w, r)
+			require.Equal(t, test.expectedStatus, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
+				" for test:%s", test.name, test.expectedStatus, w.Code, test.name))
+		})
+	}
+}
