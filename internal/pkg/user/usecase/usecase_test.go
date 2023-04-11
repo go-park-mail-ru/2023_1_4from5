@@ -209,3 +209,98 @@ func TestUserUsecase_UpdatePassword(t *testing.T) {
 		})
 	}
 }
+
+func TestUserUsecase_UpdateProfileInfo(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	mockUserRepo := mock.NewMockUserRepo(ctl)
+
+	testsUpdateProfileInfo := []struct {
+		name               string
+		id                 uuid.UUID
+		profileInfo        models.UpdateProfileInfo
+		mock               func()
+		expectedStatusCode error
+	}{
+		{
+			name:        "OK",
+			id:          uuid.New(),
+			profileInfo: models.UpdateProfileInfo{},
+			mock: func() {
+				mockUserRepo.EXPECT().UpdateProfileInfo(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+			},
+			expectedStatusCode: nil,
+		},
+		{
+			name:        "Internal Error",
+			id:          uuid.New(),
+			profileInfo: models.UpdateProfileInfo{},
+			mock: func() {
+				mockUserRepo.EXPECT().UpdateProfileInfo(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.InternalError)
+			},
+			expectedStatusCode: models.InternalError,
+		},
+	}
+
+	for _, test := range testsUpdateProfileInfo {
+		t.Run(test.name, func(t *testing.T) {
+			h := &UserUsecase{
+				repo: mockUserRepo,
+			}
+			test.mock()
+			err := h.UpdateProfileInfo(context.Background(), test.profileInfo, test.id)
+			require.Equal(t, test.expectedStatusCode, err, fmt.Errorf("%s :  expected %e, got %e,",
+				test.name, test.expectedStatusCode, err))
+		})
+	}
+}
+
+func TestUserUsecase_Donate(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	mockUserRepo := mock.NewMockUserRepo(ctl)
+
+	testsDonateInfo := []struct {
+		name               string
+		id                 uuid.UUID
+		donateInfo         models.Donate
+		mock               func()
+		expectedStatusCode error
+		expectedRes        int
+	}{
+		{
+			name:       "OK",
+			id:         uuid.New(),
+			donateInfo: models.Donate{},
+			mock: func() {
+				mockUserRepo.EXPECT().Donate(gomock.Any(), gomock.Any(), gomock.Any()).Return(100, nil)
+			},
+			expectedStatusCode: nil,
+			expectedRes:        100,
+		},
+		{
+			name:       "Internal Error",
+			id:         uuid.New(),
+			donateInfo: models.Donate{},
+			mock: func() {
+				mockUserRepo.EXPECT().Donate(gomock.Any(), gomock.Any(), gomock.Any()).Return(0, models.InternalError)
+			},
+			expectedStatusCode: models.InternalError,
+			expectedRes:        0,
+		},
+	}
+
+	for _, test := range testsDonateInfo {
+		t.Run(test.name, func(t *testing.T) {
+			h := &UserUsecase{
+				repo: mockUserRepo,
+			}
+			test.mock()
+			got, err := h.Donate(context.Background(), test.donateInfo, test.id)
+			require.Equal(t, test.expectedStatusCode, err, fmt.Errorf("%s :  expected %e, got %e,",
+				test.name, test.expectedStatusCode, err))
+			require.Equal(t, test.expectedRes, got, fmt.Errorf("%s :  expected %d, got %d,",
+				test.name, test.expectedRes, err))
+		})
+	}
+}

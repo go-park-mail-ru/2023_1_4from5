@@ -236,6 +236,63 @@ func TestCreatorHandler_CreateAim(t *testing.T) {
 			},
 			expectedStatus: http.StatusInternalServerError,
 		},
+		{
+			name: "Is Creator wrong data",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/aim/create",
+					bytes.NewReader(bodyPrepare(testAim)))
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, models.WrongData)
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Is Creator internal error",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/aim/create",
+					bytes.NewReader(bodyPrepare(testAim)))
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, models.InternalError)
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Is Creator wrong",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/aim/create",
+					bytes.NewReader(bodyPrepare(testAim)))
+
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+
+				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil)
+				return r
+			},
+			expectedStatus: http.StatusForbidden,
+		},
 	}
 
 	for _, test := range tests {

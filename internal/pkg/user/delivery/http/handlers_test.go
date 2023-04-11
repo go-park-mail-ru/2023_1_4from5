@@ -321,7 +321,7 @@ func TestUserHandler_UpdateProfilePhoto(t *testing.T) {
 			expectedStatus: http.StatusForbidden,
 		},
 		{
-			name: "Forbidden",
+			name: "Get CSRF",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("GET", "/user/updateProfilePhoto",
 					nil)

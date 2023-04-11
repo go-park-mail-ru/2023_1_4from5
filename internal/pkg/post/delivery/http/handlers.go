@@ -405,11 +405,7 @@ func (h *PostHandler) EditPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
-	if err != nil {
-		utils.Response(w, http.StatusForbidden, nil)
-		return
-	}
-	if *userDataCSRF != *userDataJWT {
+	if err != nil || *userDataCSRF != *userDataJWT {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
