@@ -1,3 +1,7 @@
+linters-settings:
+  gocognit:
+    min-complexity: 60
+
 linters:
   enable:
     - errcheck
