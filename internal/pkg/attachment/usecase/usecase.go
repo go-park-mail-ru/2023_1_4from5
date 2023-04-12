@@ -102,7 +102,7 @@ func deleteAttachment(attachment models.AttachmentData) error {
 	filename := filepath.Join(models.FolderPath, attachment.Id.String(), ".", val)
 
 	if err := os.Remove(filename); err != nil {
-		fmt.Println(err)
+
 		return models.InternalError
 	}
 	return nil

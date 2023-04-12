@@ -120,7 +120,7 @@ func (r *CreatorRepo) CreatorPosts(ctx context.Context, creatorId uuid.UUID) ([]
 			r.logger.Error(err)
 			return nil, models.InternalError
 		}
-		attachs = attachs[:len(attachs)/2] //TODO: из-за двойного джойна дублируется, пофиксить
+		attachs = attachs[:len(attachs)/2]
 		post.Attachments = make([]models.Attachment, len(attachs))
 		for i, v := range attachs {
 			post.Attachments[i].Type = types[i].String

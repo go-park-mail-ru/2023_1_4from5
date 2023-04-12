@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -155,13 +154,12 @@ func (r *PostRepo) GetPost(ctx context.Context, postID, userID uuid.UUID) (model
 		return models.Post{}, models.InternalError
 	}
 
-	attachs = attachs[:len(attachs)/2] //TODO !!!!!!!!!!!!!!!!
+	attachs = attachs[:len(attachs)/2]
 	post.Attachments = make([]models.Attachment, len(attachs))
 	for i, v := range attachs {
 		post.Attachments[i].Type = types[i].String
 		post.Attachments[i].Id = v
 	}
-	fmt.Println(subs)
 	post.Subscriptions, err = r.GetSubsByID(ctx, subs...)
 	return post, err
 }
@@ -294,7 +292,6 @@ func (r *PostRepo) RemoveLike(ctx context.Context, userID uuid.UUID, postID uuid
 		userUUID uuid.UUID
 		postUUID uuid.UUID
 	)
-	fmt.Println("Remove Like")
 	row := r.db.QueryRowContext(ctx, IsLiked, postID, userID)
 	if err := row.Scan(&postUUID, &userUUID); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		r.logger.Error(err)
