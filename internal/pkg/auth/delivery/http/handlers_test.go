@@ -2,6 +2,7 @@ package http
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
@@ -11,6 +12,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -38,7 +40,7 @@ type args struct {
 
 var testUsers = []models.User{
 	{
-		Login:        "Dasha2003!",
+		Login:        "Dasha2003",
 		PasswordHash: "Dasha2003!",
 		Name:         "Дарья Такташова",
 	},
@@ -64,7 +66,16 @@ func TestNewAuthHandler(t *testing.T) {
 	defer ctl.Finish()
 
 	mockUsecase := mock.NewMockAuthUsecase(ctl)
-	testHandler := NewAuthHandler(mockUsecase)
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+	testHandler := NewAuthHandler(mockUsecase, zapSugar)
 	if testHandler.usecase != mockUsecase {
 		t.Error("bad constructor")
 	}
@@ -121,7 +132,7 @@ func TestAuthHandler_SignIn(t *testing.T) {
 		LoginUserCopy := models.LoginUser{Login: testUsers[i].Login, PasswordHash: testUsers[i].PasswordHash}
 		if tests[i].args.expectedStatusCode != models.NoAuthData {
 			mockUsecase.EXPECT().
-				SignIn(LoginUserCopy).
+				SignIn(gomock.Any(), LoginUserCopy).
 				Return("", tests[i].args.expectedStatusCode)
 		}
 	}
@@ -214,15 +225,15 @@ func TestAuthHandler_SignUp(t *testing.T) {
 			continue
 		}
 		if tests[i].args.expectedStatusCode == models.InternalError {
-			mockUsecase.EXPECT().SignUp(gomock.Any()).Return("", tests[i].args.expectedStatusCode)
+			mockUsecase.EXPECT().SignUp(gomock.Any(), gomock.Any()).Return("", tests[i].args.expectedStatusCode)
 			continue
 		}
 		if tests[i].args.expectedStatusCode == nil {
-			mockUsecase.EXPECT().SignUp(gomock.Any()).Return("token", tests[i].args.expectedStatusCode)
+			mockUsecase.EXPECT().SignUp(gomock.Any(), gomock.Any()).Return("token", tests[i].args.expectedStatusCode)
 			continue
 		}
 		mockUsecase.EXPECT().
-			SignUp(models.User{Login: testUsers[i].Login, PasswordHash: testUsers[i].PasswordHash, Name: testUsers[i].Name}).
+			SignUp(gomock.Any(), models.User{Login: testUsers[i].Login, PasswordHash: testUsers[i].PasswordHash, Name: testUsers[i].Name}).
 			Return("", tests[i].args.expectedStatusCode)
 	}
 
@@ -249,10 +260,11 @@ type argsLogout struct {
 func TestAuthHandler_Logout(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
+	mockUsecase := mock.NewMockAuthUsecase(ctl)
 
 	os.Setenv("TOKEN_SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
-	bdy, _ := tkn.GetToken(models.User{Login: testUsers[1].Login, Id: uuid.New()})
+	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUsers[1].Login, Id: uuid.New()})
 
 	tests := []struct {
 		name  string
@@ -287,12 +299,28 @@ func TestAuthHandler_Logout(t *testing.T) {
 				expectedResponse:   http.Response{StatusCode: http.StatusBadRequest},
 			},
 		},
+		{
+			name:  "InternalError",
+			Login: testUsers[0].Login,
+			args: argsLogout{
+				r:                  httptest.NewRequest("POST", "/logout", nil),
+				expectedStatusCode: http.StatusInternalServerError,
+				expectedResponse:   http.Response{StatusCode: http.StatusInternalServerError},
+			},
+		},
 	}
 
 	for i := 0; i < len(tests); i++ {
 		name := "SSID"
 		expires := time.Now().UTC().Add(time.Hour)
 		value := bdy
+		if tests[i].args.expectedStatusCode == http.StatusOK {
+			mockUsecase.EXPECT().IncUserVersion(gomock.Any(), gomock.Any()).Return(1, nil)
+		}
+
+		if tests[i].args.expectedStatusCode == http.StatusInternalServerError {
+			mockUsecase.EXPECT().IncUserVersion(gomock.Any(), gomock.Any()).Return(0, models.InternalError)
+		}
 		if tests[i].args.expectedStatusCode == http.StatusBadRequest {
 			switch i {
 			case 0:
@@ -318,7 +346,7 @@ func TestAuthHandler_Logout(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Login, func(t *testing.T) {
-			h := &AuthHandler{}
+			h := &AuthHandler{usecase: mockUsecase}
 
 			w := httptest.NewRecorder()
 			h.Logout(w, test.args.r)

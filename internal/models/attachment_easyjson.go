@@ -36,12 +36,12 @@ func easyjson76362c5bDecodeGithubComGoParkMailRu202314from5InternalModels(in *jl
 			continue
 		}
 		switch key {
-		case "attachment_id":
+		case "id":
 			if data := in.UnsafeBytes(); in.Ok() {
 				in.AddError((out.Id).UnmarshalText(data))
 			}
-		case "attachment_path":
-			out.Path = string(in.String())
+		case "type":
+			out.Type = string(in.String())
 		default:
 			in.SkipRecursive()
 		}
@@ -57,14 +57,14 @@ func easyjson76362c5bEncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 	first := true
 	_ = first
 	{
-		const prefix string = ",\"attachment_id\":"
+		const prefix string = ",\"id\":"
 		out.RawString(prefix[1:])
 		out.RawText((in.Id).MarshalText())
 	}
 	{
-		const prefix string = ",\"attachment_path\":"
+		const prefix string = ",\"type\":"
 		out.RawString(prefix)
-		out.String(string(in.Path))
+		out.String(string(in.Type))
 	}
 	out.RawByte('}')
 }

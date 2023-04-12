@@ -5,10 +5,12 @@
 package mock
 
 import (
+	context "context"
 	reflect "reflect"
 
 	models "github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	gomock "github.com/golang/mock/gomock"
+	uuid "github.com/google/uuid"
 )
 
 // MockAuthUsecase is a mock of AuthUsecase interface.
@@ -34,34 +36,93 @@ func (m *MockAuthUsecase) EXPECT() *MockAuthUsecaseMockRecorder {
 	return m.recorder
 }
 
-// SignIn mocks base method.
-func (m *MockAuthUsecase) SignIn(user models.LoginUser) (string, error) {
+// CheckUser mocks base method.
+func (m *MockAuthUsecase) CheckUser(ctx context.Context, user models.User) (models.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SignIn", user)
+	ret := m.ctrl.Call(m, "CheckUser", ctx, user)
+	ret0, _ := ret[0].(models.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckUser indicates an expected call of CheckUser.
+func (mr *MockAuthUsecaseMockRecorder) CheckUser(ctx, user interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUser", reflect.TypeOf((*MockAuthUsecase)(nil).CheckUser), ctx, user)
+}
+
+// CheckUserVersion mocks base method.
+func (m *MockAuthUsecase) CheckUserVersion(ctx context.Context, details models.AccessDetails) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckUserVersion", ctx, details)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckUserVersion indicates an expected call of CheckUserVersion.
+func (mr *MockAuthUsecaseMockRecorder) CheckUserVersion(ctx, details interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUserVersion", reflect.TypeOf((*MockAuthUsecase)(nil).CheckUserVersion), ctx, details)
+}
+
+// EncryptPwd mocks base method.
+func (m *MockAuthUsecase) EncryptPwd(ctx context.Context, pwd string) string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EncryptPwd", ctx, pwd)
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// EncryptPwd indicates an expected call of EncryptPwd.
+func (mr *MockAuthUsecaseMockRecorder) EncryptPwd(ctx, pwd interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EncryptPwd", reflect.TypeOf((*MockAuthUsecase)(nil).EncryptPwd), ctx, pwd)
+}
+
+// IncUserVersion mocks base method.
+func (m *MockAuthUsecase) IncUserVersion(ctx context.Context, details models.AccessDetails) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncUserVersion", ctx, details)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IncUserVersion indicates an expected call of IncUserVersion.
+func (mr *MockAuthUsecaseMockRecorder) IncUserVersion(ctx, details interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncUserVersion", reflect.TypeOf((*MockAuthUsecase)(nil).IncUserVersion), ctx, details)
+}
+
+// SignIn mocks base method.
+func (m *MockAuthUsecase) SignIn(ctx context.Context, user models.LoginUser) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SignIn", ctx, user)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SignIn indicates an expected call of SignIn.
-func (mr *MockAuthUsecaseMockRecorder) SignIn(user interface{}) *gomock.Call {
+func (mr *MockAuthUsecaseMockRecorder) SignIn(ctx, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignIn", reflect.TypeOf((*MockAuthUsecase)(nil).SignIn), user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignIn", reflect.TypeOf((*MockAuthUsecase)(nil).SignIn), ctx, user)
 }
 
 // SignUp mocks base method.
-func (m *MockAuthUsecase) SignUp(user models.User) (string, error) {
+func (m *MockAuthUsecase) SignUp(ctx context.Context, user models.User) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SignUp", user)
+	ret := m.ctrl.Call(m, "SignUp", ctx, user)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SignUp indicates an expected call of SignUp.
-func (mr *MockAuthUsecaseMockRecorder) SignUp(user interface{}) *gomock.Call {
+func (mr *MockAuthUsecaseMockRecorder) SignUp(ctx, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignUp", reflect.TypeOf((*MockAuthUsecase)(nil).SignUp), user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SignUp", reflect.TypeOf((*MockAuthUsecase)(nil).SignUp), ctx, user)
 }
 
 // MockAuthRepo is a mock of AuthRepo interface.
@@ -88,33 +149,63 @@ func (m *MockAuthRepo) EXPECT() *MockAuthRepoMockRecorder {
 }
 
 // CheckUser mocks base method.
-func (m *MockAuthRepo) CheckUser(user models.User) (models.User, error) {
+func (m *MockAuthRepo) CheckUser(ctx context.Context, user models.User) (models.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckUser", user)
+	ret := m.ctrl.Call(m, "CheckUser", ctx, user)
 	ret0, _ := ret[0].(models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CheckUser indicates an expected call of CheckUser.
-func (mr *MockAuthRepoMockRecorder) CheckUser(user interface{}) *gomock.Call {
+func (mr *MockAuthRepoMockRecorder) CheckUser(ctx, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUser", reflect.TypeOf((*MockAuthRepo)(nil).CheckUser), user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUser", reflect.TypeOf((*MockAuthRepo)(nil).CheckUser), ctx, user)
+}
+
+// CheckUserVersion mocks base method.
+func (m *MockAuthRepo) CheckUserVersion(ctx context.Context, details models.AccessDetails) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckUserVersion", ctx, details)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckUserVersion indicates an expected call of CheckUserVersion.
+func (mr *MockAuthRepoMockRecorder) CheckUserVersion(ctx, details interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUserVersion", reflect.TypeOf((*MockAuthRepo)(nil).CheckUserVersion), ctx, details)
 }
 
 // CreateUser mocks base method.
-func (m *MockAuthRepo) CreateUser(user models.User) (models.User, error) {
+func (m *MockAuthRepo) CreateUser(ctx context.Context, user models.User) (models.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateUser", user)
+	ret := m.ctrl.Call(m, "CreateUser", ctx, user)
 	ret0, _ := ret[0].(models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateUser indicates an expected call of CreateUser.
-func (mr *MockAuthRepoMockRecorder) CreateUser(user interface{}) *gomock.Call {
+func (mr *MockAuthRepoMockRecorder) CreateUser(ctx, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockAuthRepo)(nil).CreateUser), user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockAuthRepo)(nil).CreateUser), ctx, user)
+}
+
+// IncUserVersion mocks base method.
+func (m *MockAuthRepo) IncUserVersion(ctx context.Context, userId uuid.UUID) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncUserVersion", ctx, userId)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IncUserVersion indicates an expected call of IncUserVersion.
+func (mr *MockAuthRepoMockRecorder) IncUserVersion(ctx, userId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncUserVersion", reflect.TypeOf((*MockAuthRepo)(nil).IncUserVersion), ctx, userId)
 }
 
 // MockTokenGenerator is a mock of TokenGenerator interface.
@@ -140,19 +231,19 @@ func (m *MockTokenGenerator) EXPECT() *MockTokenGeneratorMockRecorder {
 	return m.recorder
 }
 
-// GetToken mocks base method.
-func (m *MockTokenGenerator) GetToken(user models.User) (string, error) {
+// GetJWTToken mocks base method.
+func (m *MockTokenGenerator) GetJWTToken(ctx context.Context, user models.User) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetToken", user)
+	ret := m.ctrl.Call(m, "GetJWTToken", ctx, user)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetToken indicates an expected call of GetToken.
-func (mr *MockTokenGeneratorMockRecorder) GetToken(user interface{}) *gomock.Call {
+// GetJWTToken indicates an expected call of GetJWTToken.
+func (mr *MockTokenGeneratorMockRecorder) GetJWTToken(ctx, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetToken", reflect.TypeOf((*MockTokenGenerator)(nil).GetToken), user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetJWTToken", reflect.TypeOf((*MockTokenGenerator)(nil).GetJWTToken), ctx, user)
 }
 
 // MockEncrypter is a mock of Encrypter interface.
@@ -179,15 +270,15 @@ func (m *MockEncrypter) EXPECT() *MockEncrypterMockRecorder {
 }
 
 // EncryptPswd mocks base method.
-func (m *MockEncrypter) EncryptPswd(pswd string) string {
+func (m *MockEncrypter) EncryptPswd(ctx context.Context, pswd string) string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EncryptPswd", pswd)
+	ret := m.ctrl.Call(m, "EncryptPswd", ctx, pswd)
 	ret0, _ := ret[0].(string)
 	return ret0
 }
 
 // EncryptPswd indicates an expected call of EncryptPswd.
-func (mr *MockEncrypterMockRecorder) EncryptPswd(pswd interface{}) *gomock.Call {
+func (mr *MockEncrypterMockRecorder) EncryptPswd(ctx, pswd interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EncryptPswd", reflect.TypeOf((*MockEncrypter)(nil).EncryptPswd), pswd)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EncryptPswd", reflect.TypeOf((*MockEncrypter)(nil).EncryptPswd), ctx, pswd)
 }

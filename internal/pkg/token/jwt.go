@@ -1,4 +1,4 @@
-package jwt
+package token
 
 import (
 	"fmt"
@@ -7,27 +7,19 @@ import (
 	"github.com/google/uuid"
 	"net/http"
 	"os"
-	"strings"
-	"time"
 )
 
-type Extractor func(r *http.Request) string
-
-func ExtractTokenFromCookie(r *http.Request) string {
+func ExtractJWTTokenFromCookie(r *http.Request) string {
 	tokenCookie, err := r.Cookie("SSID")
 	if err != nil {
 		return ""
 	}
 	token := tokenCookie.Value
-	strArr := strings.Split(token, " ")
-	if len(strArr) == 2 {
-		return strArr[1]
-	}
-	return strArr[0]
+	return token
 }
 
-func VerifyToken(r *http.Request, extractor Extractor) (*models.Token, error) {
-	tokenStr := extractor(r)
+func VerifyJWTToken(r *http.Request) (*models.Token, error) {
+	tokenStr := ExtractJWTTokenFromCookie(r)
 	if tokenStr == "" {
 		return nil, models.NoToken
 	}
@@ -48,23 +40,24 @@ func VerifyToken(r *http.Request, extractor Extractor) (*models.Token, error) {
 	return nil, models.NoAuthData
 }
 
-func ExtractTokenMetadata(r *http.Request, extractor Extractor) (*models.AccessDetails, error) {
-	token, err := VerifyToken(r, extractor)
+func ExtractJWTTokenMetadata(r *http.Request) (*models.AccessDetails, error) {
+	token, err := VerifyJWTToken(r)
 	if err != nil {
 		return nil, err
 	}
-	exp := token.ExpiresAt
-	if exp < time.Now().UTC().Unix() {
+
+	if err = token.Valid(); err != nil {
 		return nil, models.ExpiredToken
 	}
+
 	uid, err := uuid.Parse(token.Id)
 	if err != nil {
 		return nil, err
 	}
-	data := &models.AccessDetails{Login: token.Login, Id: uid}
+
+	data := &models.AccessDetails{Login: token.Login, Id: uid, UserVersion: token.UserVersion}
 	if data.Login == "" || data.Id.String() == "" {
 		return nil, models.InvalidToken
 	}
-
 	return data, err
 }

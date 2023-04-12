@@ -9,6 +9,10 @@ services:
       dockerfile: build/Dockerfile
     ports:
       - "8000:8000"
+    volumes:
+      - type: bind
+        source: /home/ubuntu/frontend/2023_1_4from5/public/images
+        target: /images
   postgres:
     image: postgres:14
     environment:
@@ -17,3 +21,7 @@ services:
       POSTGRES_PASSWORD: "submepassword"
     ports:
       - "5432:5432"
+    volumes:
+      - type: bind
+        source: /home/ubuntu/db_data
+        target: /var/lib/postgresql/data

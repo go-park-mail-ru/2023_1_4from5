@@ -1,25 +1,33 @@
 package auth
 
 import (
+	"context"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
+	"github.com/google/uuid"
 )
 
 //go:generate mockgen -source=interfaces.go -destination=./mocks/auth_mock.go -package=mock
 
 type AuthUsecase interface {
-	SignIn(user models.LoginUser) (string, error)
-	SignUp(user models.User) (string, error)
+	SignIn(ctx context.Context, user models.LoginUser) (string, error)
+	SignUp(ctx context.Context, user models.User) (string, error)
+	IncUserVersion(ctx context.Context, details models.AccessDetails) (int, error)
+	CheckUser(ctx context.Context, user models.User) (models.User, error)
+	EncryptPwd(ctx context.Context, pwd string) string
+	CheckUserVersion(ctx context.Context, details models.AccessDetails) (int, error)
 }
 
 type AuthRepo interface {
-	CreateUser(user models.User) (models.User, error)
-	CheckUser(user models.User) (models.User, error)
+	CreateUser(ctx context.Context, user models.User) (models.User, error)
+	CheckUser(ctx context.Context, user models.User) (models.User, error)
+	IncUserVersion(ctx context.Context, userId uuid.UUID) (int, error)
+	CheckUserVersion(ctx context.Context, details models.AccessDetails) (int, error)
 }
 
 type TokenGenerator interface {
-	GetToken(user models.User) (string, error)
+	GetJWTToken(ctx context.Context, user models.User) (string, error)
 }
 
 type Encrypter interface {
-	EncryptPswd(pswd string) string
+	EncryptPswd(ctx context.Context, pswd string) string
 }

@@ -11,4 +11,7 @@ var (
 	NoAuthData    = errors.New("NoAuthData")
 	InvalidToken  = errors.New("InvalidToken")
 	WrongData     = errors.New("WrongData")
+	Unauthorized  = errors.New("Unauthorized")
+	Forbbiden     = errors.New("Forbidden")
+	Unsupported   = errors.New("Unsupported")
 )

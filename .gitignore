@@ -17,3 +17,10 @@
 *.env
 *.idea
 *.pem
+
+*.out.tmp
+*.html
+
+images
+
+log.txt

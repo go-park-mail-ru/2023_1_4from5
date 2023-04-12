@@ -2,15 +2,18 @@ package utils
 
 import (
 	"net/http"
+	"os"
 	"time"
 )
 
-func Cookie(w http.ResponseWriter, token string) {
+func Cookie(w http.ResponseWriter, token, name string) {
+	domain, _ := os.LookupEnv("DOMAIN")
 	SSCookie := &http.Cookie{
-		Name:     "SSID",
-		Value:    token,
-		Path:     "/",
-		Domain:   "sub-me.ru",
+		Name:   name,
+		Value:  token,
+		Path:   "/",
+		Domain: domain,
+		// SameSite: 2,
 		HttpOnly: true,
 		Expires:  time.Now().UTC().Add(time.Hour * 24),
 	}
