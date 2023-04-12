@@ -197,6 +197,10 @@ func (h *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err = h.authUsecase.CheckUser(r.Context(), models.User{Login: userDataJWT.Login, PasswordHash: updPwd.OldPassword})
+	if err == models.WrongPassword {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
 	if err == models.InternalError {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
