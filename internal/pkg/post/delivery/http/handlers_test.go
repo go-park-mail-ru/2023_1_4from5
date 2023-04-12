@@ -37,7 +37,7 @@ func bodyPrepare(like interface{}) []byte {
 }
 
 var testUser = models.User{
-	Login:        "Dasha2003!",
+	Login:        "Dasha2003",
 	PasswordHash: "Dasha2003!",
 	Name:         "Дарья Такташова",
 }
@@ -46,6 +46,19 @@ type fields struct {
 	usecase           post.PostUsecase
 	authUsecase       auth.AuthUsecase
 	attachmentUsecase attachment.AttachmentUsecase
+}
+
+func setCSRFToken(r *http.Request, token string) {
+	r.Header.Set("X-CSRF-Token", token)
+}
+
+func setJWTToken(r *http.Request, token string) {
+	r.AddCookie(&http.Cookie{
+		Name:     "SSID",
+		Value:    token,
+		Expires:  time.Time{},
+		HttpOnly: true,
+	})
 }
 
 func TestNewPostHandler(t *testing.T) {
@@ -397,12 +410,7 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/create",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    "111",
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, "111")
 
 				return r
 			},
@@ -414,12 +422,7 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/create",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, errors.New("test"))
 
 				return r
@@ -432,12 +435,7 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				r := httptest.NewRequest("GET", "/post/create",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 
 				return r
@@ -450,19 +448,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/create",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    "111",
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, "111")
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 
@@ -476,19 +463,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/create",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				os.Setenv("CSRF_SECRET", "TEST")
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
@@ -514,19 +490,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/create",
 					body)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				r.Header.Add("Content-Type", writer.FormDataContentType())
@@ -552,19 +517,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/create",
 					body)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				r.Header.Add("Content-Type", writer.FormDataContentType())
@@ -590,19 +544,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/create",
 					body)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, models.WrongData)
@@ -630,19 +573,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/create",
 					body)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, models.InternalError)
@@ -669,19 +601,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/create",
 					body)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil)
@@ -708,19 +629,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/create",
 					body)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
@@ -752,19 +662,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/create",
 					body)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
@@ -796,19 +695,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/create",
 					body)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
@@ -872,12 +760,7 @@ func TestPostHandler_EditPost(t *testing.T) {
 				r := httptest.NewRequest("PUT", "/post/edit/{post-uuid}",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    "111",
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, "111")
 
 				return r
 			},
@@ -889,12 +772,7 @@ func TestPostHandler_EditPost(t *testing.T) {
 				r := httptest.NewRequest("PUT", "//post/edit/{post-uuid}",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, errors.New("test"))
 
 				return r
@@ -907,12 +785,7 @@ func TestPostHandler_EditPost(t *testing.T) {
 				r := httptest.NewRequest("GET", "/post/edit/{post-uuid}",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 
 				return r
@@ -925,19 +798,8 @@ func TestPostHandler_EditPost(t *testing.T) {
 				r := httptest.NewRequest("PUT", "/post/edit/{post-uuid}",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    "111",
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, "111")
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 
@@ -951,19 +813,8 @@ func TestPostHandler_EditPost(t *testing.T) {
 				r := httptest.NewRequest("PUT", "/post/edit/{post-uuid}",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				os.Setenv("CSRF_SECRET", "TEST")
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
@@ -977,19 +828,8 @@ func TestPostHandler_EditPost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
 					bytes.NewReader(bodyPrepare(newPost)))
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				r = mux.SetURLVars(r, map[string]string{
 					"post-uuid": "123",
@@ -1006,19 +846,8 @@ func TestPostHandler_EditPost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
 					bytes.NewReader(bodyPrepare(newPost)))
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				r = mux.SetURLVars(r, map[string]string{
 					"post-uuid": uuid.NewString(),
@@ -1036,19 +865,8 @@ func TestPostHandler_EditPost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
 					bytes.NewReader(bodyPrepare(newPost)))
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				r = mux.SetURLVars(r, map[string]string{
 					"post-uuid": uuid.NewString(),
@@ -1066,19 +884,8 @@ func TestPostHandler_EditPost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
 					bytes.NewReader(bodyPrepare(newPost)))
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				r = mux.SetURLVars(r, map[string]string{
 					"post-uuid": uuid.NewString(),
@@ -1096,19 +903,8 @@ func TestPostHandler_EditPost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
 					bytes.NewReader([]byte("111")))
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				r = mux.SetURLVars(r, map[string]string{
 					"post-uuid": uuid.NewString(),
@@ -1126,19 +922,8 @@ func TestPostHandler_EditPost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
 					bytes.NewReader(bodyPrepare(newPostErr)))
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				r = mux.SetURLVars(r, map[string]string{
 					"post-uuid": uuid.NewString(),
@@ -1156,19 +941,8 @@ func TestPostHandler_EditPost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
 					bytes.NewReader(bodyPrepare(newPost)))
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				r = mux.SetURLVars(r, map[string]string{
 					"post-uuid": uuid.NewString(),
@@ -1188,19 +962,8 @@ func TestPostHandler_EditPost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
 					bytes.NewReader(bodyPrepare(newPost)))
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				r = mux.SetURLVars(r, map[string]string{
 					"post-uuid": uuid.NewString(),
@@ -1264,12 +1027,7 @@ func TestPostHandler_GetPost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/get/{post-uuid}",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
 
 				r = mux.SetURLVars(r, map[string]string{
 					"post-uuid": uuid.NewString(),
@@ -1286,14 +1044,7 @@ func TestPostHandler_GetPost(t *testing.T) {
 			mock: func() *http.Request {
 				r := httptest.NewRequest("POST", "/post/get/{post-uuid}",
 					nil)
-
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
+				setJWTToken(r, bdy)
 				return r
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -1304,12 +1055,7 @@ func TestPostHandler_GetPost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/get/{post-uuid}",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
 
 				r = mux.SetURLVars(r, map[string]string{
 					"post-uuid": "111",
@@ -1325,12 +1071,7 @@ func TestPostHandler_GetPost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/get/{post-uuid}",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
 
 				r = mux.SetURLVars(r, map[string]string{
 					"post-uuid": uuid.NewString(),
@@ -1348,12 +1089,7 @@ func TestPostHandler_GetPost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/get/{post-uuid}",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
 
 				r = mux.SetURLVars(r, map[string]string{
 					"post-uuid": uuid.NewString(),
@@ -1371,12 +1107,7 @@ func TestPostHandler_GetPost(t *testing.T) {
 				r := httptest.NewRequest("POST", "/post/get/{post-uuid}",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
 
 				r = mux.SetURLVars(r, map[string]string{
 					"post-uuid": uuid.NewString(),

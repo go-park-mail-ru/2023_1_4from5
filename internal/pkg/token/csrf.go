@@ -11,17 +11,14 @@ import (
 	"time"
 )
 
-func ExtractCSRFTokenFromCookie(r *http.Request) string {
-	tokenCookie, err := r.Cookie("X-CSRF-Token")
-	if err != nil {
-		return ""
-	}
-	token := tokenCookie.Value
-	return token
+func ExtractCSRFTokenFromHeader(r *http.Request) string {
+	tokenHeader := r.Header.Get("X-CSRF-Token")
+	return tokenHeader
 }
 
 func VerifyCSRFToken(r *http.Request) (*models.Token, error) {
-	tokenStr := ExtractCSRFTokenFromCookie(r)
+	tokenStr := ExtractCSRFTokenFromHeader(r)
+	fmt.Println(tokenStr)
 	if tokenStr == "" {
 		return nil, models.NoToken
 	}

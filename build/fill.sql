@@ -15,9 +15,9 @@ TRUNCATE TABLE "tag" CASCADE;
 
 
 --------------------------------------------Автор рецептов--------------------------------------
----LOGIN Dasha2003! PASSWORD Dasha2003!
+---LOGIN Dasha2003 PASSWORD Dasha2003!
 INSERT INTO "user"(user_id, login, display_name, password_hash, registration_date)
-VALUES ('b184cc4e-78ef-434f-ac88-5084a77ee087', 'Dasha2003!', 'Дарья Такташова',
+VALUES ('b184cc4e-78ef-434f-ac88-5084a77ee087', 'Dasha2003', 'Дарья Такташова',
         '781be5ea6620295cbdb249154b840fbe2327d87c666d8e76b29f45f70fcf7d6d', '2023-02-27 19:10');
 
 INSERT INTO creator (creator_id, user_id, name,  followers_count, description, posts_count)

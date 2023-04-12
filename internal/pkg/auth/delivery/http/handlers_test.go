@@ -40,7 +40,7 @@ type args struct {
 
 var testUsers = []models.User{
 	{
-		Login:        "Dasha2003!",
+		Login:        "Dasha2003",
 		PasswordHash: "Dasha2003!",
 		Name:         "Дарья Такташова",
 	},

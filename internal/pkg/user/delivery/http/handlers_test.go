@@ -46,6 +46,19 @@ func TestNewUserHandler(t *testing.T) {
 	}
 }
 
+func setCSRFToken(r *http.Request, token string) {
+	r.Header.Set("X-CSRF-Token", token)
+}
+
+func setJWTToken(r *http.Request, token string) {
+	r.AddCookie(&http.Cookie{
+		Name:     "SSID",
+		Value:    token,
+		Expires:  time.Time{},
+		HttpOnly: true,
+	})
+}
+
 func TestGetProfile(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
@@ -265,19 +278,8 @@ func TestUserHandler_UpdateProfilePhoto(t *testing.T) {
 				r := httptest.NewRequest("POST", "/user/updateProfilePhoto",
 					body)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				usecaseMock.EXPECT().UpdatePhoto(gomock.Any(), gomock.Any()).Return(name, models.InternalError)
@@ -292,12 +294,7 @@ func TestUserHandler_UpdateProfilePhoto(t *testing.T) {
 				r := httptest.NewRequest("POST", "/user/updateProfilePhoto",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    "111",
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, "111")
 
 				return r
 			},
@@ -309,12 +306,7 @@ func TestUserHandler_UpdateProfilePhoto(t *testing.T) {
 				r := httptest.NewRequest("POST", "/user/updateProfilePhoto",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, errors.New("test"))
 
 				return r
@@ -327,12 +319,7 @@ func TestUserHandler_UpdateProfilePhoto(t *testing.T) {
 				r := httptest.NewRequest("GET", "/user/updateProfilePhoto",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 
 				return r
@@ -345,12 +332,7 @@ func TestUserHandler_UpdateProfilePhoto(t *testing.T) {
 				r := httptest.NewRequest("GET", "/user/updateProfilePhoto",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				os.Unsetenv("CSRF_SECRET")
 				return r
@@ -363,19 +345,8 @@ func TestUserHandler_UpdateProfilePhoto(t *testing.T) {
 				r := httptest.NewRequest("POST", "/user/updateProfilePhoto",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    "111",
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, "111")
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 
@@ -389,19 +360,8 @@ func TestUserHandler_UpdateProfilePhoto(t *testing.T) {
 				r := httptest.NewRequest("POST", "/user/updateProfilePhoto",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				os.Setenv("CSRF_SECRET", "TEST")
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
@@ -429,19 +389,8 @@ func TestUserHandler_UpdateProfilePhoto(t *testing.T) {
 				r := httptest.NewRequest("POST", "/user/updateProfilePhoto",
 					body)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				r.Header.Add("Content-Type", writer.FormDataContentType())
@@ -505,19 +454,8 @@ func TestUserHandler_UpdateProfilePhoto(t *testing.T) {
 				r := httptest.NewRequest("POST", "/user/updateProfilePhoto",
 					body)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				r.Header.Add("Content-Type", writer.FormDataContentType())
@@ -589,19 +527,8 @@ func TestUserHandler_Donate(t *testing.T) {
 			name: "OK",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("POST", "/user/donate", bytes.NewReader(bodyPrepare(testDonation)))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				usecaseMock.EXPECT().Donate(gomock.Any(), gomock.Any(), gomock.Any()).Return(100, nil)
 				return r
@@ -613,12 +540,7 @@ func TestUserHandler_Donate(t *testing.T) {
 			name: "Unauthorized",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("POST", "/user/donate", bytes.NewReader(bodyPrepare(testDonation)))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    "111",
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, "1111")
 				return r
 			},
 			expectedStatus: http.StatusUnauthorized,
@@ -627,12 +549,7 @@ func TestUserHandler_Donate(t *testing.T) {
 			name: "Forbidden",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("POST", "/user/donate", bytes.NewReader(bodyPrepare(testDonation)))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, errors.New("test"))
 				return r
@@ -643,12 +560,7 @@ func TestUserHandler_Donate(t *testing.T) {
 			name: "Get CSRF",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("GET", "/user/donate", bytes.NewReader(nil))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				return r
@@ -659,12 +571,7 @@ func TestUserHandler_Donate(t *testing.T) {
 			name: "Get CSRF but no secret key",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("GET", "/user/donate", bytes.NewReader(nil))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				os.Unsetenv("CSRF_SECRET")
@@ -678,19 +585,8 @@ func TestUserHandler_Donate(t *testing.T) {
 				r := httptest.NewRequest("POST", "/user/donate",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    "111",
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, "111")
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 
@@ -702,19 +598,8 @@ func TestUserHandler_Donate(t *testing.T) {
 			name: "BadRequest",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("POST", "/user/donate", bytes.NewReader(bodyPrepare(testDonationErr)))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				return r
 			},
@@ -725,19 +610,8 @@ func TestUserHandler_Donate(t *testing.T) {
 			name: "Internal Error",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("POST", "/user/donate", bytes.NewReader(bodyPrepare(testDonation)))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				usecaseMock.EXPECT().Donate(gomock.Any(), gomock.Any(), gomock.Any()).Return(100, models.InternalError)
 				return r
@@ -749,19 +623,8 @@ func TestUserHandler_Donate(t *testing.T) {
 			name: "Bad Request2",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("POST", "/user/donate", bytes.NewReader(bodyPrepare(testDonation)))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				usecaseMock.EXPECT().Donate(gomock.Any(), gomock.Any(), gomock.Any()).Return(100, models.WrongData)
 				return r
@@ -792,7 +655,7 @@ func TestUserHandler_Donate(t *testing.T) {
 	}
 }
 
-var testUpdateProfileInfo = models.UpdateProfileInfo{Login: "Dasha2003!", Name: "Daria Taktashova"}
+var testUpdateProfileInfo = models.UpdateProfileInfo{Login: "Dasha2003", Name: "Daria Taktashova"}
 var testUpdateProfileInfoErr = models.UpdateProfileInfo{Login: "D", Name: "Daria Taktashova"}
 
 func TestUserHandler_UpdateData(t *testing.T) {
@@ -819,19 +682,8 @@ func TestUserHandler_UpdateData(t *testing.T) {
 			name: "OK",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("PUT", "/user/updateData", bytes.NewReader(bodyPrepare(testUpdateProfileInfo)))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				usecaseMock.EXPECT().UpdateProfileInfo(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				return r
@@ -842,12 +694,7 @@ func TestUserHandler_UpdateData(t *testing.T) {
 			name: "Unauthorized",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("PUT", "/user/updateData", bytes.NewReader(bodyPrepare(testDonation)))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    "111",
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, "1111")
 				return r
 			},
 			expectedStatus: http.StatusUnauthorized,
@@ -856,12 +703,7 @@ func TestUserHandler_UpdateData(t *testing.T) {
 			name: "Forbidden",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("PUT", "/user/updateData", bytes.NewReader(bodyPrepare(testDonation)))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, errors.New("test"))
 				return r
@@ -872,12 +714,7 @@ func TestUserHandler_UpdateData(t *testing.T) {
 			name: "Get CSRF",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("GET", "/user/updateData", bytes.NewReader(nil))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				return r
@@ -890,19 +727,8 @@ func TestUserHandler_UpdateData(t *testing.T) {
 				r := httptest.NewRequest("POST", "/user/updateData",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    "111",
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, "tokenCSRF")
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 
@@ -914,12 +740,7 @@ func TestUserHandler_UpdateData(t *testing.T) {
 			name: "Get CSRF but no secret key",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("GET", "/user/updateData", bytes.NewReader(nil))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				os.Unsetenv("CSRF_SECRET")
@@ -931,19 +752,8 @@ func TestUserHandler_UpdateData(t *testing.T) {
 			name: "Wrong Data",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("PUT", "/user/updateData", bytes.NewReader(bodyPrepare(testUpdateProfileInfoErr)))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				return r
 			},
@@ -953,19 +763,8 @@ func TestUserHandler_UpdateData(t *testing.T) {
 			name: "Internal Error",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("PUT", "/user/updateData", bytes.NewReader(bodyPrepare(testUpdateProfileInfo)))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				usecaseMock.EXPECT().UpdateProfileInfo(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.InternalError)
 				return r
@@ -1017,19 +816,8 @@ func TestUserHandler_UpdatePassword(t *testing.T) {
 			name: "OK",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("PUT", "/user/updatePassword", bytes.NewReader(bodyPrepare(testUpdatePasswordInfo)))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				mockAuthUsecase.EXPECT().EncryptPwd(gomock.Any(), gomock.Any()).Return("cbkjqvaiuwklaNCVBhjaewskl")
 				mockAuthUsecase.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(models.User{}, nil)
@@ -1044,12 +832,7 @@ func TestUserHandler_UpdatePassword(t *testing.T) {
 			name: "Get CSRF but no secret key",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("GET", "/user/updatePassword", bytes.NewReader(nil))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				os.Unsetenv("CSRF_SECRET")
@@ -1063,19 +846,8 @@ func TestUserHandler_UpdatePassword(t *testing.T) {
 				r := httptest.NewRequest("POST", "/user/updatePassword",
 					nil)
 
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    "111",
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, "tokenCSRF")
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 
@@ -1087,12 +859,7 @@ func TestUserHandler_UpdatePassword(t *testing.T) {
 			name: "Unauthorized",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("PUT", "/user/updatePassword", bytes.NewReader(bodyPrepare(testDonation)))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    "111",
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, "bdy")
 				return r
 			},
 			expectedStatus: http.StatusUnauthorized,
@@ -1101,12 +868,7 @@ func TestUserHandler_UpdatePassword(t *testing.T) {
 			name: "Forbidden",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("PUT", "/user/updatePassword", bytes.NewReader(bodyPrepare(testDonation)))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, errors.New("test"))
 				return r
@@ -1117,12 +879,7 @@ func TestUserHandler_UpdatePassword(t *testing.T) {
 			name: "Get CSRF",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("GET", "/user/updatePassword", bytes.NewReader(nil))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
 
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				return r
@@ -1133,19 +890,8 @@ func TestUserHandler_UpdatePassword(t *testing.T) {
 			name: "Same Password",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("PUT", "/user/updatePassword", bytes.NewReader(bodyPrepare(testUpdatePasswordInfoSame)))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				return r
 			},
@@ -1155,19 +901,8 @@ func TestUserHandler_UpdatePassword(t *testing.T) {
 			name: "Password is not valid",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("PUT", "/user/updatePassword", bytes.NewReader(bodyPrepare(testUpdatePasswordInfoErr)))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				return r
 			},
@@ -1177,19 +912,8 @@ func TestUserHandler_UpdatePassword(t *testing.T) {
 			name: "Password is not valid",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("PUT", "/user/updatePassword", bytes.NewReader(bodyPrepare(testUpdatePasswordInfo)))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				mockAuthUsecase.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(models.User{}, models.InternalError)
 				return r
@@ -1200,19 +924,8 @@ func TestUserHandler_UpdatePassword(t *testing.T) {
 			name: "Password is not valid",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("PUT", "/user/updatePassword", bytes.NewReader(bodyPrepare(testUpdatePasswordInfo)))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				mockAuthUsecase.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(models.User{}, errors.New("test"))
 				return r
@@ -1223,19 +936,8 @@ func TestUserHandler_UpdatePassword(t *testing.T) {
 			name: "Internal Error in UpdatePassword",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("PUT", "/user/updatePassword", bytes.NewReader(bodyPrepare(testUpdatePasswordInfo)))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				mockAuthUsecase.EXPECT().EncryptPwd(gomock.Any(), gomock.Any()).Return("cbkjqvaiuwklaNCVBhjaewskl")
 				mockAuthUsecase.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(models.User{}, nil)
@@ -1248,19 +950,8 @@ func TestUserHandler_UpdatePassword(t *testing.T) {
 			name: "Error in SignIn",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("PUT", "/user/updatePassword", bytes.NewReader(bodyPrepare(testUpdatePasswordInfo)))
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    bdy,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				r.AddCookie(&http.Cookie{
-					Name:     "X-CSRF-Token",
-					Value:    tokenCSRF,
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
 				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
 				mockAuthUsecase.EXPECT().EncryptPwd(gomock.Any(), gomock.Any()).Return("cbkjqvaiuwklaNCVBhjaewskl")
 				mockAuthUsecase.EXPECT().CheckUser(gomock.Any(), gomock.Any()).Return(models.User{}, nil)

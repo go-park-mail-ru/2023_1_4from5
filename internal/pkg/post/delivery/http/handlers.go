@@ -50,7 +50,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 			utils.Response(w, http.StatusUnauthorized, nil)
 			return
 		}
-		utils.Cookie(w, tokenCSRF, "X-CSRF-Token")
+		utils.ResponseWithCSRF(w, tokenCSRF)
 		return
 	}
 
@@ -288,7 +288,7 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 			utils.Response(w, http.StatusUnauthorized, nil)
 			return
 		}
-		utils.Cookie(w, tokenCSRF, "X-CSRF-Token")
+		utils.ResponseWithCSRF(w, tokenCSRF)
 		return
 	}
 
@@ -400,7 +400,7 @@ func (h *PostHandler) EditPost(w http.ResponseWriter, r *http.Request) {
 			utils.Response(w, http.StatusUnauthorized, nil)
 			return
 		}
-		utils.Cookie(w, tokenCSRF, "X-CSRF-Token")
+		utils.ResponseWithCSRF(w, tokenCSRF)
 		return
 	}
 
@@ -476,7 +476,7 @@ func (h *PostHandler) AddAttach(w http.ResponseWriter, r *http.Request) {
 			utils.Response(w, http.StatusUnauthorized, nil)
 			return
 		}
-		utils.Cookie(w, tokenCSRF, "X-CSRF-Token")
+		utils.ResponseWithCSRF(w, tokenCSRF)
 		return
 	}
 
@@ -587,7 +587,7 @@ func (h *PostHandler) DeleteAttach(w http.ResponseWriter, r *http.Request) {
 			utils.Response(w, http.StatusUnauthorized, nil)
 			return
 		}
-		utils.Cookie(w, tokenCSRF, "X-CSRF-Token")
+		utils.ResponseWithCSRF(w, tokenCSRF)
 		return
 	}
 
