@@ -59,7 +59,7 @@ func (user User) UserPasswordIsValid() bool {
 }
 
 func (user User) UserNameIsValid() bool {
-	return len(user.Name) < 40
+	return len(user.Name) > 0 && len(user.Name) < 40
 }
 
 func (user User) UserAuthIsValid() bool {
