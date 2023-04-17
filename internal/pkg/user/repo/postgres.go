@@ -125,16 +125,16 @@ func (ur *UserRepo) Donate(ctx context.Context, donateInfo models.Donate, userID
 	return newMoney, nil
 }
 
-func (ur *UserRepo) CheckIfCreator(ctx context.Context, userId uuid.UUID) (bool, error) {
+func (ur *UserRepo) CheckIfCreator(ctx context.Context, userId uuid.UUID) (uuid.UUID, bool, error) {
 	idTmp := uuid.UUID{}
 	row := ur.db.QueryRowContext(ctx, CheckIfCreator, userId)
 	if err := row.Scan(&idTmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		ur.logger.Error(err)
-		return false, models.InternalError
+		return uuid.Nil, false, models.InternalError
 	} else if err == nil {
-		return true, nil
+		return idTmp, true, nil
 	}
-	return false, nil
+	return uuid.Nil, false, nil
 }
 
 func (ur *UserRepo) BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error) {

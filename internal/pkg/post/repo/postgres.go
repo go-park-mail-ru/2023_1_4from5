@@ -129,7 +129,7 @@ func (r *PostRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]mod
 			continue
 		}
 		row := r.db.QueryRowContext(ctx, GetSubInfo, v)
-		err := row.Scan(&sub.Creator, &sub.MonthConst, &sub.Title,
+		err := row.Scan(&sub.Creator, &sub.MonthCost, &sub.Title,
 			&sub.Description)
 		if err != nil {
 			r.logger.Error(err)

@@ -81,7 +81,7 @@ func (r *CreatorRepo) GetCreatorSubs(ctx context.Context, creatorID uuid.UUID) (
 	defer rows.Close()
 	for rows.Next() {
 		tmpSub := models.Subscription{}
-		err = rows.Scan(&tmpSub.Id, &tmpSub.MonthConst, &tmpTitle, &tmpDescr)
+		err = rows.Scan(&tmpSub.Id, &tmpSub.MonthCost, &tmpTitle, &tmpDescr)
 		if err != nil {
 			r.logger.Error(err)
 			return nil, models.InternalError
@@ -193,7 +193,7 @@ func (r *CreatorRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]
 	var sub models.Subscription
 	for _, v := range subsIDs {
 		row := r.db.QueryRowContext(ctx, GetSubInfo, v)
-		err := row.Scan(&sub.Creator, &sub.MonthConst, &sub.Title,
+		err := row.Scan(&sub.Creator, &sub.MonthCost, &sub.Title,
 			&sub.Description)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			r.logger.Error(err)

@@ -44,8 +44,8 @@ func easyjsonFfbd3743DecodeGithubComGoParkMailRu202314from5InternalModels(in *jl
 			if data := in.UnsafeBytes(); in.Ok() {
 				in.AddError((out.Creator).UnmarshalText(data))
 			}
-		case "month_const":
-			out.MonthConst = int(in.Int())
+		case "month_cost":
+			out.MonthCost = int(in.Int())
 		case "title":
 			out.Title = string(in.String())
 		case "description":
@@ -64,20 +64,31 @@ func easyjsonFfbd3743EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 	out.RawByte('{')
 	first := true
 	_ = first
-	{
+	if true {
 		const prefix string = ",\"id\":"
+		first = false
 		out.RawString(prefix[1:])
 		out.RawText((in.Id).MarshalText())
 	}
-	{
+	if true {
 		const prefix string = ",\"creator\":"
-		out.RawString(prefix)
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
 		out.RawText((in.Creator).MarshalText())
 	}
 	{
-		const prefix string = ",\"month_const\":"
-		out.RawString(prefix)
-		out.Int(int(in.MonthConst))
+		const prefix string = ",\"month_cost\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Int(int(in.MonthCost))
 	}
 	{
 		const prefix string = ",\"title\":"

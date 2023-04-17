@@ -22,7 +22,7 @@ var testSubscriptionId = []uuid.UUID{subsIDs[0]}
 var id = subsIDs[0].String()
 var attachTypes = []string{"test1", "test2"}
 var attachments = []models.Attachment{{Id: attachsIDs[0], Type: attachTypes[0]}, {Id: attachsIDs[1], Type: attachTypes[1]}}
-var subs = []models.Subscription{{Id: subsIDs[0], Creator: creatorId, MonthConst: 100, Title: "test", Description: "TEST"}, {Id: subsIDs[1], Creator: creatorId, MonthConst: 100}}
+var subs = []models.Subscription{{Id: subsIDs[0], Creator: creatorId, MonthCost: 100, Title: "test", Description: "TEST"}, {Id: subsIDs[1], Creator: creatorId, MonthCost: 100}}
 var posts = []models.Post{{Id: uuid.New(), Creator: creatorId, LikesCount: 4, Title: "test", Text: "TEST", Attachments: attachments, Subscriptions: subs}, {Id: uuid.New(), Creator: creatorId, LikesCount: 15, Title: "test1", Text: "TEST1", Attachments: attachments, Subscriptions: subs}}
 var creatorInfo = models.Creator{Id: creatorId, UserId: uuid.New(), Name: "testName", FollowersCount: 5, Description: "test", PostsCount: 10}
 var creatorAim = models.Aim{MoneyGot: 100, MoneyNeeded: 200, Description: "testAim", Creator: creatorId}
@@ -126,7 +126,7 @@ func TestCreatorRepo_CreatorPosts(t *testing.T) {
 				mock.ExpectQuery(`SELECT "post"\.post_id, creation_date, title, post_text, likes_count, array_agg\(attachment_id\), array_agg\(attachment_type\), array_agg\(DISTINCT subscription_id\) FROM "post" LEFT JOIN "attachment" a on "post"\.post_id \= a\.post_id LEFT JOIN "post_subscription" ps on "post"\.post_id \= ps\.post_id WHERE`).
 					WithArgs(creatorId).WillReturnRows(rows)
 				for i := 0; i < 4; i++ {
-					rows = sqlmock.NewRows([]string{"creator_id", "month_cost", "title", "description"}).AddRow(subs[i%2].Creator, subs[i%2].MonthConst, subs[i%2].Title, subs[i%2].Description)
+					rows = sqlmock.NewRows([]string{"creator_id", "month_cost", "title", "description"}).AddRow(subs[i%2].Creator, subs[i%2].MonthCost, subs[i%2].Title, subs[i%2].Description)
 					mock.ExpectQuery(`SELECT creator_id, month_cost, title, description FROM "subscription" WHERE`).WithArgs(subsIDs[i%2]).WillReturnRows(rows)
 				}
 			},
@@ -219,9 +219,9 @@ func TestCreatorRepo_GetSubsByID(t *testing.T) {
 		{
 			name: "Ok",
 			mock: func() {
-				rows := sqlmock.NewRows([]string{"creator_id", "month_cost", "title", "description"}).AddRow(subs[0].Creator, subs[0].MonthConst, subs[0].Title, subs[0].Description)
+				rows := sqlmock.NewRows([]string{"creator_id", "month_cost", "title", "description"}).AddRow(subs[0].Creator, subs[0].MonthCost, subs[0].Title, subs[0].Description)
 				mock.ExpectQuery(`SELECT creator_id, month_cost, title, description FROM "subscription" WHERE`).WithArgs(subsIDs[0]).WillReturnRows(rows)
-				rows = sqlmock.NewRows([]string{"creator_id", "month_cost", "title", "description"}).AddRow(subs[1].Creator, subs[1].MonthConst, subs[1].Title, subs[1].Description)
+				rows = sqlmock.NewRows([]string{"creator_id", "month_cost", "title", "description"}).AddRow(subs[1].Creator, subs[1].MonthCost, subs[1].Title, subs[1].Description)
 				mock.ExpectQuery(`SELECT creator_id, month_cost, title, description FROM "subscription" WHERE`).WithArgs(subsIDs[1]).WillReturnRows(rows)
 			},
 			subIDs:      subsIDs,
@@ -240,7 +240,7 @@ func TestCreatorRepo_GetSubsByID(t *testing.T) {
 			name: "One of IDs is invalid",
 			mock: func() {
 				mock.ExpectQuery(`SELECT creator_id, month_cost, title, description FROM "subscription" WHERE`).WithArgs(subsIDs[0]).WillReturnError(sql.ErrNoRows)
-				rows := sqlmock.NewRows([]string{"creator_id", "month_cost", "title", "description"}).AddRow(subs[1].Creator, subs[1].MonthConst, subs[1].Title, subs[1].Description)
+				rows := sqlmock.NewRows([]string{"creator_id", "month_cost", "title", "description"}).AddRow(subs[1].Creator, subs[1].MonthCost, subs[1].Title, subs[1].Description)
 				mock.ExpectQuery(`SELECT creator_id, month_cost, title, description FROM "subscription" WHERE`).WithArgs(subsIDs[1]).WillReturnRows(rows)
 			},
 			subIDs:      subsIDs,
@@ -447,7 +447,7 @@ func TestCreatorRepo_GetCreatorSubs(t *testing.T) {
 			mock: func() {
 				rows := sqlmock.NewRows([]string{"subscription_id", "month_cost", "title", "description"})
 				for _, sub := range subs {
-					rows = rows.AddRow(sub.Id, sub.MonthConst, sub.Title, sub.Description)
+					rows = rows.AddRow(sub.Id, sub.MonthCost, sub.Title, sub.Description)
 				}
 				mock.ExpectQuery(`SELECT subscription_id, month_cost, title, description FROM "subscription" WHERE`).
 					WithArgs(creatorId).WillReturnRows(rows)
@@ -461,7 +461,7 @@ func TestCreatorRepo_GetCreatorSubs(t *testing.T) {
 			mock: func() {
 				rows := sqlmock.NewRows([]string{"subscription_id", "month_cost", "title", "description"})
 				for _, sub := range subs {
-					rows = rows.AddRow(sub.Id, sub.MonthConst, sub.Title, sub.Description)
+					rows = rows.AddRow(sub.Id, sub.MonthCost, sub.Title, sub.Description)
 				}
 				mock.ExpectQuery(`SELECT subscription_id, month_cost, title, description FROM "subscription" WHERE`).
 					WithArgs(creatorId).WillReturnError(errors.New("test"))
@@ -676,7 +676,7 @@ func TestCreatorRepo_GetPage(t *testing.T) {
 				mock.ExpectQuery(`SELECT "post"\.post_id, creation_date, title, post_text, likes_count, array_agg\(attachment_id\), array_agg\(attachment_type\), array_agg\(DISTINCT subscription_id\) FROM "post" LEFT JOIN "attachment" a on "post"\.post_id \= a\.post_id LEFT JOIN "post_subscription" ps on "post"\.post_id \= ps\.post_id WHERE`).
 					WithArgs(creatorId).WillReturnRows(rows)
 				for i := 0; i < 4; i++ {
-					rows = sqlmock.NewRows([]string{"creator_id", "month_cost", "title", "description"}).AddRow(subs[i%2].Creator, subs[i%2].MonthConst, subs[i%2].Title, subs[i%2].Description)
+					rows = sqlmock.NewRows([]string{"creator_id", "month_cost", "title", "description"}).AddRow(subs[i%2].Creator, subs[i%2].MonthCost, subs[i%2].Title, subs[i%2].Description)
 					mock.ExpectQuery(`SELECT creator_id, month_cost, title, description FROM "subscription" WHERE`).WithArgs(subsIDs[i%2]).WillReturnRows(rows)
 				}
 				for i := 0; i < 2; i++ {
@@ -686,7 +686,7 @@ func TestCreatorRepo_GetPage(t *testing.T) {
 				}
 				rows = sqlmock.NewRows([]string{"subscription_id", "month_cost", "title", "description"})
 				for _, sub := range subs {
-					rows = rows.AddRow(sub.Id, sub.MonthConst, sub.Title, sub.Description)
+					rows = rows.AddRow(sub.Id, sub.MonthCost, sub.Title, sub.Description)
 				}
 				mock.ExpectQuery(`SELECT subscription_id, month_cost, title, description FROM "subscription" WHERE`).
 					WithArgs(creatorId).WillReturnRows(rows)
@@ -752,7 +752,7 @@ func TestCreatorRepo_GetPage(t *testing.T) {
 				mock.ExpectQuery(`SELECT "post"\.post_id, creation_date, title, post_text, likes_count, array_agg\(attachment_id\), array_agg\(attachment_type\), array_agg\(DISTINCT subscription_id\) FROM "post" LEFT JOIN "attachment" a on "post"\.post_id \= a\.post_id LEFT JOIN "post_subscription" ps on "post"\.post_id \= ps\.post_id WHERE`).
 					WithArgs(creatorId).WillReturnRows(rows)
 				for i := 0; i < 4; i++ {
-					rows = sqlmock.NewRows([]string{"creator_id", "month_cost", "title", "description"}).AddRow(subs[i%2].Creator, subs[i%2].MonthConst, subs[i%2].Title, subs[i%2].Description)
+					rows = sqlmock.NewRows([]string{"creator_id", "month_cost", "title", "description"}).AddRow(subs[i%2].Creator, subs[i%2].MonthCost, subs[i%2].Title, subs[i%2].Description)
 					mock.ExpectQuery(`SELECT creator_id, month_cost, title, description FROM "subscription" WHERE`).WithArgs(subsIDs[i%2]).WillReturnRows(rows)
 				}
 

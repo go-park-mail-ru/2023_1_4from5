@@ -20,7 +20,7 @@ func NewUserUsecase(repo user.UserRepo, logger *zap.SugaredLogger) *UserUsecase 
 	}
 }
 
-func (uc *UserUsecase) CheckIfCreator(ctx context.Context, userId uuid.UUID) (bool, error) {
+func (uc *UserUsecase) CheckIfCreator(ctx context.Context, userId uuid.UUID) (uuid.UUID, bool, error) {
 	return uc.repo.CheckIfCreator(ctx, userId)
 }
 

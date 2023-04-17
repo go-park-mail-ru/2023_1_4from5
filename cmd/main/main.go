@@ -14,6 +14,9 @@ import (
 	postDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/delivery/http"
 	postRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/repo"
 	postUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/usecase"
+	subscriptionDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription/delivery/http"
+	subscriptionRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription/repo"
+	subscriptionUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription/usecase"
 	userDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/http"
 	userRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/repo"
 	userUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/usecase"
@@ -85,6 +88,10 @@ func run() error {
 	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo, zapSugar)
 	creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse, authUse, postUse)
 
+	subscriptionRepo := subscriptionRepository.NewSubscriptionRepo(db, zapSugar)
+	subscriptionUse := subscriptionUsecase.NewSubscriptionUsecase(subscriptionRepo, zapSugar)
+	subscriptionHandler := subscriptionDelivery.NewSubscriptionHandler(subscriptionUse, authUse, userUse, zapSugar)
+
 	logMw := middleware.NewLoggerMiddleware(zapSugar)
 	r := mux.NewRouter().PathPrefix("/api").Subrouter()
 	r.Use(middleware.CORSMiddleware)
@@ -113,6 +120,7 @@ func run() error {
 		creator.HandleFunc("/list", creatorHandler.GetAllCreators).Methods(http.MethodGet, http.MethodOptions)
 		creator.HandleFunc("/page/{creator-uuid}", creatorHandler.GetPage).Methods(http.MethodGet, http.MethodOptions)
 		creator.HandleFunc("/aim/create", creatorHandler.CreateAim).Methods(http.MethodPost, http.MethodOptions)
+		creator.HandleFunc("/subscription/create", creatorHandler.CreateAim).Methods(http.MethodPost, http.MethodOptions)
 	}
 
 	post := r.PathPrefix("/post").Subrouter()
@@ -125,6 +133,13 @@ func run() error {
 		post.HandleFunc("/removeLike", postHandler.RemoveLike).Methods(http.MethodPut, http.MethodOptions)
 		post.HandleFunc("/delete/{post-uuid}", postHandler.DeletePost).Methods(http.MethodDelete, http.MethodOptions, http.MethodGet)
 		post.HandleFunc("/get/{post-uuid}", postHandler.GetPost).Methods(http.MethodGet, http.MethodOptions)
+	}
+
+	subscription := r.PathPrefix("/subscription").Subrouter()
+	{
+		subscription.HandleFunc("/create", subscriptionHandler.CreateSubscription).Methods(http.MethodPost, http.MethodGet, http.MethodOptions)
+		/*subscription.HandleFunc("/delete/{sub-uuid}", creatorHandler.DeleteSubscription).Methods(http.MethodDelete, http.MethodGet, http.MethodOptions)
+		subscription.HandleFunc("/edit/{sub-uuid}", creatorHandler.EditSubscription).Methods(http.MethodGet, http.MethodGet, http.MethodOptions)*/
 	}
 
 	http.Handle("/", r)

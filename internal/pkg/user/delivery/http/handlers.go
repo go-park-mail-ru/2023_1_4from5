@@ -350,7 +350,7 @@ func (h *UserHandler) BecomeCreator(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if isAlsoCreator, err := h.usecase.CheckIfCreator(r.Context(), userDataJWT.Id); err != nil {
+	if _, isAlsoCreator, err := h.usecase.CheckIfCreator(r.Context(), userDataJWT.Id); err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	} else if isAlsoCreator {
