@@ -5,11 +5,15 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
 const (
-	CreateSubscription = `INSERT INTO "subscription"(subscription_id,creator_id, month_cost, title, description) VALUES ($1, $2, $3, $4, $5);`
+	CreateSubscription       = `INSERT INTO "subscription"(subscription_id,creator_id, month_cost, title, description) VALUES ($1, $2, $3, $4, $5);`
+	DeletePosts              = `DELETE FROM "post_subscription" WHERE subscription_id = $1;`
+	DeleteUsersSubscriptions = `DELETE FROM "user_subscription" WHERE subscription_id = $1;`
+	DeleteSubscription       = `DELETE FROM "subscription" WHERE subscription_id = $1 AND creator_id = $2 RETURNING subscription_id;`
 )
 
 type SubscriptionRepo struct {
@@ -30,5 +34,51 @@ func (r *SubscriptionRepo) CreateSubscription(ctx context.Context, subscriptionI
 		r.logger.Error(err)
 		return models.InternalError
 	}
+	return nil
+}
+func (r *SubscriptionRepo) DeleteSubscription(ctx context.Context, subscriptionID, creatorID uuid.UUID) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		r.logger.Error(err)
+		return models.InternalError
+	}
+	row, err := tx.QueryContext(ctx, DeletePosts, subscriptionID)
+	if err != nil {
+		_ = tx.Rollback()
+		r.logger.Error(err)
+		return models.InternalError
+	}
+	if err = row.Close(); err != nil {
+		r.logger.Error(err)
+		return models.InternalError
+	}
+
+	row, err = tx.QueryContext(ctx, DeleteUsersSubscriptions, subscriptionID)
+	if err != nil {
+		_ = tx.Rollback()
+		r.logger.Error(err)
+		return models.InternalError
+	}
+	if err = row.Close(); err != nil {
+		r.logger.Error(err)
+		return models.InternalError
+	}
+
+	row, err = tx.QueryContext(ctx, DeleteSubscription, subscriptionID, creatorID)
+	if err != nil {
+		_ = tx.Rollback()
+		r.logger.Error(err)
+		return models.InternalError
+	}
+	if !row.Next() {
+		_ = tx.Rollback()
+		return models.Forbbiden
+	}
+
+	if err = tx.Commit(); err != nil {
+		r.logger.Error(err)
+		return models.InternalError
+	}
+
 	return nil
 }
