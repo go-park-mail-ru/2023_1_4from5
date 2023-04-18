@@ -158,7 +158,9 @@ func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId u
 			if creatorPage.IsMyPage {
 				creatorPage.Posts[i].IsAvailable = true
 			}
-
+			if len(creatorPage.Posts[i].Subscriptions) == 0 {
+				creatorPage.Posts[i].IsAvailable = true
+			}
 			for _, availableSubscription := range creatorPage.Posts[i].Subscriptions {
 				for _, userSubscription := range userSubscriptions {
 					if availableSubscription.Id == userSubscription {

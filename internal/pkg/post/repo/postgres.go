@@ -256,7 +256,7 @@ func (r *PostRepo) AddLike(ctx context.Context, userID uuid.UUID, postID uuid.UU
 		return models.Like{}, models.WrongData
 	}
 	// проверяем, есть ли доступ к этому посту
-	/*if ok, err := r.IsPostOwner(ctx, userID, postID); err != nil {
+	if ok, err := r.IsPostOwner(ctx, userID, postID); err != nil {
 		r.logger.Error(err)
 		return models.Like{}, err
 	} else if !ok {
@@ -264,7 +264,7 @@ func (r *PostRepo) AddLike(ctx context.Context, userID uuid.UUID, postID uuid.UU
 			r.logger.Error(err)
 			return models.Like{}, err
 		}
-	}*/
+	}
 	// обновляем кол-во лайков, заодно смотрим, есть ли вообще такой пост
 	var like models.Like
 	like.PostID = postID
