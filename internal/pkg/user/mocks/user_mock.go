@@ -52,12 +52,13 @@ func (mr *MockUserUsecaseMockRecorder) BecomeCreator(ctx, creatorInfo, userId in
 }
 
 // CheckIfCreator mocks base method.
-func (m *MockUserUsecase) CheckIfCreator(ctx context.Context, userId uuid.UUID) (bool, error) {
+func (m *MockUserUsecase) CheckIfCreator(ctx context.Context, userId uuid.UUID) (uuid.UUID, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckIfCreator", ctx, userId)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // CheckIfCreator indicates an expected call of CheckIfCreator.
@@ -79,6 +80,20 @@ func (m *MockUserUsecase) Donate(ctx context.Context, donateInfo models.Donate, 
 func (mr *MockUserUsecaseMockRecorder) Donate(ctx, donateInfo, userID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Donate", reflect.TypeOf((*MockUserUsecase)(nil).Donate), ctx, donateInfo, userID)
+}
+
+// Follow mocks base method.
+func (m *MockUserUsecase) Follow(ctx context.Context, userId, creatorId uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Follow", ctx, userId, creatorId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Follow indicates an expected call of Follow.
+func (mr *MockUserUsecaseMockRecorder) Follow(ctx, userId, creatorId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Follow", reflect.TypeOf((*MockUserUsecase)(nil).Follow), ctx, userId, creatorId)
 }
 
 // GetHomePage mocks base method.
@@ -193,18 +208,34 @@ func (mr *MockUserRepoMockRecorder) BecomeCreator(ctx, creatorInfo, userId inter
 }
 
 // CheckIfCreator mocks base method.
-func (m *MockUserRepo) CheckIfCreator(ctx context.Context, userId uuid.UUID) (bool, error) {
+func (m *MockUserRepo) CheckIfCreator(ctx context.Context, userId uuid.UUID) (uuid.UUID, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckIfCreator", ctx, userId)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // CheckIfCreator indicates an expected call of CheckIfCreator.
 func (mr *MockUserRepoMockRecorder) CheckIfCreator(ctx, userId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckIfCreator", reflect.TypeOf((*MockUserRepo)(nil).CheckIfCreator), ctx, userId)
+}
+
+// CheckIfFollow mocks base method.
+func (m *MockUserRepo) CheckIfFollow(ctx context.Context, userId, creatorId uuid.UUID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckIfFollow", ctx, userId, creatorId)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckIfFollow indicates an expected call of CheckIfFollow.
+func (mr *MockUserRepoMockRecorder) CheckIfFollow(ctx, userId, creatorId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckIfFollow", reflect.TypeOf((*MockUserRepo)(nil).CheckIfFollow), ctx, userId, creatorId)
 }
 
 // Donate mocks base method.
@@ -220,6 +251,20 @@ func (m *MockUserRepo) Donate(ctx context.Context, donateInfo models.Donate, use
 func (mr *MockUserRepoMockRecorder) Donate(ctx, donateInfo, userID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Donate", reflect.TypeOf((*MockUserRepo)(nil).Donate), ctx, donateInfo, userID)
+}
+
+// Follow mocks base method.
+func (m *MockUserRepo) Follow(ctx context.Context, userId, creatorId uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Follow", ctx, userId, creatorId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Follow indicates an expected call of Follow.
+func (mr *MockUserRepoMockRecorder) Follow(ctx, userId, creatorId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Follow", reflect.TypeOf((*MockUserRepo)(nil).Follow), ctx, userId, creatorId)
 }
 
 // GetHomePage mocks base method.

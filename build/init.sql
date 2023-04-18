@@ -12,6 +12,7 @@ drop table if exists "user" CASCADE;
 drop table if exists "post" CASCADE;
 drop table if exists "subscription" CASCADE;
 drop table if exists "tag" CASCADE;
+drop table if exists "follow" CASCADE;
 
 
 create table "user"
@@ -175,6 +176,16 @@ create table donation
             references "creator" (creator_id),
     money_count   int       not null,
     donation_date timestamp not null default now()
-)
+);
+
+create table follow
+(
+    user_id       uuid      not null
+        constraint donation_user_user_id_fk
+            references "user" (user_id),
+    creator_id    uuid      not null
+        constraint donation_creator_creator_id_fk
+            references "creator" (creator_id)
+);
 
 

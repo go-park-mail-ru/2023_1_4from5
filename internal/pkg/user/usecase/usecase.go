@@ -24,6 +24,15 @@ func (uc *UserUsecase) CheckIfCreator(ctx context.Context, userId uuid.UUID) (uu
 	return uc.repo.CheckIfCreator(ctx, userId)
 }
 
+func (uc *UserUsecase) Follow(ctx context.Context, userId, creatorId uuid.UUID) error {
+	if isFollowing, err := uc.repo.CheckIfFollow(ctx, userId, creatorId); err == models.InternalError {
+		return err
+	} else if isFollowing == true {
+		return models.WrongData
+	}
+	return uc.repo.Follow(ctx, userId, creatorId)
+}
+
 func (uc *UserUsecase) GetProfile(ctx context.Context, details models.AccessDetails) (models.UserProfile, error) {
 	userId := details.Id
 	return uc.repo.GetUserProfile(ctx, userId)

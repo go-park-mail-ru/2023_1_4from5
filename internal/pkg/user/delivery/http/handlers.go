@@ -8,6 +8,7 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"github.com/mailru/easyjson"
 	"io"
 	"net/http"
@@ -25,6 +26,38 @@ func NewUserHandler(uc user.UserUsecase, auc auth.AuthUsecase) *UserHandler {
 		usecase:     uc,
 		authUsecase: auc,
 	}
+}
+
+func (h *UserHandler) Follow(w http.ResponseWriter, r *http.Request) {
+	userInfo, err := token.ExtractJWTTokenMetadata(r)
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	creatorUUID, ok := mux.Vars(r)["creator-uuid"]
+	if !ok {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	creatorId, err := uuid.Parse(creatorUUID)
+	if err != nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	err = h.usecase.Follow(r.Context(), userInfo.Id, creatorId)
+	if err == models.InternalError {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if err == models.WrongData {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, nil)
 }
 
 func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {

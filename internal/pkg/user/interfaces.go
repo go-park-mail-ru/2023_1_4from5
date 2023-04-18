@@ -17,6 +17,7 @@ type UserUsecase interface {
 	Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int, error)
 	CheckIfCreator(ctx context.Context, userId uuid.UUID) (uuid.UUID, bool, error)
 	BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error)
+	Follow(ctx context.Context, userId, creatorId uuid.UUID) error
 }
 
 type UserRepo interface {
@@ -28,4 +29,6 @@ type UserRepo interface {
 	Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int, error)
 	CheckIfCreator(ctx context.Context, userId uuid.UUID) (uuid.UUID, bool, error)
 	BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error)
+	Follow(ctx context.Context, userId, creatorId uuid.UUID) error
+	CheckIfFollow(ctx context.Context, userId, creatorId uuid.UUID) (bool, error)
 }

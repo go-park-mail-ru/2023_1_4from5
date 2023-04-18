@@ -19,6 +19,8 @@ const (
 	UpdateAuthorAimMoney = `UPDATE "creator" SET money_got = money_got + $1 WHERE creator_id = $2 RETURNING money_got;`
 	AddDonate            = `INSERT INTO "donation"(user_id, creator_id, money_count) VALUES ($1, $2, $3);`
 	BecameCreator        = `INSERT INTO "creator"(creator_id, user_id, name, description) VALUES ($1, $2, $3, $4);`
+	Follow               = `INSERT INTO "follow" (user_id, creator_id) VALUES ($1, $2);`
+	CheckIfFollow        = `SELECT user_id FROM "follow" WHERE user_id = $1 AND creator_id = $2;`
 )
 
 type UserRepo struct {
@@ -68,6 +70,26 @@ func (ur *UserRepo) GetHomePage(ctx context.Context, id uuid.UUID) (models.UserH
 
 func (ur *UserRepo) UpdateProfilePhoto(ctx context.Context, userID uuid.UUID, path uuid.UUID) error {
 	row := ur.db.QueryRowContext(ctx, UpdateProfilePhoto, path, userID)
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		ur.logger.Error(err)
+		return models.InternalError
+	}
+	return nil
+}
+
+func (ur *UserRepo) CheckIfFollow(ctx context.Context, userId, creatorId uuid.UUID) (bool, error) {
+	row := ur.db.QueryRowContext(ctx, CheckIfFollow, userId, creatorId)
+	if err := row.Scan(&userId); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		ur.logger.Error(err)
+		return false, models.InternalError
+	} else if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	return true, nil
+}
+
+func (ur *UserRepo) Follow(ctx context.Context, userId, creatorId uuid.UUID) error {
+	row := ur.db.QueryRowContext(ctx, Follow, userId, creatorId)
 	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		ur.logger.Error(err)
 		return models.InternalError
