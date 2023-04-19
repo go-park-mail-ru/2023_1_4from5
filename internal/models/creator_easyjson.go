@@ -42,6 +42,8 @@ func easyjson7c25d2a6DecodeGithubComGoParkMailRu202314from5InternalModels(in *jl
 			(out.Aim).UnmarshalEasyJSON(in)
 		case "is_my_page":
 			out.IsMyPage = bool(in.Bool())
+		case "follows":
+			out.Follows = bool(in.Bool())
 		case "posts":
 			if in.IsNull() {
 				in.Skip()
@@ -116,6 +118,11 @@ func easyjson7c25d2a6EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 		const prefix string = ",\"is_my_page\":"
 		out.RawString(prefix)
 		out.Bool(bool(in.IsMyPage))
+	}
+	{
+		const prefix string = ",\"follows\":"
+		out.RawString(prefix)
+		out.Bool(bool(in.Follows))
 	}
 	{
 		const prefix string = ",\"posts\":"

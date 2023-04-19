@@ -19,6 +19,7 @@ const (
 	IsLiked           = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2`
 	GetSubInfo        = `SELECT creator_id, month_cost, title, description FROM "subscription" WHERE subscription_id = $1;`
 	AddAim            = `UPDATE creator SET aim = $1,  money_got = $2, money_needed = $3 WHERE creator_id = $4;`
+	CheckIfFollow     = `SELECT user_id FROM "follow" WHERE user_id = $1 AND creator_id = $2;`
 )
 
 type CreatorRepo struct {
@@ -31,6 +32,17 @@ func NewCreatorRepo(db *sql.DB, logger *zap.SugaredLogger) *CreatorRepo {
 		db:     db,
 		logger: logger,
 	}
+}
+
+func (r *CreatorRepo) CheckIfFollow(ctx context.Context, userId, creatorId uuid.UUID) (bool, error) {
+	row := r.db.QueryRowContext(ctx, CheckIfFollow, userId, creatorId)
+	if err := row.Scan(&userId); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		r.logger.Error(err)
+		return false, models.InternalError
+	} else if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	return true, nil
 }
 
 func (r *CreatorRepo) GetUserSubscriptions(ctx context.Context, userId uuid.UUID) ([]uuid.UUID, error) {
@@ -138,6 +150,9 @@ func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId u
 	if err := r.CreatorInfo(ctx, &creatorPage, creatorId); err == models.InternalError {
 		return models.CreatorPage{}, models.InternalError
 	} else if err == nil { //нашёл такого автора
+		if creatorPage.Follows, err = r.CheckIfFollow(ctx, userId, creatorId); err != nil {
+			return models.CreatorPage{}, models.InternalError
+		}
 		if creatorPage.CreatorInfo.UserId == userId { // страница автора принадлежит пользователю
 			creatorPage.IsMyPage = true
 		} else { // находим подписки пользователя
