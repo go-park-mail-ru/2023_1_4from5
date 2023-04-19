@@ -33,6 +33,10 @@ func (uc *UserUsecase) Follow(ctx context.Context, userId, creatorId uuid.UUID) 
 	return uc.repo.Follow(ctx, userId, creatorId)
 }
 
+func (uc *UserUsecase) Subscribe(ctx context.Context, subscription models.SubscriptionDetails) error {
+	return uc.repo.Subscribe(ctx, subscription)
+}
+
 func (uc *UserUsecase) GetProfile(ctx context.Context, details models.AccessDetails) (models.UserProfile, error) {
 	userId := details.Id
 	return uc.repo.GetUserProfile(ctx, userId)

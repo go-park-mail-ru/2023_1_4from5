@@ -12,6 +12,8 @@ TRUNCATE TABLE "post" CASCADE;
 TRUNCATE TABLE "donation" CASCADE;
 TRUNCATE TABLE "subscription" CASCADE;
 TRUNCATE TABLE "tag" CASCADE;
+TRUNCATE TABLE "follow" CASCADE;
+
 
 
 --------------------------------------------Автор рецептов--------------------------------------

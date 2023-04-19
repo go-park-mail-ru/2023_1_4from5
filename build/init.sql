@@ -79,7 +79,8 @@ create table user_payments
     subscription_id   uuid      not null
         constraint user_payments_subscription_subscription_id_fk references subscription (subscription_id),
     payment_timestamp timestamp not null default now(),
-    payment_info      text ---что-то, номер кошелька, что угодно
+    payment_info      text, ---что-то, номер кошелька, что угодно
+    money             int       not null
 );
 
 create table post
@@ -180,10 +181,10 @@ create table donation
 
 create table follow
 (
-    user_id       uuid      not null
+    user_id    uuid not null
         constraint donation_user_user_id_fk
             references "user" (user_id),
-    creator_id    uuid      not null
+    creator_id uuid not null
         constraint donation_creator_creator_id_fk
             references "creator" (creator_id)
 );

@@ -15,6 +15,13 @@ type Subscription struct {
 	Description string    `json:"description,omitempty"`
 }
 
+type SubscriptionDetails struct {
+	Id         uuid.UUID `json:"id,omitempty"`
+	UserID     uuid.UUID `json:"user_id,omitempty"`
+	MonthCount int       `json:"month_count"`
+	Money      int       `json:"money"`
+}
+
 func (subscription *Subscription) Sanitize() {
 	subscription.Title = html.EscapeString(subscription.Title)
 	subscription.Description = html.EscapeString(subscription.Description)

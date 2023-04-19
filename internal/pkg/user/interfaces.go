@@ -18,6 +18,7 @@ type UserUsecase interface {
 	CheckIfCreator(ctx context.Context, userId uuid.UUID) (uuid.UUID, bool, error)
 	BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error)
 	Follow(ctx context.Context, userId, creatorId uuid.UUID) error
+	Subscribe(ctx context.Context, subscription models.SubscriptionDetails) error
 }
 
 type UserRepo interface {
@@ -31,4 +32,5 @@ type UserRepo interface {
 	BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error)
 	Follow(ctx context.Context, userId, creatorId uuid.UUID) error
 	CheckIfFollow(ctx context.Context, userId, creatorId uuid.UUID) (bool, error)
+	Subscribe(ctx context.Context, subscription models.SubscriptionDetails) error
 }

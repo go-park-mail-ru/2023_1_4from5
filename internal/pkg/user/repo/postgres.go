@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -21,6 +22,9 @@ const (
 	BecameCreator        = `INSERT INTO "creator"(creator_id, user_id, name, description) VALUES ($1, $2, $3, $4);`
 	Follow               = `INSERT INTO "follow" (user_id, creator_id) VALUES ($1, $2);`
 	CheckIfFollow        = `SELECT user_id FROM "follow" WHERE user_id = $1 AND creator_id = $2;`
+	UpdateSubscription   = `UPDATE "user_subscription" SET expire_date = expire_date + $1 * INTERVAL '1 MONTH' WHERE user_id = $2 AND subscription_id = $3 RETURNING user_id;`
+	Subscribe            = `INSERT INTO "user_subscription" VALUES ($1, $2, now() + $3 * INTERVAL '1 MONTH');`
+	AddPaymentInfo       = `INSERT INTO "user_payments" (user_id, subscription_id, payment_timestamp, money) VALUES ($1, $2, now(), $3);`
 )
 
 type UserRepo struct {
@@ -97,6 +101,45 @@ func (ur *UserRepo) Follow(ctx context.Context, userId, creatorId uuid.UUID) err
 	return nil
 }
 
+func (ur *UserRepo) Subscribe(ctx context.Context, subscription models.SubscriptionDetails) error {
+	tx, err := ur.db.BeginTx(ctx, nil)
+	if err != nil {
+		ur.logger.Error(err)
+		return models.InternalError
+	}
+	// если подписка уже есть обновляем expire date
+
+	row := ur.db.QueryRowContext(ctx, UpdateSubscription, subscription.MonthCount, subscription.UserID, subscription.Id)
+	fmt.Println(subscription.MonthCount, subscription.UserID, subscription.Id)
+	var userIDtmp uuid.UUID
+	if err := row.Scan(&userIDtmp); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		ur.logger.Error(err)
+		_ = tx.Rollback()
+		return models.InternalError
+	} else if errors.Is(err, sql.ErrNoRows) { // если нет, то добавляем о ней запись
+		row = ur.db.QueryRowContext(ctx, Subscribe, subscription.UserID, subscription.Id, subscription.MonthCount)
+		if err = row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
+			ur.logger.Error(err)
+			_ = tx.Rollback()
+			return models.InternalError
+		}
+	}
+
+	row = ur.db.QueryRowContext(ctx, AddPaymentInfo, subscription.UserID, subscription.Id, subscription.Money)
+	if err = row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		ur.logger.Error(err)
+		_ = tx.Rollback()
+		return models.InternalError
+	}
+
+	if err = tx.Commit(); err != nil {
+		ur.logger.Error(err)
+		return models.InternalError
+	}
+
+	return nil
+}
+
 func (ur *UserRepo) UpdatePassword(ctx context.Context, id uuid.UUID, password string) error {
 	row := ur.db.QueryRowContext(ctx, UpdatePassword, password, id)
 	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
@@ -121,15 +164,11 @@ func (ur *UserRepo) Donate(ctx context.Context, donateInfo models.Donate, userID
 		ur.logger.Error(err)
 		return 0, models.InternalError
 	}
-
-	row := tx.QueryRowContext(ctx, UpdateAuthorAimMoney, donateInfo.MoneyCount, donateInfo.CreatorID)
-	if err != nil {
-		_ = tx.Rollback()
-		ur.logger.Error(err)
-		return 0, models.InternalError
-	}
 	var newMoney int
+	row := tx.QueryRowContext(ctx, UpdateAuthorAimMoney, donateInfo.MoneyCount, donateInfo.CreatorID)
+
 	if err = row.Scan(&newMoney); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		ur.logger.Error(err)
 		_ = tx.Rollback()
 		return 0, models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {

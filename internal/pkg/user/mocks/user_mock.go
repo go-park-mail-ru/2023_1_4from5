@@ -126,6 +126,20 @@ func (mr *MockUserUsecaseMockRecorder) GetProfile(ctx, details interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfile", reflect.TypeOf((*MockUserUsecase)(nil).GetProfile), ctx, details)
 }
 
+// Subscribe mocks base method.
+func (m *MockUserUsecase) Subscribe(ctx context.Context, subscription models.SubscriptionDetails) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Subscribe", ctx, subscription)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Subscribe indicates an expected call of Subscribe.
+func (mr *MockUserUsecaseMockRecorder) Subscribe(ctx, subscription interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockUserUsecase)(nil).Subscribe), ctx, subscription)
+}
+
 // UpdatePassword mocks base method.
 func (m *MockUserUsecase) UpdatePassword(ctx context.Context, id uuid.UUID, password string) error {
 	m.ctrl.T.Helper()
@@ -295,6 +309,20 @@ func (m *MockUserRepo) GetUserProfile(ctx context.Context, id uuid.UUID) (models
 func (mr *MockUserRepoMockRecorder) GetUserProfile(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserProfile", reflect.TypeOf((*MockUserRepo)(nil).GetUserProfile), ctx, id)
+}
+
+// Subscribe mocks base method.
+func (m *MockUserRepo) Subscribe(ctx context.Context, subscription models.SubscriptionDetails) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Subscribe", ctx, subscription)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Subscribe indicates an expected call of Subscribe.
+func (mr *MockUserRepoMockRecorder) Subscribe(ctx, subscription interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockUserRepo)(nil).Subscribe), ctx, subscription)
 }
 
 // UpdatePassword mocks base method.
