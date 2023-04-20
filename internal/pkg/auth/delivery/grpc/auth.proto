@@ -1,4 +1,4 @@
-//protoc  --go_out=.  --go-grpc_out=. --proto_path=internal/pkg/auth/delivery/grpc auth.proto
+//protoc  --go_out=. --go-grpc_out=. --proto_path=internal/pkg/auth/delivery/grpc auth.proto
 syntax = "proto3";
 
 option go_package = "internal/pkg/auth/delivery/grpc";
@@ -26,19 +26,24 @@ message AccessDetails  {
 
 message Token {
   string Cookie = 1;
+  string Error = 2;
 };
 
 message Empty {
    string Error = 1;
 };
 
+message UserVersion {
+  string UserVersion = 1;
+  string Error = 2;
+};
+
+
 
 service AuthService {
   rpc SignIn(LoginUser) returns (Token) {}
-  rpc Logout(AccessDetails) returns (Empty) {}
   rpc SignUp(User) returns (Token) {}
-  rpc CheckUserVersion(C) returns (Profile) {}
-  rpc CheckUser(UserUpdatePic) returns (Empty) {}
-  rpc IncUserVersion(UserUpdatePass) returns (Empty) {}
-  rpc EncryptPwd(UserUpdateBio) returns (Empty) {}
+  rpc CheckUserVersion(AccessDetails) returns (UserVersion) {}
+  rpc CheckUser(User) returns  (Empty) {}
+  rpc IncUserVersion(AccessDetails) returns (Empty) {}
 }

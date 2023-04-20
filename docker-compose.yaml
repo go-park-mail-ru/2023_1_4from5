@@ -1,12 +1,18 @@
 version: "3.3"
 
 services:
+  auth:
+    build:
+      context: .
+      dockerfile: ./build/auth.Dockerfile
+    ports:
+      - "8010:8010"
   main:
     depends_on:
       - postgres
     build:
       context: .
-      dockerfile: build/Dockerfile
+      dockerfile: build/main.Dockerfile
     ports:
       - "8000:8000"
     volumes:
