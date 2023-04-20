@@ -21,6 +21,7 @@ const (
 	AddDonate            = `INSERT INTO "donation"(user_id, creator_id, money_count) VALUES ($1, $2, $3);`
 	BecameCreator        = `INSERT INTO "creator"(creator_id, user_id, name, description) VALUES ($1, $2, $3, $4);`
 	Follow               = `INSERT INTO "follow" (user_id, creator_id) VALUES ($1, $2);`
+	Unfollow             = `DELETE FROM "follow" WHERE user_id = $1 AND creator_id = $2;`
 	CheckIfFollow        = `SELECT user_id FROM "follow" WHERE user_id = $1 AND creator_id = $2;`
 	UpdateSubscription   = `UPDATE "user_subscription" SET expire_date = expire_date + $1 * INTERVAL '1 MONTH' WHERE user_id = $2 AND subscription_id = $3 RETURNING user_id;`
 	Subscribe            = `INSERT INTO "user_subscription" VALUES ($1, $2, now() + $3 * INTERVAL '1 MONTH');`
@@ -94,6 +95,15 @@ func (ur *UserRepo) CheckIfFollow(ctx context.Context, userId, creatorId uuid.UU
 
 func (ur *UserRepo) Follow(ctx context.Context, userId, creatorId uuid.UUID) error {
 	row := ur.db.QueryRowContext(ctx, Follow, userId, creatorId)
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		ur.logger.Error(err)
+		return models.InternalError
+	}
+	return nil
+}
+
+func (ur *UserRepo) Unfollow(ctx context.Context, userId, creatorId uuid.UUID) error {
+	row := ur.db.QueryRowContext(ctx, Unfollow, userId, creatorId)
 	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		ur.logger.Error(err)
 		return models.InternalError

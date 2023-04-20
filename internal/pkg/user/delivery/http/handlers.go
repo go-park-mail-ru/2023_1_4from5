@@ -59,6 +59,39 @@ func (h *UserHandler) Follow(w http.ResponseWriter, r *http.Request) {
 
 	utils.Response(w, http.StatusOK, nil)
 }
+
+func (h *UserHandler) Unfollow(w http.ResponseWriter, r *http.Request) {
+	userInfo, err := token.ExtractJWTTokenMetadata(r)
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	creatorUUID, ok := mux.Vars(r)["creator-uuid"]
+	if !ok {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	creatorId, err := uuid.Parse(creatorUUID)
+	if err != nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	err = h.usecase.Unfollow(r.Context(), userInfo.Id, creatorId)
+	if err == models.InternalError {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if err == models.WrongData {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, nil)
+}
+
 func (h *UserHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
 
