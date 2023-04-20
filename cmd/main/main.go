@@ -142,7 +142,7 @@ func run() error {
 	subscription := r.PathPrefix("/subscription").Subrouter()
 	{
 		subscription.HandleFunc("/create", subscriptionHandler.CreateSubscription).Methods(http.MethodPost, http.MethodGet, http.MethodOptions)
-		//subscription.HandleFunc("/edit/{sub-uuid}", subscriptionHandler.EditSubscription).Methods(http.MethodGet, http.MethodGet, http.MethodOptions)
+		subscription.HandleFunc("/edit/{sub-uuid}", subscriptionHandler.EditSubscription).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
 		subscription.HandleFunc("/delete/{sub-uuid}", subscriptionHandler.DeleteSubscription).Methods(http.MethodDelete, http.MethodGet, http.MethodOptions)
 	}
 

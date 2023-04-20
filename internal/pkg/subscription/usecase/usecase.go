@@ -27,3 +27,7 @@ func (uc *SubscriptionUsecase) CreateSubscription(ctx context.Context, subscript
 func (uc *SubscriptionUsecase) DeleteSubscription(ctx context.Context, subscriptionID, creatorID uuid.UUID) error {
 	return uc.repo.DeleteSubscription(ctx, subscriptionID, creatorID)
 }
+
+func (uc *SubscriptionUsecase) EditSubscription(ctx context.Context, subscriptionNewInfo models.Subscription) error {
+	return uc.repo.EditSubscription(ctx, subscriptionNewInfo)
+}
