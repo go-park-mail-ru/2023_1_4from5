@@ -10,10 +10,11 @@ import (
 )
 
 const (
-	CreateSubscription       = `INSERT INTO "subscription"(subscription_id,creator_id, month_cost, title, description) VALUES ($1, $2, $3, $4, $5);`
-	DeletePosts              = `DELETE FROM "post_subscription" WHERE subscription_id = $1;`
-	DeleteUsersSubscriptions = `DELETE FROM "user_subscription" WHERE subscription_id = $1;`
-	DeleteSubscription       = `DELETE FROM "subscription" WHERE subscription_id = $1 AND creator_id = $2 RETURNING subscription_id;`
+	CreateSubscription        = `INSERT INTO "subscription"(subscription_id,creator_id, month_cost, title, description) VALUES ($1, $2, $3, $4, $5);`
+	DeleteSubsccriptionsPosts = `DELETE FROM "post_subscription" WHERE subscription_id = $1;`
+	DeleteUsersSubscriptions  = `DELETE FROM "user_subscription" WHERE subscription_id = $1;`
+	DeleteSubscription        = `DELETE FROM "subscription" WHERE subscription_id = $1 AND creator_id = $2 RETURNING subscription_id;`
+	EditSubscription          = `UPDATE "subscription" SET month_cost = $1, title = $2, description = $3 WHERE subscription_id = $4;`
 )
 
 type SubscriptionRepo struct {
@@ -42,7 +43,7 @@ func (r *SubscriptionRepo) DeleteSubscription(ctx context.Context, subscriptionI
 		r.logger.Error(err)
 		return models.InternalError
 	}
-	row, err := tx.QueryContext(ctx, DeletePosts, subscriptionID)
+	row, err := tx.QueryContext(ctx, DeleteSubsccriptionsPosts, subscriptionID)
 	if err != nil {
 		_ = tx.Rollback()
 		r.logger.Error(err)
@@ -80,5 +81,14 @@ func (r *SubscriptionRepo) DeleteSubscription(ctx context.Context, subscriptionI
 		return models.InternalError
 	}
 
+	return nil
+}
+
+func (r *SubscriptionRepo) EditSubscription(ctx context.Context, subscriptionNewInfo models.Subscription) error {
+	row := r.db.QueryRowContext(ctx, EditSubscription, subscriptionNewInfo.MonthCost, subscriptionNewInfo.Title, subscriptionNewInfo.Description, subscriptionNewInfo.Id)
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		r.logger.Error(err)
+		return models.InternalError
+	}
 	return nil
 }

@@ -11,8 +11,10 @@ import (
 type SubscriptionUsecase interface {
 	CreateSubscription(ctx context.Context, subscriptionInfo models.Subscription) error
 	DeleteSubscription(ctx context.Context, subscriptionID, creatorID uuid.UUID) error
+	EditSubscription(ctx context.Context, subscriptionInfo models.Subscription) error
 }
 type SubscriptionRepo interface {
 	CreateSubscription(ctx context.Context, subscriptionInfo models.Subscription) error
 	DeleteSubscription(ctx context.Context, subscriptionID, creatorID uuid.UUID) error
+	EditSubscription(ctx context.Context, subscriptionInfo models.Subscription) error
 }
