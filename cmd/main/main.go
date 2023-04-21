@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	attachmentRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment/repo"
 	attachmentUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment/usecase"
+	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	authDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/http"
 	authRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/repo"
 	authUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
@@ -24,6 +25,7 @@ import (
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 	"log"
 	"net/http"
 	"os"
@@ -69,9 +71,20 @@ func run() error {
 		return err
 	}
 
+	authConn, err := grpc.Dial(
+		"auth:8010",
+		grpc.WithInsecure(),
+	)
+
+	if err != nil {
+		log.Fatalf("cant connect to session grpc")
+	}
+
+	authClient := generatedAuth.NewAuthServiceClient(authConn)
+
 	authRepo := authRepository.NewAuthRepo(db, zapSugar)
 	authUse := authUsecase.NewAuthUsecase(authRepo, tokenGenerator, encryptor, zapSugar)
-	authHandler := authDelivery.NewAuthHandler(authUse, zapSugar)
+	authHandler := authDelivery.NewAuthHandler(authClient, zapSugar)
 
 	userRepo := userRepository.NewUserRepo(db, zapSugar)
 	userUse := userUsecase.NewUserUsecase(userRepo, zapSugar)
@@ -99,9 +112,9 @@ func run() error {
 
 	auth := r.PathPrefix("/auth").Subrouter()
 	{
-		auth.HandleFunc("/signUp", authHandler.SignUp).Methods(http.MethodPost, http.MethodOptions)
+		//auth.HandleFunc("/signUp", authHandler.SignUp).Methods(http.MethodPost, http.MethodOptions)
 		auth.HandleFunc("/signIn", authHandler.SignIn).Methods(http.MethodPost, http.MethodOptions)
-		auth.HandleFunc("/logout", authHandler.Logout).Methods(http.MethodGet, http.MethodOptions)
+		//auth.HandleFunc("/logout", authHandler.Logout).Methods(http.MethodGet, http.MethodOptions)
 	}
 
 	user := r.PathPrefix("/user").Subrouter()
