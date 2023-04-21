@@ -16,6 +16,7 @@ message User{
   string PasswordHash = 5;
   string Registration = 6; //TODO: to timestamp)
   int64 UserVersion = 7;
+  string Error = 8;
 }
 
 message AccessDetails  {
@@ -44,6 +45,6 @@ service AuthService {
   rpc SignIn(LoginUser) returns (Token) {}
   rpc SignUp(User) returns (Token) {}
   rpc CheckUserVersion(AccessDetails) returns (UserVersion) {}
-  rpc CheckUser(User) returns  (Empty) {}
+  rpc CheckUser(User) returns  (User) {}
   rpc IncUserVersion(AccessDetails) returns (Empty) {}
 }

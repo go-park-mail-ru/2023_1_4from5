@@ -58,7 +58,7 @@ func (h GrpcAuthHandler) SignUp(ctx context.Context, in *generated.User) (*gener
 	}
 	user := models.User{
 		Id:           idTmp,
-		Login:        in.Login,
+		Login:        in.Login, //TODO: наверное здесь можно заполнять не все поля
 		Name:         in.Name,
 		ProfilePhoto: idTmpPh,
 		PasswordHash: in.PasswordHash,
@@ -73,5 +73,58 @@ func (h GrpcAuthHandler) SignUp(ctx context.Context, in *generated.User) (*gener
 		}, nil
 	}
 	return &generated.Token{Error: err.Error()}, nil
+
+}
+
+func (h GrpcAuthHandler) CheckUserVersion(ctx context.Context, in *generated.AccessDetails) (*generated.UserVersion, error) {
+	idTmp, err := uuid.Parse(in.Id)
+	if err != nil {
+		return &generated.UserVersion{Error: err.Error()}, nil
+	}
+	user := models.AccessDetails{
+		Login:       in.Login,
+		Id:          idTmp,
+		UserVersion: int(in.UserVersion),
+	}
+
+	uv, err := h.uc.CheckUserVersion(ctx, user)
+	if err == nil {
+		return &generated.UserVersion{
+			UserVersion: int64(uv),
+			Error:       "",
+		}, nil
+	}
+	return &generated.UserVersion{Error: err.Error()}, nil
+}
+
+func (h GrpcAuthHandler) CheckUser(ctx context.Context, in *generated.User) (*generated.User, error) {
+	idTmp, err := uuid.Parse(in.Id)
+	idTmpPh, err := uuid.Parse(in.ProfilePhoto)
+	if err != nil {
+		return &generated.User{Error: models.WrongData.Error()}, nil
+	}
+	user := models.User{
+		Id:           idTmp,
+		Login:        in.Login, //TODO: наверное здесь можно заполнять не все поля
+		Name:         in.Name,
+		ProfilePhoto: idTmpPh,
+		PasswordHash: in.PasswordHash,
+		Registration: time.Time{},
+		UserVersion:  0,
+	}
+	checkedUser, err := h.uc.CheckUser(ctx, user)
+	if err == nil {
+		return &generated.User{
+			Id:           checkedUser.Id.String(),
+			Login:        in.Login, //TODO: наверное здесь можно заполнять не все поля
+			Name:         in.Name,
+			ProfilePhoto: checkedUser.ProfilePhoto.String(),
+			PasswordHash: in.PasswordHash,
+			Registration: checkedUser.Registration.String(),
+			UserVersion:  0,
+			Error:        "",
+		}, nil
+	}
+	return &generated.User{Error: err.Error()}, nil
 
 }

@@ -35,7 +35,7 @@ type AuthServiceClient interface {
 	SignIn(ctx context.Context, in *LoginUser, opts ...grpc.CallOption) (*Token, error)
 	SignUp(ctx context.Context, in *User, opts ...grpc.CallOption) (*Token, error)
 	CheckUserVersion(ctx context.Context, in *AccessDetails, opts ...grpc.CallOption) (*UserVersion, error)
-	CheckUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*Empty, error)
+	CheckUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*User, error)
 	IncUserVersion(ctx context.Context, in *AccessDetails, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -74,8 +74,8 @@ func (c *authServiceClient) CheckUserVersion(ctx context.Context, in *AccessDeta
 	return out, nil
 }
 
-func (c *authServiceClient) CheckUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
+func (c *authServiceClient) CheckUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*User, error) {
+	out := new(User)
 	err := c.cc.Invoke(ctx, AuthService_CheckUser_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ type AuthServiceServer interface {
 	SignIn(context.Context, *LoginUser) (*Token, error)
 	SignUp(context.Context, *User) (*Token, error)
 	CheckUserVersion(context.Context, *AccessDetails) (*UserVersion, error)
-	CheckUser(context.Context, *User) (*Empty, error)
+	CheckUser(context.Context, *User) (*User, error)
 	IncUserVersion(context.Context, *AccessDetails) (*Empty, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
@@ -117,7 +117,7 @@ func (UnimplementedAuthServiceServer) SignUp(context.Context, *User) (*Token, er
 func (UnimplementedAuthServiceServer) CheckUserVersion(context.Context, *AccessDetails) (*UserVersion, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckUserVersion not implemented")
 }
-func (UnimplementedAuthServiceServer) CheckUser(context.Context, *User) (*Empty, error) {
+func (UnimplementedAuthServiceServer) CheckUser(context.Context, *User) (*User, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckUser not implemented")
 }
 func (UnimplementedAuthServiceServer) IncUserVersion(context.Context, *AccessDetails) (*Empty, error) {
