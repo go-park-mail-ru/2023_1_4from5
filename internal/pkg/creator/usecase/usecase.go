@@ -40,6 +40,10 @@ func (uc *CreatorUsecase) CreateAim(ctx context.Context, aimInfo models.Aim) err
 	return uc.repo.CreateAim(ctx, aimInfo)
 }
 
+func (uc *CreatorUsecase) FindCreators(ctx context.Context, keyword string) ([]models.Creator, error) {
+	return uc.repo.FindCreators(ctx, keyword)
+}
+
 func (uc *CreatorUsecase) GetAllCreators(ctx context.Context) ([]models.Creator, error) {
 	return uc.repo.GetAllCreators(ctx)
 }
