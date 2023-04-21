@@ -3,6 +3,7 @@ package http
 import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/mailru/easyjson"
 	"go.uber.org/zap"
@@ -44,38 +45,50 @@ func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 	utils.Response(w, http.StatusOK, nil)
 }
 
-//func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
-//	userData, err := token.ExtractJWTTokenMetadata(r)
-//	if err != nil {
-//		utils.Response(w, http.StatusBadRequest, nil)
-//		return
-//	}
-//	if _, err := h.usecase.IncUserVersion(r.Context(), *userData); err != nil {
-//		utils.Response(w, http.StatusInternalServerError, nil)
-//		return
-//	}
-//	utils.Cookie(w, "", "SSID")
-//	utils.Response(w, http.StatusOK, nil)
-//}
-//
-//func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
-//	var user models.User
-//	err := easyjson.UnmarshalFromReader(r.Body, &user)
-//	if err != nil || !user.UserIsValid() {
-//		utils.Response(w, http.StatusBadRequest, nil)
-//		return
-//	}
-//
-//	token, err := h.usecase.SignUp(r.Context(), user)
-//	if token == "" {
-//		if err == models.WrongData {
-//			utils.Response(w, http.StatusConflict, nil)
-//			return
-//		}
-//		utils.Response(w, http.StatusInternalServerError, nil)
-//		return
-//	}
-//
-//	utils.Cookie(w, token, "SSID")
-//	utils.Response(w, http.StatusOK, nil)
-//}
+func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	userData, err := token.ExtractJWTTokenMetadata(r)
+	if err != nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	if uv, err := h.client.IncUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userData.Login,
+		Id:          userData.Id.String(),
+		UserVersion: int64(userData.UserVersion),
+	}); err != nil || len(uv.Error) != 0 {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	utils.Cookie(w, "", "SSID")
+	utils.Response(w, http.StatusOK, nil)
+}
+
+func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
+	var user models.User
+	err := easyjson.UnmarshalFromReader(r.Body, &user)
+	if err != nil || !user.UserIsValid() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	token, err := h.client.SignUp(r.Context(), &generatedAuth.User{
+		Id:           user.Id.String(),
+		Login:        user.Login,
+		Name:         user.Name,
+		ProfilePhoto: user.ProfilePhoto.String(),
+		PasswordHash: user.PasswordHash,
+		Registration: user.Registration.String(),
+		UserVersion:  int64(user.UserVersion),
+	})
+	if len(token.Cookie) == 0 {
+		if token.Error == models.WrongData.Error() {
+			utils.Response(w, http.StatusConflict, nil)
+			return
+		}
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	utils.Cookie(w, token.Cookie, "SSID")
+	utils.Response(w, http.StatusOK, nil)
+}

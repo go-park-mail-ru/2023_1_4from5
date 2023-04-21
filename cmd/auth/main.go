@@ -7,6 +7,7 @@ import (
 	authRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/repo"
 	authUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
+	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"log"

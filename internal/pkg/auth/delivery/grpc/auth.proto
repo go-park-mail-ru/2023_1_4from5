@@ -14,7 +14,7 @@ message User{
   string Name = 3;
   string ProfilePhoto = 4;
   string PasswordHash = 5;
-  string Registration = 6;
+  string Registration = 6; //TODO: to timestamp)
   int64 UserVersion = 7;
 }
 
@@ -34,7 +34,7 @@ message Empty {
 };
 
 message UserVersion {
-  string UserVersion = 1;
+  int64 UserVersion = 1;
   string Error = 2;
 };
 

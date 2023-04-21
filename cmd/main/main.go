@@ -72,7 +72,7 @@ func run() error {
 	}
 
 	authConn, err := grpc.Dial(
-		"auth:8010",
+		":8010",
 		grpc.WithInsecure(),
 	)
 
@@ -112,9 +112,9 @@ func run() error {
 
 	auth := r.PathPrefix("/auth").Subrouter()
 	{
-		//auth.HandleFunc("/signUp", authHandler.SignUp).Methods(http.MethodPost, http.MethodOptions)
+		auth.HandleFunc("/signUp", authHandler.SignUp).Methods(http.MethodPost, http.MethodOptions)
 		auth.HandleFunc("/signIn", authHandler.SignIn).Methods(http.MethodPost, http.MethodOptions)
-		//auth.HandleFunc("/logout", authHandler.Logout).Methods(http.MethodGet, http.MethodOptions)
+		auth.HandleFunc("/logout", authHandler.Logout).Methods(http.MethodGet, http.MethodOptions) //TODO:мб пут?
 	}
 
 	user := r.PathPrefix("/user").Subrouter()
