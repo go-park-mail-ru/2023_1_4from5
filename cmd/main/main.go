@@ -24,6 +24,7 @@ import (
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"log"
 	"net/http"
 	"os"
@@ -69,7 +70,7 @@ func run() error {
 
 	authConn, err := grpc.Dial(
 		":8010",
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
 	if err != nil {

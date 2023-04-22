@@ -1,7 +1,7 @@
-//protoc  --go_out=. --go-grpc_out=. --proto_path=internal/pkg/auth/delivery/grpc auth.proto
+
 syntax = "proto3";
 
-option go_package = "internal/pkg/auth/delivery/grpc";
+option go_package = ".";
 
 message LoginUser {
   string Login = 1;

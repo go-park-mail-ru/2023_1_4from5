@@ -4,12 +4,13 @@ services:
   auth:
     build:
       context: .
-      dockerfile: ./build/auth.Dockerfile
+      dockerfile: build/auth.Dockerfile
     ports:
       - "8010:8010"
   main:
     depends_on:
       - postgres
+      - auth
     build:
       context: .
       dockerfile: build/main.Dockerfile
