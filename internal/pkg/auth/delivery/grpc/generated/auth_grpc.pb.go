@@ -26,6 +26,7 @@ const (
 	AuthService_CheckUserVersion_FullMethodName = "/AuthService/CheckUserVersion"
 	AuthService_CheckUser_FullMethodName        = "/AuthService/CheckUser"
 	AuthService_IncUserVersion_FullMethodName   = "/AuthService/IncUserVersion"
+	AuthService_EncryptPwd_FullMethodName       = "/AuthService/EncryptPwd"
 )
 
 // AuthServiceClient is the client API for AuthService service.
@@ -37,6 +38,7 @@ type AuthServiceClient interface {
 	CheckUserVersion(ctx context.Context, in *AccessDetails, opts ...grpc.CallOption) (*UserVersion, error)
 	CheckUser(ctx context.Context, in *User, opts ...grpc.CallOption) (*User, error)
 	IncUserVersion(ctx context.Context, in *AccessDetails, opts ...grpc.CallOption) (*Empty, error)
+	EncryptPwd(ctx context.Context, in *EncryptPwdMg, opts ...grpc.CallOption) (*EncryptPwdMg, error)
 }
 
 type authServiceClient struct {
@@ -92,6 +94,15 @@ func (c *authServiceClient) IncUserVersion(ctx context.Context, in *AccessDetail
 	return out, nil
 }
 
+func (c *authServiceClient) EncryptPwd(ctx context.Context, in *EncryptPwdMg, opts ...grpc.CallOption) (*EncryptPwdMg, error) {
+	out := new(EncryptPwdMg)
+	err := c.cc.Invoke(ctx, AuthService_EncryptPwd_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 // All implementations must embed UnimplementedAuthServiceServer
 // for forward compatibility
@@ -101,6 +112,7 @@ type AuthServiceServer interface {
 	CheckUserVersion(context.Context, *AccessDetails) (*UserVersion, error)
 	CheckUser(context.Context, *User) (*User, error)
 	IncUserVersion(context.Context, *AccessDetails) (*Empty, error)
+	EncryptPwd(context.Context, *EncryptPwdMg) (*EncryptPwdMg, error)
 	mustEmbedUnimplementedAuthServiceServer()
 }
 
@@ -122,6 +134,9 @@ func (UnimplementedAuthServiceServer) CheckUser(context.Context, *User) (*User, 
 }
 func (UnimplementedAuthServiceServer) IncUserVersion(context.Context, *AccessDetails) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IncUserVersion not implemented")
+}
+func (UnimplementedAuthServiceServer) EncryptPwd(context.Context, *EncryptPwdMg) (*EncryptPwdMg, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EncryptPwd not implemented")
 }
 func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
 
@@ -226,6 +241,24 @@ func _AuthService_IncUserVersion_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_EncryptPwd_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EncryptPwdMg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).EncryptPwd(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthService_EncryptPwd_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).EncryptPwd(ctx, req.(*EncryptPwdMg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -252,6 +285,10 @@ var AuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "IncUserVersion",
 			Handler:    _AuthService_IncUserVersion_Handler,
+		},
+		{
+			MethodName: "EncryptPwd",
+			Handler:    _AuthService_EncryptPwd_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

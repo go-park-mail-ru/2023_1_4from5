@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
+	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user"
@@ -18,15 +18,15 @@ import (
 
 type SubscriptionHandler struct {
 	usecase     subscription.SubscriptionUsecase
-	authUsecase auth.AuthUsecase
+	authClient  generatedAuth.AuthServiceClient
 	userUsecase user.UserUsecase
 	logger      *zap.SugaredLogger
 }
 
-func NewSubscriptionHandler(uc subscription.SubscriptionUsecase, auc auth.AuthUsecase, uuc user.UserUsecase, logger *zap.SugaredLogger) *SubscriptionHandler {
+func NewSubscriptionHandler(uc subscription.SubscriptionUsecase, auc generatedAuth.AuthServiceClient, uuc user.UserUsecase, logger *zap.SugaredLogger) *SubscriptionHandler {
 	return &SubscriptionHandler{
 		usecase:     uc,
-		authUsecase: auc,
+		authClient:  auc,
 		userUsecase: uuc,
 		logger:      logger,
 	}
@@ -40,7 +40,16 @@ func (h *SubscriptionHandler) CreateSubscription(w http.ResponseWriter, r *http.
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: int64(userDataJWT.UserVersion),
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -110,7 +119,16 @@ func (h *SubscriptionHandler) DeleteSubscription(w http.ResponseWriter, r *http.
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: int64(userDataJWT.UserVersion),
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -171,7 +189,16 @@ func (h *SubscriptionHandler) EditSubscription(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: int64(userDataJWT.UserVersion),
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return

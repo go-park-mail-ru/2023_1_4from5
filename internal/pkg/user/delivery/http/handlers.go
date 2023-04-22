@@ -3,7 +3,7 @@ package http
 import (
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
+	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
@@ -17,14 +17,14 @@ import (
 )
 
 type UserHandler struct {
-	usecase     user.UserUsecase
-	authUsecase auth.AuthUsecase
+	usecase    user.UserUsecase
+	authClient generatedAuth.AuthServiceClient
 }
 
-func NewUserHandler(uc user.UserUsecase, auc auth.AuthUsecase) *UserHandler {
+func NewUserHandler(uc user.UserUsecase, auc generatedAuth.AuthServiceClient) *UserHandler {
 	return &UserHandler{
-		usecase:     uc,
-		authUsecase: auc,
+		usecase:    uc,
+		authClient: auc,
 	}
 }
 
@@ -100,7 +100,16 @@ func (h *UserHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err = h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: int64(userDataJWT.UserVersion),
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -206,7 +215,16 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: int64(userDataJWT.UserVersion),
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -292,7 +310,16 @@ func (h *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: int64(userDataJWT.UserVersion),
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -326,7 +353,10 @@ func (h *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.authUsecase.CheckUser(r.Context(), models.User{Login: userDataJWT.Login, PasswordHash: updPwd.OldPassword})
+	_, err = h.authClient.CheckUser(r.Context(), &generatedAuth.User{
+		Login:        userDataJWT.Login,
+		PasswordHash: updPwd.OldPassword,
+	})
 	if err == models.WrongPassword {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
@@ -341,19 +371,30 @@ func (h *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	encryptedPwd := h.authUsecase.EncryptPwd(r.Context(), updPwd.NewPassword)
-	if err = h.usecase.UpdatePassword(r.Context(), userDataJWT.Id, encryptedPwd); err != nil {
+	encryptedPwd, err := h.authClient.EncryptPwd(r.Context(), &generatedAuth.EncryptPwdMg{Password: updPwd.NewPassword})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if err = h.usecase.UpdatePassword(r.Context(), userDataJWT.Id, encryptedPwd.Password); err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 
-	tokenJWT, err := h.authUsecase.SignIn(r.Context(), models.LoginUser{Login: userDataJWT.Login, PasswordHash: updPwd.NewPassword})
-	if err != nil {
+	tokenJWT, err := h.authClient.SignIn(r.Context(), &generatedAuth.LoginUser{
+		Login:        userDataJWT.Login,
+		PasswordHash: updPwd.NewPassword,
+	})
+	if len(tokenJWT.Error) != 0 {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
 
-	utils.Cookie(w, tokenJWT, "SSID")
+	utils.Cookie(w, tokenJWT.Cookie, "SSID")
 	utils.Response(w, http.StatusOK, nil)
 }
 
@@ -365,11 +406,21 @@ func (h *UserHandler) Donate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err = h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: int64(userDataJWT.UserVersion),
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
+
 	if r.Method == http.MethodGet {
 		tokenCSRF, err := token.GetCSRFToken(models.User{Login: userDataJWT.Login, Id: userDataJWT.Id, UserVersion: userDataJWT.UserVersion})
 		if err != nil {
@@ -414,7 +465,16 @@ func (h *UserHandler) UpdateData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: int64(userDataJWT.UserVersion),
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -459,11 +519,21 @@ func (h *UserHandler) BecomeCreator(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: int64(userDataJWT.UserVersion),
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
+
 	if r.Method == http.MethodGet {
 		tokenCSRF, err := token.GetCSRFToken(models.User{Login: userDataJWT.Login, Id: userDataJWT.Id, UserVersion: userDataJWT.UserVersion})
 		if err != nil {

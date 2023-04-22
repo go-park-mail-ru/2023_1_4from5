@@ -39,6 +39,9 @@ message UserVersion {
   string Error = 2;
 };
 
+message EncryptPwdMg {
+  string Password = 1;
+};
 
 
 service AuthService {
@@ -47,4 +50,5 @@ service AuthService {
   rpc CheckUserVersion(AccessDetails) returns (UserVersion) {}
   rpc CheckUser(User) returns  (User) {}
   rpc IncUserVersion(AccessDetails) returns (Empty) {}
+  rpc EncryptPwd(EncryptPwdMg) returns (EncryptPwdMg) {}
 }

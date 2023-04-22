@@ -6,8 +6,6 @@ import (
 	attachmentUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment/usecase"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	authDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/http"
-	authRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/repo"
-	authUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
 	creatorDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/http"
 	creatorRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/repo"
 	creatorUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/usecase"
@@ -65,8 +63,6 @@ func run() error {
 	db.SetMaxIdleConns(25)
 	db.SetConnMaxLifetime(5 * time.Minute)
 
-	tokenGenerator := authUsecase.NewTokenator()
-	encryptor, err := authUsecase.NewEncryptor()
 	if err != nil {
 		return err
 	}
@@ -81,29 +77,26 @@ func run() error {
 	}
 
 	authClient := generatedAuth.NewAuthServiceClient(authConn)
-
-	authRepo := authRepository.NewAuthRepo(db, zapSugar)
-	authUse := authUsecase.NewAuthUsecase(authRepo, tokenGenerator, encryptor, zapSugar)
 	authHandler := authDelivery.NewAuthHandler(authClient, zapSugar)
 
 	userRepo := userRepository.NewUserRepo(db, zapSugar)
 	userUse := userUsecase.NewUserUsecase(userRepo, zapSugar)
-	userHandler := userDelivery.NewUserHandler(userUse, authUse)
+	userHandler := userDelivery.NewUserHandler(userUse, authClient)
 
 	attachmentRepo := attachmentRepository.NewAttachmentRepo(db, zapSugar)
 	attachmentUse := attachmentUsecase.NewAttachmentUsecase(attachmentRepo, zapSugar)
 
 	postRepo := postRepository.NewPostRepo(db, zapSugar)
 	postUse := postUsecase.NewPostUsecase(postRepo, zapSugar)
-	postHandler := postDelivery.NewPostHandler(postUse, authUse, attachmentUse, zapSugar)
+	postHandler := postDelivery.NewPostHandler(postUse, authClient, attachmentUse, zapSugar)
 
 	creatorRepo := creatorRepository.NewCreatorRepo(db, zapSugar)
 	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo, zapSugar)
-	creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse, authUse, postUse)
+	creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse, authClient, postUse)
 
 	subscriptionRepo := subscriptionRepository.NewSubscriptionRepo(db, zapSugar)
 	subscriptionUse := subscriptionUsecase.NewSubscriptionUsecase(subscriptionRepo, zapSugar)
-	subscriptionHandler := subscriptionDelivery.NewSubscriptionHandler(subscriptionUse, authUse, userUse, zapSugar)
+	subscriptionHandler := subscriptionDelivery.NewSubscriptionHandler(subscriptionUse, authClient, userUse, zapSugar)
 
 	logMw := middleware.NewLoggerMiddleware(zapSugar)
 	r := mux.NewRouter().PathPrefix("/api").Subrouter()

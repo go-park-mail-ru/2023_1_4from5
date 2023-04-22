@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
+	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	"github.com/google/uuid"
 	"time"
 )
@@ -13,7 +13,8 @@ import (
 
 type GrpcAuthHandler struct {
 	uc auth.AuthUsecase
-	generated.AuthServiceServer
+
+	generatedAuth.AuthServiceServer
 }
 
 func NewGrpcAuthHandler(uc auth.AuthUsecase) *GrpcAuthHandler {
@@ -22,20 +23,20 @@ func NewGrpcAuthHandler(uc auth.AuthUsecase) *GrpcAuthHandler {
 	}
 }
 
-func (h GrpcAuthHandler) SignIn(ctx context.Context, in *generated.LoginUser) (*generated.Token, error) {
+func (h GrpcAuthHandler) SignIn(ctx context.Context, in *generatedAuth.LoginUser) (*generatedAuth.Token, error) {
 	user := models.LoginUser{Login: in.Login, PasswordHash: in.PasswordHash}
 
 	token, err := h.uc.SignIn(ctx, user)
 	if err == nil {
-		return &generated.Token{Cookie: token, Error: ""}, nil
+		return &generatedAuth.Token{Cookie: token, Error: ""}, nil
 	}
-	return &generated.Token{Cookie: token, Error: err.Error()}, nil
+	return &generatedAuth.Token{Cookie: token, Error: err.Error()}, nil
 }
 
-func (h GrpcAuthHandler) IncUserVersion(ctx context.Context, in *generated.AccessDetails) (*generated.Empty, error) {
+func (h GrpcAuthHandler) IncUserVersion(ctx context.Context, in *generatedAuth.AccessDetails) (*generatedAuth.Empty, error) {
 	idTmp, err := uuid.Parse(in.Id)
 	if err != nil {
-		return &generated.Empty{Error: models.WrongData.Error()}, nil
+		return &generatedAuth.Empty{Error: models.WrongData.Error()}, nil
 	}
 	user := models.AccessDetails{
 		Login:       in.Login,
@@ -45,16 +46,16 @@ func (h GrpcAuthHandler) IncUserVersion(ctx context.Context, in *generated.Acces
 
 	_, err = h.uc.IncUserVersion(ctx, user)
 	if err == nil {
-		return &generated.Empty{Error: ""}, nil
+		return &generatedAuth.Empty{Error: ""}, nil
 	}
-	return &generated.Empty{Error: err.Error()}, nil
+	return &generatedAuth.Empty{Error: err.Error()}, nil
 }
 
-func (h GrpcAuthHandler) SignUp(ctx context.Context, in *generated.User) (*generated.Token, error) {
+func (h GrpcAuthHandler) SignUp(ctx context.Context, in *generatedAuth.User) (*generatedAuth.Token, error) {
 	idTmp, err := uuid.Parse(in.Id)
 	idTmpPh, err := uuid.Parse(in.ProfilePhoto)
 	if err != nil {
-		return &generated.Token{Error: models.WrongData.Error()}, nil
+		return &generatedAuth.Token{Error: models.WrongData.Error()}, nil
 	}
 	user := models.User{
 		Id:           idTmp,
@@ -67,19 +68,19 @@ func (h GrpcAuthHandler) SignUp(ctx context.Context, in *generated.User) (*gener
 	}
 	token, err := h.uc.SignUp(ctx, user)
 	if err == nil {
-		return &generated.Token{
+		return &generatedAuth.Token{
 			Cookie: token,
 			Error:  "",
 		}, nil
 	}
-	return &generated.Token{Error: err.Error()}, nil
+	return &generatedAuth.Token{Error: err.Error()}, nil
 
 }
 
-func (h GrpcAuthHandler) CheckUserVersion(ctx context.Context, in *generated.AccessDetails) (*generated.UserVersion, error) {
+func (h GrpcAuthHandler) CheckUserVersion(ctx context.Context, in *generatedAuth.AccessDetails) (*generatedAuth.UserVersion, error) {
 	idTmp, err := uuid.Parse(in.Id)
 	if err != nil {
-		return &generated.UserVersion{Error: err.Error()}, nil
+		return &generatedAuth.UserVersion{Error: err.Error()}, nil
 	}
 	user := models.AccessDetails{
 		Login:       in.Login,
@@ -89,19 +90,19 @@ func (h GrpcAuthHandler) CheckUserVersion(ctx context.Context, in *generated.Acc
 
 	uv, err := h.uc.CheckUserVersion(ctx, user)
 	if err == nil {
-		return &generated.UserVersion{
+		return &generatedAuth.UserVersion{
 			UserVersion: int64(uv),
 			Error:       "",
 		}, nil
 	}
-	return &generated.UserVersion{Error: err.Error()}, nil
+	return &generatedAuth.UserVersion{Error: err.Error()}, nil
 }
 
-func (h GrpcAuthHandler) CheckUser(ctx context.Context, in *generated.User) (*generated.User, error) {
+func (h GrpcAuthHandler) CheckUser(ctx context.Context, in *generatedAuth.User) (*generatedAuth.User, error) {
 	idTmp, err := uuid.Parse(in.Id)
 	idTmpPh, err := uuid.Parse(in.ProfilePhoto)
 	if err != nil {
-		return &generated.User{Error: models.WrongData.Error()}, nil
+		return &generatedAuth.User{Error: models.WrongData.Error()}, nil
 	}
 	user := models.User{
 		Id:           idTmp,
@@ -114,7 +115,7 @@ func (h GrpcAuthHandler) CheckUser(ctx context.Context, in *generated.User) (*ge
 	}
 	checkedUser, err := h.uc.CheckUser(ctx, user)
 	if err == nil {
-		return &generated.User{
+		return &generatedAuth.User{
 			Id:           checkedUser.Id.String(),
 			Login:        in.Login, //TODO: наверное здесь можно заполнять не все поля
 			Name:         in.Name,
@@ -125,6 +126,10 @@ func (h GrpcAuthHandler) CheckUser(ctx context.Context, in *generated.User) (*ge
 			Error:        "",
 		}, nil
 	}
-	return &generated.User{Error: err.Error()}, nil
+	return &generatedAuth.User{Error: err.Error()}, nil
 
+}
+
+func (h GrpcAuthHandler) EncryptPwd(ctx context.Context, in *generatedAuth.EncryptPwdMg) (*generatedAuth.EncryptPwdMg, error) {
+	return &generatedAuth.EncryptPwdMg{Password: h.uc.EncryptPwd(ctx, in.Password)}, nil
 }

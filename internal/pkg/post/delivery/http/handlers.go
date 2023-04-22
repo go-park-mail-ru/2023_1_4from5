@@ -3,7 +3,7 @@ package http
 import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
+	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
@@ -17,15 +17,15 @@ import (
 
 type PostHandler struct {
 	usecase           post.PostUsecase
-	authUsecase       auth.AuthUsecase
+	authClient        generatedAuth.AuthServiceClient
 	attachmentUsecase attachment.AttachmentUsecase
 	logger            *zap.SugaredLogger
 }
 
-func NewPostHandler(uc post.PostUsecase, auc auth.AuthUsecase, attuc attachment.AttachmentUsecase, logger *zap.SugaredLogger) *PostHandler {
+func NewPostHandler(uc post.PostUsecase, auc generatedAuth.AuthServiceClient, attuc attachment.AttachmentUsecase, logger *zap.SugaredLogger) *PostHandler {
 	return &PostHandler{
 		usecase:           uc,
-		authUsecase:       auc,
+		authClient:        auc,
 		attachmentUsecase: attuc,
 		logger:            logger,
 	}
@@ -38,8 +38,16 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
-
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: int64(userDataJWT.UserVersion),
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -195,12 +203,21 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
-	userData, err := token.ExtractJWTTokenMetadata(r)
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userData); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: int64(userDataJWT.UserVersion),
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -214,7 +231,7 @@ func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	postOwner, err := h.usecase.IsPostOwner(r.Context(), userData.Id, like.PostID)
+	postOwner, err := h.usecase.IsPostOwner(r.Context(), userDataJWT.Id, like.PostID)
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
@@ -224,7 +241,7 @@ func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	like, err = h.usecase.AddLike(r.Context(), userData.Id, like.PostID)
+	like, err = h.usecase.AddLike(r.Context(), userDataJWT.Id, like.PostID)
 	if err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
@@ -238,13 +255,22 @@ func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PostHandler) RemoveLike(w http.ResponseWriter, r *http.Request) {
-	userData, err := token.ExtractJWTTokenMetadata(r)
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userData); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: int64(userDataJWT.UserVersion),
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -257,7 +283,7 @@ func (h *PostHandler) RemoveLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	like, err = h.usecase.RemoveLike(r.Context(), userData.Id, like.PostID)
+	like, err = h.usecase.RemoveLike(r.Context(), userDataJWT.Id, like.PostID)
 	if err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
@@ -277,7 +303,16 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: int64(userDataJWT.UserVersion),
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -389,7 +424,16 @@ func (h *PostHandler) EditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: int64(userDataJWT.UserVersion),
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -465,7 +509,16 @@ func (h *PostHandler) AddAttach(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: int64(userDataJWT.UserVersion),
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -576,7 +629,16 @@ func (h *PostHandler) DeleteAttach(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: int64(userDataJWT.UserVersion),
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return

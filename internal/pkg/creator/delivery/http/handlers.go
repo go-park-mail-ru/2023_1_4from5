@@ -2,7 +2,7 @@ package http
 
 import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
+	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
@@ -14,14 +14,14 @@ import (
 
 type CreatorHandler struct {
 	usecase     creator.CreatorUsecase
-	authUsecase auth.AuthUsecase
+	authClient  generatedAuth.AuthServiceClient
 	postUsecase post.PostUsecase
 }
 
-func NewCreatorHandler(uc creator.CreatorUsecase, auc auth.AuthUsecase, puc post.PostUsecase) *CreatorHandler {
+func NewCreatorHandler(uc creator.CreatorUsecase, auc generatedAuth.AuthServiceClient, puc post.PostUsecase) *CreatorHandler {
 	return &CreatorHandler{
 		usecase:     uc,
-		authUsecase: auc,
+		authClient:  auc,
 		postUsecase: puc,
 	}
 }
@@ -70,7 +70,16 @@ func (h *CreatorHandler) CreateAim(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: int64(userDataJWT.UserVersion),
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
