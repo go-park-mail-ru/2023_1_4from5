@@ -3,7 +3,7 @@ package main
 import (
 	"database/sql"
 	grpcAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
+	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	authRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/repo"
 	authUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
@@ -66,7 +66,7 @@ func run() error {
 
 	server := grpc.NewServer()
 
-	generated.RegisterAuthServiceServer(server, service)
+	generatedAuth.RegisterAuthServiceServer(server, service)
 
 	log.Print("auth running on: ", srv.Addr())
 	return server.Serve(srv)
