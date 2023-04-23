@@ -38,6 +38,24 @@ func (h *CreatorHandler) GetAllCreators(w http.ResponseWriter, r *http.Request) 
 	utils.Response(w, http.StatusOK, creators)
 }
 
+func (h *CreatorHandler) FindCreator(w http.ResponseWriter, r *http.Request) {
+	keyword, ok := mux.Vars(r)["keyword"]
+	if !ok {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	creators, err := h.usecase.FindCreators(r.Context(), keyword)
+	if err == models.InternalError {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	for i, _ := range creators {
+		creators[i].Sanitize()
+	}
+	utils.Response(w, http.StatusOK, creators)
+}
+
 func (h *CreatorHandler) GetPage(w http.ResponseWriter, r *http.Request) {
 	creatorUUID, ok := mux.Vars(r)["creator-uuid"]
 	if !ok {

@@ -12,6 +12,7 @@ type CreatorUsecase interface {
 	GetPage(ctx context.Context, details *models.AccessDetails, creatorUUID string) (models.CreatorPage, error)
 	CreateAim(ctx context.Context, aimInfo models.Aim) error
 	GetAllCreators(ctx context.Context) ([]models.Creator, error)
+	FindCreators(ctx context.Context, keyword string) ([]models.Creator, error)
 }
 
 type CreatorRepo interface {
@@ -19,4 +20,5 @@ type CreatorRepo interface {
 	GetPage(ctx context.Context, userId uuid.UUID, creatorId uuid.UUID) (models.CreatorPage, error)
 	CreateAim(ctx context.Context, aimInfo models.Aim) error
 	GetAllCreators(ctx context.Context) ([]models.Creator, error)
+	FindCreators(ctx context.Context, keyword string) ([]models.Creator, error)
 }
