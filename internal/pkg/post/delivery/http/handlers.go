@@ -144,40 +144,30 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		postFilesTmp := r.MultipartForm.File["attachments"]
+	}
+	postFilesTmp := r.MultipartForm.File["attachments"]
 
-		postData.Attachments = make([]models.AttachmentData, len(postFilesTmp))
-		for i, file := range postFilesTmp {
-			tmpFile, err := file.Open()
-			if err != nil {
-				utils.Response(w, http.StatusBadRequest, nil)
-				return
-			}
-			buf, _ := io.ReadAll(tmpFile)
-
-			if err = tmpFile.Close(); err != nil {
-				h.logger.Error(err)
-				utils.Response(w, http.StatusInternalServerError, nil)
-				return
-			}
-
-			if postData.Attachments[i].Data, err = file.Open(); err != nil {
-				utils.Response(w, http.StatusBadRequest, nil)
-				return
-			}
-			postData.Attachments[i].Type = http.DetectContentType(buf)
-			postData.Attachments[i].Id = uuid.New()
-		}
-
-		if err = h.attachmentUsecase.CreateAttachments(r.Context(), postData.Attachments...); err == models.Unsupported {
-			utils.Response(w, http.StatusUnsupportedMediaType, nil)
+	postData.Attachments = make([]models.AttachmentData, len(postFilesTmp))
+	for i, file := range postFilesTmp {
+		tmpFile, err := file.Open()
+		if err != nil {
+			utils.Response(w, http.StatusBadRequest, nil)
 			return
-		} else if err != nil {
+		}
+		buf, _ := io.ReadAll(tmpFile)
+
+		if err = tmpFile.Close(); err != nil {
 			h.logger.Error(err)
 			utils.Response(w, http.StatusInternalServerError, nil)
 			return
 		}
 
+		if postData.Attachments[i].Data, err = file.Open(); err != nil {
+			utils.Response(w, http.StatusBadRequest, nil)
+			return
+		}
+		postData.Attachments[i].Type = http.DetectContentType(buf)
+		postData.Attachments[i].Id = uuid.New()
 	}
 
 	tmpSubs, ok := postValues["subscriptions"]
@@ -195,6 +185,17 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	if err := h.usecase.CreatePost(r.Context(), postData); err != nil {
 		_ = h.attachmentUsecase.DeleteAttachments(postData.Attachments...)
 		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if err = h.attachmentUsecase.CreateAttachments(r.Context(), postData.Attachments...); err == models.Unsupported {
+		utils.Response(w, http.StatusUnsupportedMediaType, nil)
+		_ = h.usecase.DeletePost(r.Context(), postData.Id)
+		return
+	} else if err != nil {
+		h.logger.Error(err)
+		_ = h.usecase.DeletePost(r.Context(), postData.Id)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -407,7 +408,6 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -466,7 +466,6 @@ func (h *PostHandler) EditPost(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-
 	ok, err = h.usecase.IsPostOwner(r.Context(), (*userDataJWT).Id, postEditData.Id)
 	if err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
@@ -489,7 +488,7 @@ func (h *PostHandler) EditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(postEditData.Title) > 40 || len(postEditData.Text) > 4000 {
+	if len(postEditData.Title) > 40 || len(postEditData.Text) > 4000 || len(postEditData.Title) == 0 {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}

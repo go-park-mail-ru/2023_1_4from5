@@ -143,16 +143,21 @@ func (r *PostRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]mod
 
 func (r *PostRepo) GetPost(ctx context.Context, postID, userID uuid.UUID) (models.Post, error) {
 	var post models.Post
+	var postTextTmp sql.NullString
 	attachs := make([]uuid.UUID, 0)
 	types := make([]sql.NullString, 0)
 	subs := make([]uuid.UUID, 0)
 	row := r.db.QueryRowContext(ctx, GetPost, postID)
 	err := row.Scan(&post.Id, &post.Creator, &post.Creation, &post.Title,
-		&post.Text, pq.Array(&attachs), pq.Array(&types), pq.Array(&subs)) //подписки, при которыз пост доступен
+		&postTextTmp, pq.Array(&attachs), pq.Array(&types), pq.Array(&subs)) //подписки, при которыз пост доступен
+	if err != nil && errors.Is(sql.ErrNoRows, err) {
+		return models.Post{}, models.WrongData
+	}
 	if err != nil {
 		r.logger.Error(err)
 		return models.Post{}, models.InternalError
 	}
+	post.Text = postTextTmp.String
 
 	attachs = attachs[:len(attachs)/2]
 	post.Attachments = make([]models.Attachment, len(attachs))
@@ -233,7 +238,6 @@ func (r *PostRepo) IsPostOwner(ctx context.Context, userId uuid.UUID, postId uui
 		r.logger.Error(err)
 		return false, models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
-		r.logger.Error(err)
 		return false, models.WrongData
 	}
 	if userIdtmp != userId {

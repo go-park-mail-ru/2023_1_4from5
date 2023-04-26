@@ -38,7 +38,7 @@ func (u *PostUsecase) GetPost(ctx context.Context, postID, userID uuid.UUID) (mo
 	}
 	post, err := u.repo.GetPost(ctx, postID, userID)
 	if err != nil {
-		return models.Post{}, models.InternalError
+		return models.Post{}, err
 	}
 
 	if !isAvailable {

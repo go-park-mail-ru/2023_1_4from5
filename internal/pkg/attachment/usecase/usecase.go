@@ -75,7 +75,6 @@ func (u *AttachmentUsecase) CreateAttachments(ctx context.Context, attachments .
 			return models.InternalError
 		}
 		_ = f.Close()
-
 	}
 	return nil
 }
