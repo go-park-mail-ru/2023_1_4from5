@@ -6,6 +6,7 @@ import (
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user"
+	generatedUser "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -18,12 +19,14 @@ import (
 
 type UserHandler struct {
 	usecase    user.UserUsecase
+	userClient generatedUser.UserServiceClient
 	authClient generatedAuth.AuthServiceClient
 }
 
-func NewUserHandler(uc user.UserUsecase, auc generatedAuth.AuthServiceClient) *UserHandler {
+func NewUserHandler(uc user.UserUsecase, userClient generatedUser.UserServiceClient, auc generatedAuth.AuthServiceClient) *UserHandler {
 	return &UserHandler{
 		usecase:    uc,
+		userClient: userClient,
 		authClient: auc,
 	}
 }
@@ -47,12 +50,19 @@ func (h *UserHandler) Follow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.usecase.Follow(r.Context(), userInfo.Id, creatorId)
-	if err == models.InternalError {
+	answer, err := h.userClient.Follow(r.Context(), &generatedUser.FollowMessage{
+		UserID:    userInfo.Id.String(),
+		CreatorID: creatorId.String(),
+	})
+	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
-	if err == models.WrongData {
+	if answer.Error == models.InternalError.Error() {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if answer.Error == models.WrongData.Error() {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}

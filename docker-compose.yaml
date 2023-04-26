@@ -7,19 +7,14 @@ services:
       dockerfile: build/auth.Dockerfile
     ports:
       - "8010:8010"
-  main:
-    depends_on:
-      - postgres
-      - auth
+
+  user:
     build:
       context: .
-      dockerfile: build/main.Dockerfile
+      dockerfile: build/user.Dockerfile
     ports:
-      - "8000:8000"
-    volumes:
-      - type: bind
-        source: /home/ubuntu/frontend/2023_1_4from5/public/images
-        target: /images
+      - "8020:8020"
+
   postgres:
     image: postgres:14
     environment:
@@ -32,3 +27,18 @@ services:
       - type: bind
         source: /home/ubuntu/db_data
         target: /var/lib/postgresql/data
+
+  main:
+    depends_on:
+      - postgres
+      - auth
+      - user
+    build:
+      context: .
+      dockerfile: build/main.Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - type: bind
+        source: /home/ubuntu/frontend/2023_1_4from5/public/images
+        target: /images

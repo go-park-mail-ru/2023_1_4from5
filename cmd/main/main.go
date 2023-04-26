@@ -16,6 +16,7 @@ import (
 	subscriptionDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription/delivery/http"
 	subscriptionRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription/repo"
 	subscriptionUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription/usecase"
+	generatedUser "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/grpc/generated"
 	userDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/http"
 	userRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/repo"
 	userUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/usecase"
@@ -77,12 +78,22 @@ func run() error {
 		log.Fatalf("cant connect to session grpc")
 	}
 
+	userConn, err := grpc.Dial(
+		":8020",
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+
+	if err != nil {
+		log.Fatalf("cant connect to session grpc")
+	}
+
 	authClient := generatedAuth.NewAuthServiceClient(authConn)
 	authHandler := authDelivery.NewAuthHandler(authClient, zapSugar)
 
 	userRepo := userRepository.NewUserRepo(db, zapSugar)
 	userUse := userUsecase.NewUserUsecase(userRepo, zapSugar)
-	userHandler := userDelivery.NewUserHandler(userUse, authClient)
+	userClient := generatedUser.NewUserServiceClient(userConn)
+	userHandler := userDelivery.NewUserHandler(userUse, userClient, authClient)
 
 	attachmentRepo := attachmentRepository.NewAttachmentRepo(db, zapSugar)
 	attachmentUse := attachmentUsecase.NewAttachmentUsecase(attachmentRepo, zapSugar)

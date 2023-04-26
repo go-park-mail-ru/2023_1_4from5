@@ -24,7 +24,7 @@ func main() {
 }
 func run() error {
 
-	logger := utils.FileLogger("log.txt")
+	logger := utils.FileLogger("logAuth.txt")
 
 	defer func(logger *zap.Logger) {
 		err := logger.Sync()

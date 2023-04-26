@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option go_package = ".";
+
+message FollowMessage {
+  string UserID = 1;
+  string CreatorID = 2;
+};
+
+message Empty {
+  string Error = 1;
+};
+
+service UserService {
+  rpc Follow(FollowMessage) returns (Empty) {}
+}
