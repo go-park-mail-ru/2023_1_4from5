@@ -6,3 +6,10 @@ WHERE (setweight(to_tsvector('russian', name),'A') ||
 LIMIT 30;
 
 SELECT to_tsvector('english', 'FOOD BLOGGER');
+
+CREATE TEXT SEARCH DICTIONARY russian_ispell (
+    TEMPLATE = ispell,
+    DictFile = russian,
+    AffFile = russian,
+    StopWords = russian
+    );

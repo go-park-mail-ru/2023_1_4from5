@@ -263,7 +263,7 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	if http.DetectContentType(buf) != "image/jpeg" && http.DetectContentType(buf) != "image/png" {
+	if http.DetectContentType(buf) != "images/jpeg" && http.DetectContentType(buf) != "images/png" {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}

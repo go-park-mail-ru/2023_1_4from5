@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
@@ -13,6 +14,8 @@ import (
 	"go.uber.org/zap"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 )
 
 type PostHandler struct {
@@ -182,24 +185,55 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	postData.Id = uuid.New()
-	if err := h.usecase.CreatePost(r.Context(), postData); err != nil {
-		_ = h.attachmentUsecase.DeleteAttachments(postData.Attachments...)
+	if err = h.usecase.CreatePost(r.Context(), postData); err != nil {
+		_ = h.attachmentUsecase.DeleteAttachmentsFiles(r.Context(), postData.Attachments...)
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 
-	if err = h.attachmentUsecase.CreateAttachments(r.Context(), postData.Attachments...); err == models.Unsupported {
-		utils.Response(w, http.StatusUnsupportedMediaType, nil)
-		_ = h.usecase.DeletePost(r.Context(), postData.Id)
-		return
-	} else if err != nil {
-		h.logger.Error(err)
-		_ = h.usecase.DeletePost(r.Context(), postData.Id)
-		utils.Response(w, http.StatusInternalServerError, nil)
-		return
-	}
+	for i, attach := range postData.Attachments {
+		fmt.Println(attach.Type)
+		attachmentType, ok := h.attachmentUsecase.GetFileExtension(attach.Type)
+		if !ok {
+			if err = h.attachmentUsecase.DeleteAttachmentsFiles(r.Context(), postData.Attachments[:i]...); err != nil {
+				h.logger.Error(err)
+				_ = h.usecase.DeletePost(r.Context(), postData.Id)
+				utils.Response(w, http.StatusInternalServerError, nil)
+				return
+			}
+			utils.Response(w, http.StatusUnsupportedMediaType, nil)
+			_ = h.usecase.DeletePost(r.Context(), postData.Id)
+			return
+		}
+		f, err := os.Create(fmt.Sprintf("%s.%s", filepath.Join(models.FolderPath, attach.Id.String()), attachmentType))
+		if err != nil {
+			if err = h.attachmentUsecase.DeleteAttachmentsFiles(r.Context(), postData.Attachments[:i]...); err != nil {
+				h.logger.Error(err)
+				_ = h.usecase.DeletePost(r.Context(), postData.Id)
+				utils.Response(w, http.StatusInternalServerError, nil)
+				return
+			}
+			h.logger.Error(err)
+			_ = h.usecase.DeletePost(r.Context(), postData.Id)
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
 
+		if _, err := io.Copy(f, attach.Data); err != nil {
+			if err := h.attachmentUsecase.DeleteAttachmentsFiles(r.Context(), postData.Attachments[:i]...); err != nil {
+				h.logger.Error(err)
+				_ = h.usecase.DeletePost(r.Context(), postData.Id)
+				utils.Response(w, http.StatusInternalServerError, nil)
+				return
+			}
+			h.logger.Error(err)
+			_ = h.usecase.DeletePost(r.Context(), postData.Id)
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+		_ = f.Close()
+	}
 	utils.Response(w, http.StatusOK, nil)
 }
 
@@ -609,13 +643,28 @@ func (h *PostHandler) AddAttach(w http.ResponseWriter, r *http.Request) {
 	attach.Type = http.DetectContentType(buf)
 	attach.Id = uuid.New()
 
-	if err = h.attachmentUsecase.CreateAttachments(r.Context(), attach); err == models.Unsupported {
+	attachmentType, ok := h.attachmentUsecase.GetFileExtension(attach.Type)
+	if !ok {
 		utils.Response(w, http.StatusUnsupportedMediaType, nil)
 		return
-	} else if err != nil {
+	}
+	f, err := os.Create(fmt.Sprintf("%s.%s", filepath.Join(models.FolderPath, attach.Id.String()), attachmentType))
+	if err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
+	}
+
+	if _, err := io.Copy(f, attach.Data); err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	_ = f.Close()
+
+	if err = h.attachmentUsecase.AddAttach(r.Context(), postID, attach); err != nil {
+		_ = h.attachmentUsecase.DeleteAttachmentsFiles(r.Context(), attach)
+		utils.Response(w, http.StatusInternalServerError, nil)
 	}
 
 	utils.Response(w, http.StatusOK, nil)
@@ -696,18 +745,7 @@ func (h *PostHandler) DeleteAttach(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.attachmentUsecase.DeleteAttachment(r.Context(), attachInfo.Id, postID)
-	if err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
-	if err != nil {
-		h.logger.Error(err)
-		utils.Response(w, http.StatusInternalServerError, nil)
-		return
-	}
-
-	err = h.attachmentUsecase.DeleteAttachments(models.AttachmentData{Id: attachInfo.Id, Type: attachInfo.Type})
+	err = h.attachmentUsecase.DeleteAttachment(r.Context(), postID, models.AttachmentData{Id: attachInfo.Id, Type: attachInfo.Type})
 	if err == models.WrongData {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
