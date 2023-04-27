@@ -20,20 +20,8 @@ func NewCreatorUsecase(repo creator.CreatorRepo, logger *zap.SugaredLogger) *Cre
 	}
 }
 
-func (uc *CreatorUsecase) GetPage(ctx context.Context, details *models.AccessDetails, creatorUUID string) (models.CreatorPage, error) {
-	userId := details.Id
-	creatorId, err := uuid.Parse(creatorUUID)
-	if err != nil {
-		uc.logger.Error(err)
-		return models.CreatorPage{}, models.WrongData
-	}
-	creatorPage, err := uc.repo.GetPage(ctx, userId, creatorId)
-
-	if err != nil {
-		return models.CreatorPage{}, err
-	}
-
-	return creatorPage, nil
+func (uc *CreatorUsecase) GetPage(ctx context.Context, userID, creatorID uuid.UUID) (models.CreatorPage, error) {
+	return uc.repo.GetPage(ctx, userID, creatorID)
 }
 
 func (uc *CreatorUsecase) CreateAim(ctx context.Context, aimInfo models.Aim) error {

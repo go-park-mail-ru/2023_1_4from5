@@ -16,3 +16,13 @@ message UUIDResponse{
   string Value = 1;
   string Error = 2;
 }
+
+message Subscription{
+  string Id = 1;
+  string Creator = 2;
+  string CreatorName = 3;
+  string CreatorPhoto = 4;
+  int64  MonthCost = 5;
+  string Title = 6;
+  string Description = 7;
+}

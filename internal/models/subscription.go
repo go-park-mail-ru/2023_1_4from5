@@ -8,11 +8,13 @@ import (
 )
 
 type Subscription struct {
-	Id          uuid.UUID `json:"id,omitempty"`
-	Creator     uuid.UUID `json:"creator,omitempty"`
-	MonthCost   int64     `json:"month_cost"`
-	Title       string    `json:"title"`
-	Description string    `json:"description,omitempty"`
+	Id           uuid.UUID `json:"id,omitempty"`
+	Creator      uuid.UUID `json:"creator,omitempty"`
+	CreatorName  string    `json:"creator_name,omitempty"`
+	CreatorPhoto uuid.UUID `json:"creator_photo,omitempty"`
+	MonthCost    int64     `json:"month_cost"`
+	Title        string    `json:"title"`
+	Description  string    `json:"description,omitempty"`
 }
 
 type SubscriptionDetails struct {

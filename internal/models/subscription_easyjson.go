@@ -146,6 +146,12 @@ func easyjsonFfbd3743DecodeGithubComGoParkMailRu202314from5InternalModels1(in *j
 			if data := in.UnsafeBytes(); in.Ok() {
 				in.AddError((out.Creator).UnmarshalText(data))
 			}
+		case "creator_name":
+			out.CreatorName = string(in.String())
+		case "creator_photo":
+			if data := in.UnsafeBytes(); in.Ok() {
+				in.AddError((out.CreatorPhoto).UnmarshalText(data))
+			}
 		case "month_cost":
 			out.MonthCost = int64(in.Int64())
 		case "title":
@@ -181,6 +187,26 @@ func easyjsonFfbd3743EncodeGithubComGoParkMailRu202314from5InternalModels1(out *
 			out.RawString(prefix)
 		}
 		out.RawText((in.Creator).MarshalText())
+	}
+	if in.CreatorName != "" {
+		const prefix string = ",\"creator_name\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.CreatorName))
+	}
+	if true {
+		const prefix string = ",\"creator_photo\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.RawText((in.CreatorPhoto).MarshalText())
 	}
 	{
 		const prefix string = ",\"month_cost\":"

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -25,7 +24,9 @@ const (
 	CheckIfFollow        = `SELECT user_id FROM "follow" WHERE user_id = $1 AND creator_id = $2;`
 	UpdateSubscription   = `UPDATE "user_subscription" SET expire_date = expire_date + $1 * INTERVAL '1 MONTH' WHERE user_id = $2 AND subscription_id = $3 RETURNING user_id;`
 	Subscribe            = `INSERT INTO "user_subscription" VALUES ($1, $2, now() + $3 * INTERVAL '1 MONTH');`
+	CheckIfSubExists     = `SELECT subscription_id FROM subscription WHERE subscription_id = $1;`
 	AddPaymentInfo       = `INSERT INTO "user_payments" (user_id, subscription_id, payment_timestamp, money) VALUES ($1, $2, now(), $3);`
+	UserSubscriptions    = `SELECT us.subscription_id, c.creator_id, name, profile_photo, month_cost, title, subscription.description FROM "subscription" join user_subscription us on subscription.subscription_id = us.subscription_id join creator c on c.creator_id = subscription.creator_id WHERE us.user_id = $1;`
 )
 
 type UserRepo struct {
@@ -51,6 +52,30 @@ func (ur *UserRepo) GetUserProfile(ctx context.Context, id uuid.UUID) (models.Us
 		return models.UserProfile{}, models.NotFound
 	}
 	return profile, nil
+}
+
+func (ur *UserRepo) UserSubscriptions(ctx context.Context, userId uuid.UUID) ([]models.Subscription, error) {
+	subs := make([]models.Subscription, 0)
+	rows, err := ur.db.QueryContext(ctx, UserSubscriptions, userId)
+	if err != nil && !errors.Is(sql.ErrNoRows, err) {
+		ur.logger.Error(err)
+		return nil, models.InternalError
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var sub models.Subscription
+		var descriptionTmp sql.NullString
+		err = rows.Scan(&sub.Id, &sub.Creator, &sub.CreatorName,
+			&sub.CreatorPhoto, &sub.MonthCost, &sub.Title, &descriptionTmp)
+		if err != nil {
+			ur.logger.Error(err)
+			return nil, models.InternalError
+		}
+		sub.Description = descriptionTmp.String
+
+		subs = append(subs, sub)
+	}
+	return subs, nil
 }
 
 func (ur *UserRepo) GetHomePage(ctx context.Context, id uuid.UUID) (models.UserHomePage, error) {
@@ -120,13 +145,22 @@ func (ur *UserRepo) Subscribe(ctx context.Context, subscription models.Subscript
 	// если подписка уже есть обновляем expire date
 
 	row := ur.db.QueryRowContext(ctx, UpdateSubscription, subscription.MonthCount, subscription.UserID, subscription.Id)
-	fmt.Println(subscription.MonthCount, subscription.UserID, subscription.Id)
 	var userIDtmp uuid.UUID
 	if err := row.Scan(&userIDtmp); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		ur.logger.Error(err)
 		_ = tx.Rollback()
 		return models.InternalError
 	} else if errors.Is(err, sql.ErrNoRows) { // если нет, то добавляем о ней запись
+		row = ur.db.QueryRowContext(ctx, CheckIfSubExists, subscription.Id)
+		if err = row.Scan(&subscription.Id); err != nil && !errors.Is(err, sql.ErrNoRows) {
+			ur.logger.Error(err)
+			_ = tx.Rollback()
+			return models.InternalError
+		} else if errors.Is(err, sql.ErrNoRows) { // такой подписки нет
+			_ = tx.Rollback()
+			return models.WrongData
+		}
+
 		row = ur.db.QueryRowContext(ctx, Subscribe, subscription.UserID, subscription.Id, subscription.MonthCount)
 		if err = row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 			ur.logger.Error(err)

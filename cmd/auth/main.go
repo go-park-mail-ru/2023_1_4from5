@@ -24,7 +24,7 @@ func main() {
 }
 func run() error {
 
-	logger, err := utils.FileLogger("/var/log/auth.log")
+	logger, err := utils.FileLogger("/var/log/auth_app.log")
 	if err != nil {
 		return err
 	}

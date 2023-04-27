@@ -55,7 +55,11 @@ message BecameCreatorInfoMessage{
   string Description = 2;
   string UserID = 3;
 }
-//TODO: GetHomePAge, ну то есть лента
+
+message SubscriptionsMessage{
+  repeated common.Subscription Subscriptions = 8;
+  string Error = 9;
+}
 
 service UserService {
   rpc Follow(FollowMessage) returns (common.Empty) {}
@@ -67,4 +71,5 @@ service UserService {
   rpc UpdateProfileInfo(UpdateProfileInfoMessage) returns (common.Empty) {}
   rpc Donate(DonateMessage) returns (DonateResponse) {}
   rpc BecomeCreator(BecameCreatorInfoMessage) returns (common.UUIDResponse) {}
+  rpc UserSubscriptions(common.UUIDMessage) returns (SubscriptionsMessage) {}
 }

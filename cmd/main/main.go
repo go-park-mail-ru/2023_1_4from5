@@ -6,6 +6,7 @@ import (
 	attachmentUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment/usecase"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	authDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/http"
+	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	creatorDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/http"
 	creatorRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/repo"
 	creatorUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/usecase"
@@ -40,7 +41,7 @@ func main() {
 }
 
 func run() error {
-	logger, err := utils.FileLogger("/var/log/main.log")
+	logger, err := utils.FileLogger("/var/log/main_app.log")
 	if err != nil {
 		return err
 	}
@@ -90,6 +91,15 @@ func run() error {
 		log.Fatalf("cant connect to session grpc")
 	}
 
+	creatorConn, err := grpc.Dial(
+		":8030",
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+
+	if err != nil {
+		log.Fatalf("cant connect to session grpc")
+	}
+
 	authClient := generatedAuth.NewAuthServiceClient(authConn)
 	authHandler := authDelivery.NewAuthHandler(authClient, zapSugar)
 
@@ -105,9 +115,12 @@ func run() error {
 	postUse := postUsecase.NewPostUsecase(postRepo, zapSugar)
 	postHandler := postDelivery.NewPostHandler(postUse, authClient, attachmentUse, zapSugar)
 
+	creatorClient := generatedCreator.NewCreatorServiceClient(creatorConn)
+	creatorHandler := creatorDelivery.NewCreatorHandler(creatorClient, authClient, postUse, zapSugar)
+
 	creatorRepo := creatorRepository.NewCreatorRepo(db, zapSugar)
 	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo, zapSugar)
-	creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse, authClient, postUse)
+	creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse, authClient, postUse, zapSugar)
 
 	subscriptionRepo := subscriptionRepository.NewSubscriptionRepo(db, zapSugar)
 	subscriptionUse := subscriptionUsecase.NewSubscriptionUsecase(subscriptionRepo, zapSugar)
@@ -131,13 +144,13 @@ func run() error {
 		user.HandleFunc("/donate", userHandler.Donate).Methods(http.MethodPost, http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/updatePassword", userHandler.UpdatePassword).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/updateData", userHandler.UpdateData).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
-		user.HandleFunc("/homePage", userHandler.GetHomePage).Methods(http.MethodGet, http.MethodOptions)
+		user.HandleFunc("/feed", userHandler.GetHomePage).Methods(http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/updateProfilePhoto", userHandler.UpdateProfilePhoto).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
 		user.HandleFunc("/becameCreator", userHandler.BecomeCreator).Methods(http.MethodPost, http.MethodOptions, http.MethodGet)
 		user.HandleFunc("/follow/{creator-uuid}", userHandler.Follow).Methods(http.MethodPost, http.MethodOptions)
 		user.HandleFunc("/unfollow/{creator-uuid}", userHandler.Unfollow).Methods(http.MethodPut, http.MethodOptions)
 		user.HandleFunc("/subscribe/{sub-uuid}", userHandler.Subscribe).Methods(http.MethodPost, http.MethodOptions, http.MethodGet)
-
+		user.HandleFunc("/subscriptions", userHandler.UserSubscriptions).Methods(http.MethodOptions, http.MethodGet)
 	}
 
 	creator := r.PathPrefix("/creator").Subrouter()

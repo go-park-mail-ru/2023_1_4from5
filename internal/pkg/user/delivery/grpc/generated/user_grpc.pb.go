@@ -32,6 +32,7 @@ type UserServiceClient interface {
 	UpdateProfileInfo(ctx context.Context, in *UpdateProfileInfoMessage, opts ...grpc.CallOption) (*proto.Empty, error)
 	Donate(ctx context.Context, in *DonateMessage, opts ...grpc.CallOption) (*DonateResponse, error)
 	BecomeCreator(ctx context.Context, in *BecameCreatorInfoMessage, opts ...grpc.CallOption) (*proto.UUIDResponse, error)
+	UserSubscriptions(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*SubscriptionsMessage, error)
 }
 
 type userServiceClient struct {
@@ -123,6 +124,15 @@ func (c *userServiceClient) BecomeCreator(ctx context.Context, in *BecameCreator
 	return out, nil
 }
 
+func (c *userServiceClient) UserSubscriptions(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*SubscriptionsMessage, error) {
+	out := new(SubscriptionsMessage)
+	err := c.cc.Invoke(ctx, "/UserService/UserSubscriptions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -136,6 +146,7 @@ type UserServiceServer interface {
 	UpdateProfileInfo(context.Context, *UpdateProfileInfoMessage) (*proto.Empty, error)
 	Donate(context.Context, *DonateMessage) (*DonateResponse, error)
 	BecomeCreator(context.Context, *BecameCreatorInfoMessage) (*proto.UUIDResponse, error)
+	UserSubscriptions(context.Context, *proto.UUIDMessage) (*SubscriptionsMessage, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -169,6 +180,9 @@ func (UnimplementedUserServiceServer) Donate(context.Context, *DonateMessage) (*
 }
 func (UnimplementedUserServiceServer) BecomeCreator(context.Context, *BecameCreatorInfoMessage) (*proto.UUIDResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BecomeCreator not implemented")
+}
+func (UnimplementedUserServiceServer) UserSubscriptions(context.Context, *proto.UUIDMessage) (*SubscriptionsMessage, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserSubscriptions not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -345,6 +359,24 @@ func _UserService_BecomeCreator_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_UserSubscriptions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(proto.UUIDMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).UserSubscriptions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/UserService/UserSubscriptions",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).UserSubscriptions(ctx, req.(*proto.UUIDMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -387,6 +419,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "BecomeCreator",
 			Handler:    _UserService_BecomeCreator_Handler,
+		},
+		{
+			MethodName: "UserSubscriptions",
+			Handler:    _UserService_UserSubscriptions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

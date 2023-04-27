@@ -12,7 +12,7 @@ type Post struct {
 	Id            uuid.UUID      `json:"id"`
 	Creator       uuid.UUID      `json:"creator"`
 	Creation      time.Time      `json:"creation_date"`
-	LikesCount    int            `json:"likes_count"`
+	LikesCount    int64          `json:"likes_count"`
 	Title         string         `json:"title"`
 	Text          string         `json:"text"`
 	IsAvailable   bool           `json:"is_available"`

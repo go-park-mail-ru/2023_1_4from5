@@ -78,3 +78,7 @@ func (uc *UserUsecase) Donate(ctx context.Context, donateInfo models.Donate, use
 func (uc *UserUsecase) BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error) {
 	return uc.repo.BecomeCreator(ctx, creatorInfo, userId)
 }
+
+func (uc *UserUsecase) UserSubscriptions(ctx context.Context, userId uuid.UUID) ([]models.Subscription, error) {
+	return uc.repo.UserSubscriptions(ctx, userId)
+}

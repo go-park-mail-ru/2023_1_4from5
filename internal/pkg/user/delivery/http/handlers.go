@@ -116,89 +116,6 @@ func (h *UserHandler) Unfollow(w http.ResponseWriter, r *http.Request) {
 	utils.Response(w, http.StatusOK, nil)
 }
 
-func (h *UserHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
-	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
-
-	if err != nil {
-		utils.Response(w, http.StatusUnauthorized, nil)
-		return
-	}
-
-	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
-		Login:       userDataJWT.Login,
-		Id:          userDataJWT.Id.String(),
-		UserVersion: int64(userDataJWT.UserVersion),
-	})
-	if err != nil {
-		utils.Response(w, http.StatusInternalServerError, nil)
-		return
-	}
-	if len(uv.Error) != 0 {
-		utils.Cookie(w, "", "SSID")
-		utils.Response(w, http.StatusForbidden, nil)
-		return
-	}
-	if r.Method == http.MethodGet {
-		tokenCSRF, err := token.GetCSRFToken(models.User{Login: userDataJWT.Login, Id: userDataJWT.Id, UserVersion: userDataJWT.UserVersion})
-		if err != nil {
-			utils.Response(w, http.StatusUnauthorized, nil)
-			return
-		}
-		utils.ResponseWithCSRF(w, tokenCSRF)
-		return
-	}
-	// check CSRF token
-	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
-	if err != nil || *userDataCSRF != *userDataJWT {
-		utils.Response(w, http.StatusForbidden, nil)
-		return
-	}
-
-	subUUID, ok := mux.Vars(r)["sub-uuid"]
-	if !ok {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
-
-	_, err = uuid.Parse(subUUID)
-	if err != nil {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
-
-	subscription := models.SubscriptionDetails{}
-
-	err = easyjson.UnmarshalFromReader(r.Body, &subscription)
-	if err != nil {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
-
-	if subscription.MonthCount <= 0 {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
-
-	out, err := h.userClient.Subscribe(r.Context(), &generatedUser.SubscriptionDetails{
-		UserID:     userDataJWT.Id.String(),
-		Id:         subUUID,
-		MonthCount: subscription.MonthCount,
-		Money:      subscription.Money})
-
-	if err != nil {
-		h.logger.Error(err)
-		utils.Response(w, http.StatusInternalServerError, nil)
-		return
-	}
-
-	if out.Error == models.InternalError.Error() {
-		utils.Response(w, http.StatusInternalServerError, nil)
-		return
-	}
-
-	utils.Response(w, http.StatusOK, nil)
-}
-
 func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	userInfo, err := token.ExtractJWTTokenMetadata(r)
 	if err != nil {
@@ -221,7 +138,8 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	reg, err := time.Parse("2023-02-21 15:04:05", userProfile.Registration)
+	fmt.Println(userProfile.Registration)
+	reg, err := time.Parse("2006-01-02 15:04:05 -0700 -0700", userProfile.Registration)
 
 	if err != nil {
 		h.logger.Error(err)
@@ -321,10 +239,11 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 	buf, _ := io.ReadAll(file)
 	file.Close()
 	if file, err = fileTmp.Open(); err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	if http.DetectContentType(buf) != "images/jpeg" && http.DetectContentType(buf) != "images/png" {
+	if http.DetectContentType(buf) != "image/jpeg" && http.DetectContentType(buf) != "image/png" && http.DetectContentType(buf) != "image/jpg" {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
@@ -333,6 +252,7 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 	var oldName uuid.UUID
 	oldName, err = uuid.Parse(r.PostFormValue("path"))
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
@@ -340,6 +260,7 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 	if oldName != uuid.Nil {
 		err = os.Remove(filepath.Join(models.FolderPath, fmt.Sprintf("%s.jpg", oldName.String())))
 		if err != nil {
+			h.logger.Error(err)
 			utils.Response(w, http.StatusBadRequest, nil)
 		}
 	}
@@ -355,18 +276,20 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 		utils.Response(w, http.StatusInternalServerError, nil)
 	}
 
-	f, err := os.Create(fmt.Sprintf("%s%s.jpg", models.FolderPath, name.String()))
+	f, err := os.Create(fmt.Sprintf("%s%s.jpg", models.FolderPath, name.Value))
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 	defer f.Close()
 
 	if _, err = io.Copy(f, file); err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 	}
 
-	utils.Response(w, http.StatusOK, name)
+	utils.Response(w, http.StatusOK, name.Value)
 }
 
 func (h *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
@@ -673,4 +596,148 @@ func (h *UserHandler) BecomeCreator(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.Response(w, http.StatusOK, creatorId.Value)
+}
+
+func (h *UserHandler) UserSubscriptions(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	out, err := h.userClient.UserSubscriptions(r.Context(), &generatedCommon.UUIDMessage{
+		Value: userDataJWT.Id.String()})
+
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if out.Error == models.InternalError.Error() {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	subs := make([]models.Subscription, len(out.Subscriptions))
+
+	for i, v := range out.Subscriptions {
+		subId, err := uuid.Parse(v.Id)
+		if err != nil {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+		creatorId, err := uuid.Parse(v.Creator)
+		if err != nil {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+		creatorPhoto, err := uuid.Parse(v.CreatorPhoto)
+		if err != nil {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+		subs[i] = models.Subscription{
+			Id:           subId,
+			Creator:      creatorId,
+			CreatorPhoto: creatorPhoto,
+			CreatorName:  v.CreatorName,
+			MonthCost:    v.MonthCost,
+			Title:        v.Title,
+			Description:  v.Description,
+		}
+
+		subs[i].Sanitize()
+	}
+
+	utils.Response(w, http.StatusOK, subs)
+}
+
+func (h *UserHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: int64(userDataJWT.UserVersion),
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
+		utils.Cookie(w, "", "SSID")
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+	if r.Method == http.MethodGet {
+		tokenCSRF, err := token.GetCSRFToken(models.User{Login: userDataJWT.Login, Id: userDataJWT.Id, UserVersion: userDataJWT.UserVersion})
+		if err != nil {
+			utils.Response(w, http.StatusUnauthorized, nil)
+			return
+		}
+		utils.ResponseWithCSRF(w, tokenCSRF)
+		return
+	}
+	// check CSRF token
+	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
+	if err != nil || *userDataCSRF != *userDataJWT {
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+
+	subUUID, ok := mux.Vars(r)["sub-uuid"]
+	if !ok {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	_, err = uuid.Parse(subUUID)
+	if err != nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	subscription := models.SubscriptionDetails{}
+
+	err = easyjson.UnmarshalFromReader(r.Body, &subscription)
+	if err != nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if subscription.MonthCount <= 0 {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	out, err := h.userClient.Subscribe(r.Context(), &generatedUser.SubscriptionDetails{
+		UserID:     userDataJWT.Id.String(),
+		Id:         subUUID,
+		MonthCount: subscription.MonthCount,
+		Money:      subscription.Money})
+
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if out.Error == models.InternalError.Error() {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if out.Error == models.WrongData.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, nil)
 }

@@ -20,6 +20,7 @@ type UserUsecase interface {
 	Follow(ctx context.Context, userId, creatorId uuid.UUID) error
 	Subscribe(ctx context.Context, subscription models.SubscriptionDetails) error
 	Unfollow(ctx context.Context, userId, creatorId uuid.UUID) error
+	UserSubscriptions(ctx context.Context, userId uuid.UUID) ([]models.Subscription, error)
 }
 
 type UserRepo interface {
@@ -35,4 +36,5 @@ type UserRepo interface {
 	CheckIfFollow(ctx context.Context, userId, creatorId uuid.UUID) (bool, error)
 	Subscribe(ctx context.Context, subscription models.SubscriptionDetails) error
 	Unfollow(ctx context.Context, userId, creatorId uuid.UUID) error
+	UserSubscriptions(ctx context.Context, userId uuid.UUID) ([]models.Subscription, error)
 }

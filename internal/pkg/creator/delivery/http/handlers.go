@@ -7,8 +7,10 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/mailru/easyjson"
+	"go.uber.org/zap"
 	"net/http"
 )
 
@@ -16,13 +18,15 @@ type CreatorHandler struct {
 	usecase     creator.CreatorUsecase
 	authClient  generatedAuth.AuthServiceClient
 	postUsecase post.PostUsecase
+	logger      *zap.SugaredLogger
 }
 
-func NewCreatorHandler(uc creator.CreatorUsecase, auc generatedAuth.AuthServiceClient, puc post.PostUsecase) *CreatorHandler {
+func NewCreatorHandler(uc creator.CreatorUsecase, auc generatedAuth.AuthServiceClient, puc post.PostUsecase, logger *zap.SugaredLogger) *CreatorHandler {
 	return &CreatorHandler{
 		usecase:     uc,
 		authClient:  auc,
 		postUsecase: puc,
+		logger:      logger,
 	}
 }
 
@@ -67,7 +71,15 @@ func (h *CreatorHandler) GetPage(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		tmpUserInfo = &userInfo
 	}
-	creatorPage, err := h.usecase.GetPage(r.Context(), tmpUserInfo, creatorUUID)
+
+	creatorId, err := uuid.Parse(creatorUUID)
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	creatorPage, err := h.usecase.GetPage(r.Context(), tmpUserInfo.Id, creatorId)
 	if err == models.InternalError {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return

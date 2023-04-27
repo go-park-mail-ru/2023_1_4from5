@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+option go_package = "internal/pkg/creator/delivery/grpc/generated";
+
+import "common.proto";
+
+message KeywordMessage {
+  string Keyword = 1;
+};
+
+message Creator{
+  string Id = 1;
+  string UserID = 2;
+  string CreatorName = 3;
+  string CreatorPhoto = 4;
+  string  ProfilePhoto = 5;
+  int64 FollowersCount = 6;
+  string Description = 7;
+  int64 PostsCount = 8;
+};
+
+message CreatorsMessage{
+  repeated Creator Creators = 9;
+  string Error = 10;
+};
+
+message UserCreatorMessage {
+  string UserID = 1;
+  string CreatorID = 2;
+}
+
+message CreatorPage{
+  Creator CreatorInfo = 1;
+  Aim AimInfo = 2;
+  bool IsMyPage = 3;
+  bool Follows = 4;
+  repeated Post Posts = 5;
+  repeated common.Subscription Subscriptions = 6;
+  string Error = 7;
+};
+
+message Aim{
+  string Creator = 1;
+  string Description = 2;
+  int64 MoneyNeeded = 3;
+  int64 MoneyGot = 4;
+};
+
+
+message Post{
+  string Id = 1;
+  string CreatorID = 2;
+  string Creation = 3;
+  int64 LikesCount = 4;
+  string  ProfilePhoto = 5;
+  string Title = 6;
+  string Text = 7;
+  bool IsAvailable = 8;
+  bool IsLiked = 9;
+  repeated Attachment PostAttachments = 10;
+  repeated common.Subscription Subscriptions = 11;
+};
+
+message Attachment{
+  string ID = 1;
+  string Type = 2;
+};
+
+service CreatorService {
+  rpc FindCreators(KeywordMessage) returns (CreatorsMessage) {}
+  rpc GetPage(UserCreatorMessage) returns (CreatorPage) {}
+}
+

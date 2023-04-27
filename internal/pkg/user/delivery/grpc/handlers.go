@@ -155,3 +155,28 @@ func (h GrpcUserHandler) BecomeCreator(ctx context.Context, in *generatedUser.Be
 	}
 	return &generatedCommon.UUIDResponse{Value: creatorId.String()}, nil
 }
+
+func (h GrpcUserHandler) UserSubscriptions(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedUser.SubscriptionsMessage, error) {
+	userId, err := uuid.Parse(in.Value)
+	if err != nil {
+		return &generatedUser.SubscriptionsMessage{Error: err.Error()}, nil
+	}
+	subs, err := h.uc.UserSubscriptions(ctx, userId)
+	if err != nil {
+		return &generatedUser.SubscriptionsMessage{Error: err.Error()}, nil
+	}
+	var subsProto generatedUser.SubscriptionsMessage
+	for _, v := range subs {
+		subsProto.Subscriptions = append(subsProto.Subscriptions, &generatedCommon.Subscription{
+			Id:           v.Id.String(),
+			Creator:      v.Creator.String(),
+			CreatorName:  v.CreatorName,
+			CreatorPhoto: v.CreatorPhoto.String(),
+			MonthCost:    v.MonthCost,
+			Title:        v.Title,
+			Description:  v.Description,
+		})
+	}
+	subsProto.Error = ""
+	return &subsProto, nil
+}
