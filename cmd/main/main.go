@@ -40,7 +40,10 @@ func main() {
 }
 
 func run() error {
-	logger := utils.FileLogger("log.txt")
+	logger, err := utils.FileLogger("/var/log/main.log")
+	if err != nil {
+		return err
+	}
 
 	defer func(logger *zap.Logger) {
 		err := logger.Sync()

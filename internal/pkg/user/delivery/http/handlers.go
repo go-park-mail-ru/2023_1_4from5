@@ -221,9 +221,10 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	reg, err := time.Parse("23.01.2006 15:04:05", userProfile.Registration)
+	reg, err := time.Parse("2023-02-21 15:04:05", userProfile.Registration)
 
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
