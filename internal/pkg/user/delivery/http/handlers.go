@@ -3,6 +3,7 @@ package http
 import (
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
+	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user"
@@ -16,6 +17,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type UserHandler struct {
@@ -93,12 +95,20 @@ func (h *UserHandler) Unfollow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.usecase.Unfollow(r.Context(), userInfo.Id, creatorId)
-	if err == models.InternalError {
+	out, err := h.userClient.Unfollow(r.Context(), &generatedUser.FollowMessage{
+		UserID:    userInfo.Id.String(),
+		CreatorID: creatorId.String()})
+	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
-	if err == models.WrongData {
+
+	if out.Error == models.InternalError.Error() {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if out.Error == models.WrongData.Error() {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
@@ -150,7 +160,7 @@ func (h *UserHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	subId, err := uuid.Parse(subUUID)
+	_, err = uuid.Parse(subUUID)
 	if err != nil {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
@@ -168,11 +178,20 @@ func (h *UserHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	subscription.UserID = userDataJWT.Id
-	subscription.Id = subId
 
-	err = h.usecase.Subscribe(r.Context(), subscription)
-	if err == models.InternalError {
+	out, err := h.userClient.Subscribe(r.Context(), &generatedUser.SubscriptionDetails{
+		UserID:     userDataJWT.Id.String(),
+		Id:         subUUID,
+		MonthCount: subscription.MonthCount,
+		Money:      subscription.Money})
+
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if out.Error == models.InternalError.Error() {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -186,19 +205,45 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
-	userProfile, err := h.usecase.GetProfile(r.Context(), userInfo.Id)
-	if err == models.InternalError {
+	userProfile, err := h.userClient.GetProfile(r.Context(),
+		&generatedCommon.UUIDMessage{Value: userInfo.Id.String()})
+	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
-	if err == models.NotFound {
+
+	if userProfile.Error == models.InternalError.Error() {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if userProfile.Error == models.NotFound.Error() {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
+	reg, err := time.Parse("23.01.2006 15:04:05", userProfile.Registration)
 
-	userProfile.Sanitize()
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
 
-	utils.Response(w, http.StatusOK, userProfile)
+	photo, err := uuid.Parse(userProfile.ProfilePhoto)
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	profile := models.UserProfile{
+		Login:        userProfile.Login,
+		Registration: reg,
+		ProfilePhoto: photo,
+		Name:         userProfile.Name,
+	}
+
+	profile.Sanitize()
+
+	utils.Response(w, http.StatusOK, profile)
 }
 
 func (h *UserHandler) GetHomePage(w http.ResponseWriter, r *http.Request) {
@@ -235,6 +280,7 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 		UserVersion: int64(userDataJWT.UserVersion),
 	})
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -297,8 +343,14 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	name, err := h.usecase.UpdatePhoto(r.Context(), userDataJWT.Id)
+	name, err := h.userClient.UpdatePhoto(r.Context(), &generatedCommon.UUIDMessage{
+		Value: userDataJWT.Id.String()})
 	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+	}
+
+	if name.Error != "" {
 		utils.Response(w, http.StatusInternalServerError, nil)
 	}
 
@@ -390,7 +442,15 @@ func (h *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
-	if err = h.usecase.UpdatePassword(r.Context(), userDataJWT.Id, encryptedPwd.Password); err != nil {
+	out, err := h.userClient.UpdatePassword(r.Context(), &generatedUser.UpdatePasswordMessage{
+		Password: encryptedPwd.Password,
+		UserID:   userDataJWT.Id.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if out.Error != "" {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -459,16 +519,25 @@ func (h *UserHandler) Donate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newMoneyCount, err := h.usecase.Donate(r.Context(), donateInfo, userDataJWT.Id)
-	if err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
+	newMoneyCount, err := h.userClient.Donate(r.Context(), &generatedUser.DonateMessage{MoneyCount: donateInfo.MoneyCount,
+		CreatorID: donateInfo.CreatorID.String(),
+		UserID:    userDataJWT.Id.String()})
+
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
-	utils.Response(w, http.StatusOK, newMoneyCount)
+
+	if newMoneyCount.Error == models.WrongData.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	if newMoneyCount.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	utils.Response(w, http.StatusOK, newMoneyCount.MoneyCount)
 }
 
 func (h *UserHandler) UpdateData(w http.ResponseWriter, r *http.Request) {
@@ -517,7 +586,15 @@ func (h *UserHandler) UpdateData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = h.usecase.UpdateProfileInfo(r.Context(), updProfile, userDataJWT.Id); err != nil {
+	out, err := h.userClient.UpdateProfileInfo(r.Context(), &generatedUser.UpdateProfileInfoMessage{Login: updProfile.Login,
+		Name: updProfile.Name, UserID: userDataJWT.Id.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if out.Error != "" {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -580,11 +657,19 @@ func (h *UserHandler) BecomeCreator(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	creatorId, err := h.usecase.BecomeCreator(r.Context(), authorInfo, userDataJWT.Id)
+	creatorId, err := h.userClient.BecomeCreator(r.Context(), &generatedUser.BecameCreatorInfoMessage{Name: authorInfo.Name,
+		Description: authorInfo.Description, UserID: userDataJWT.Id.String()})
+
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 
-	utils.Response(w, http.StatusOK, creatorId)
+	if creatorId.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, creatorId.Value)
 }

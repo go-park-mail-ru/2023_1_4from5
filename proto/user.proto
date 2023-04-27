@@ -26,6 +26,7 @@ message UserProfile{
   string Name = 2;
   string ProfilePhoto = 3;
   string Registration = 4;
+  string Error = 5;
 }
 message UpdatePasswordMessage{
   string UserID = 1;

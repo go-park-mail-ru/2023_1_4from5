@@ -2,6 +2,7 @@ package grpcUser
 
 import (
 	"context"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user"
 	generatedUser "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/grpc/generated"
@@ -41,9 +42,116 @@ func (h GrpcUserHandler) Unfollow(ctx context.Context, in *generatedUser.FollowM
 	if err != nil {
 		return &generatedCommon.Empty{Error: err.Error()}, nil
 	}
-	err = h.uc.Follow(ctx, userId, creatorId)
+	err = h.uc.Unfollow(ctx, userId, creatorId)
 	if err != nil {
 		return &generatedCommon.Empty{Error: err.Error()}, nil
 	}
 	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcUserHandler) Subscribe(ctx context.Context, in *generatedUser.SubscriptionDetails) (*generatedCommon.Empty, error) {
+	userId, err := uuid.Parse(in.UserID)
+	subId, err := uuid.Parse(in.Id)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	err = h.uc.Subscribe(ctx, models.SubscriptionDetails{
+		Id:         subId,
+		UserID:     userId,
+		Money:      in.Money,
+		MonthCount: in.MonthCount,
+	})
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcUserHandler) GetProfile(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedUser.UserProfile, error) {
+	userId, err := uuid.Parse(in.Value)
+	if err != nil {
+		return &generatedUser.UserProfile{Error: err.Error()}, nil
+	}
+	profile, err := h.uc.GetProfile(ctx, userId)
+	if err != nil {
+		return &generatedUser.UserProfile{Error: err.Error()}, nil
+	}
+	return &generatedUser.UserProfile{
+		Login:        profile.Login,
+		Name:         profile.Name,
+		ProfilePhoto: profile.ProfilePhoto.String(),
+		Registration: profile.Registration.String(),
+		Error:        ""}, nil
+}
+
+func (h GrpcUserHandler) UpdatePhoto(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedUser.ImageID, error) {
+	userId, err := uuid.Parse(in.Value)
+	if err != nil {
+		return &generatedUser.ImageID{Error: err.Error()}, nil
+	}
+	imageId, err := h.uc.UpdatePhoto(ctx, userId)
+	if err != nil {
+		return &generatedUser.ImageID{Error: err.Error()}, nil
+	}
+	return &generatedUser.ImageID{
+		Value: imageId.String(),
+		Error: ""}, nil
+}
+
+func (h GrpcUserHandler) UpdatePassword(ctx context.Context, in *generatedUser.UpdatePasswordMessage) (*generatedCommon.Empty, error) {
+	userId, err := uuid.Parse(in.UserID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	err = h.uc.UpdatePassword(ctx, userId, in.Password)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcUserHandler) UpdateProfileInfo(ctx context.Context, in *generatedUser.UpdateProfileInfoMessage) (*generatedCommon.Empty, error) {
+	userId, err := uuid.Parse(in.UserID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	err = h.uc.UpdateProfileInfo(ctx, models.UpdateProfileInfo{
+		Login: in.Login,
+		Name:  in.Name}, userId)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcUserHandler) Donate(ctx context.Context, in *generatedUser.DonateMessage) (*generatedUser.DonateResponse, error) {
+	userId, err := uuid.Parse(in.UserID)
+	if err != nil {
+		return &generatedUser.DonateResponse{Error: err.Error()}, nil
+	}
+	creatorId, err := uuid.Parse(in.CreatorID)
+	if err != nil {
+		return &generatedUser.DonateResponse{Error: err.Error()}, nil
+	}
+	money, err := h.uc.Donate(ctx, models.Donate{
+		CreatorID:  creatorId,
+		MoneyCount: in.MoneyCount}, userId)
+	if err != nil {
+		return &generatedUser.DonateResponse{Error: err.Error()}, nil
+	}
+	return &generatedUser.DonateResponse{MoneyCount: money, Error: ""}, nil
+}
+
+func (h GrpcUserHandler) BecomeCreator(ctx context.Context, in *generatedUser.BecameCreatorInfoMessage) (*generatedCommon.UUIDResponse, error) {
+	userId, err := uuid.Parse(in.UserID)
+	if err != nil {
+		return &generatedCommon.UUIDResponse{Error: err.Error()}, nil
+	}
+	creatorId, err := h.uc.BecomeCreator(ctx, models.BecameCreatorInfo{
+		Name:        in.Name,
+		Description: in.Description}, userId)
+	if err != nil {
+		return &generatedCommon.UUIDResponse{Error: err.Error()}, nil
+	}
+	return &generatedCommon.UUIDResponse{Value: creatorId.String()}, nil
 }

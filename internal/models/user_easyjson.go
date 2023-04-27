@@ -595,7 +595,7 @@ func easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels6(in *j
 				in.AddError((out.CreatorID).UnmarshalText(data))
 			}
 		case "money_count":
-			out.MoneyCount = int(in.Int())
+			out.MoneyCount = int64(in.Int64())
 		default:
 			in.SkipRecursive()
 		}
@@ -618,7 +618,7 @@ func easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels6(out *
 	{
 		const prefix string = ",\"money_count\":"
 		out.RawString(prefix)
-		out.Int(int(in.MoneyCount))
+		out.Int64(int64(in.MoneyCount))
 	}
 	out.RawByte('}')
 }

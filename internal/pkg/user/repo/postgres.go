@@ -168,13 +168,13 @@ func (ur *UserRepo) UpdateProfileInfo(ctx context.Context, profileInfo models.Up
 	return nil
 }
 
-func (ur *UserRepo) Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int, error) {
+func (ur *UserRepo) Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int64, error) {
 	tx, err := ur.db.BeginTx(ctx, nil)
 	if err != nil {
 		ur.logger.Error(err)
 		return 0, models.InternalError
 	}
-	var newMoney int
+	var newMoney int64
 	row := tx.QueryRowContext(ctx, UpdateAuthorAimMoney, donateInfo.MoneyCount, donateInfo.CreatorID)
 
 	if err = row.Scan(&newMoney); err != nil && !errors.Is(sql.ErrNoRows, err) {

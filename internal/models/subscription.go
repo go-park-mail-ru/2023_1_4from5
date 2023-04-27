@@ -10,7 +10,7 @@ import (
 type Subscription struct {
 	Id          uuid.UUID `json:"id,omitempty"`
 	Creator     uuid.UUID `json:"creator,omitempty"`
-	MonthCost   int       `json:"month_cost"`
+	MonthCost   int64     `json:"month_cost"`
 	Title       string    `json:"title"`
 	Description string    `json:"description,omitempty"`
 }
@@ -18,8 +18,8 @@ type Subscription struct {
 type SubscriptionDetails struct {
 	Id         uuid.UUID `json:"id,omitempty"`
 	UserID     uuid.UUID `json:"user_id,omitempty"`
-	MonthCount int       `json:"month_count"`
-	Money      int       `json:"money"`
+	MonthCount int64     `json:"month_count"`
+	Money      int64     `json:"money"`
 }
 
 func (subscription *Subscription) Sanitize() {

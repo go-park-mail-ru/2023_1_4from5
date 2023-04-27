@@ -45,9 +45,9 @@ func easyjsonFfbd3743DecodeGithubComGoParkMailRu202314from5InternalModels(in *jl
 				in.AddError((out.UserID).UnmarshalText(data))
 			}
 		case "month_count":
-			out.MonthCount = int(in.Int())
+			out.MonthCount = int64(in.Int64())
 		case "money":
-			out.Money = int(in.Int())
+			out.Money = int64(in.Int64())
 		default:
 			in.SkipRecursive()
 		}
@@ -86,12 +86,12 @@ func easyjsonFfbd3743EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 		} else {
 			out.RawString(prefix)
 		}
-		out.Int(int(in.MonthCount))
+		out.Int64(int64(in.MonthCount))
 	}
 	{
 		const prefix string = ",\"money\":"
 		out.RawString(prefix)
-		out.Int(int(in.Money))
+		out.Int64(int64(in.Money))
 	}
 	out.RawByte('}')
 }
@@ -147,7 +147,7 @@ func easyjsonFfbd3743DecodeGithubComGoParkMailRu202314from5InternalModels1(in *j
 				in.AddError((out.Creator).UnmarshalText(data))
 			}
 		case "month_cost":
-			out.MonthCost = int(in.Int())
+			out.MonthCost = int64(in.Int64())
 		case "title":
 			out.Title = string(in.String())
 		case "description":
@@ -190,7 +190,7 @@ func easyjsonFfbd3743EncodeGithubComGoParkMailRu202314from5InternalModels1(out *
 		} else {
 			out.RawString(prefix)
 		}
-		out.Int(int(in.MonthCost))
+		out.Int64(int64(in.MonthCost))
 	}
 	{
 		const prefix string = ",\"title\":"
