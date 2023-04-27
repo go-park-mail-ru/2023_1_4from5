@@ -70,7 +70,7 @@ func run() error {
 	}
 
 	authConn, err := grpc.Dial(
-		":8010",
+		"auth:8010",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 

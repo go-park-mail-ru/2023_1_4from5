@@ -33,14 +33,16 @@ func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 		Login:        user.Login,
 		PasswordHash: user.PasswordHash,
 	})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
 	if len(token.Error) != 0 {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
-	if err != nil {
-		utils.Response(w, http.StatusInternalServerError, nil)
-		return
-	}
+
 	utils.Cookie(w, token.Cookie, "SSID")
 	utils.Response(w, http.StatusOK, nil)
 }
@@ -56,6 +58,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		Id:          userData.Id.String(),
 		UserVersion: int64(userData.UserVersion),
 	}); err != nil || len(uv.Error) != 0 {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -80,6 +83,13 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		Registration: user.Registration.String(),
 		UserVersion:  int64(user.UserVersion),
 	})
+
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
 	if len(token.Cookie) == 0 {
 		if token.Error == models.WrongData.Error() {
 			utils.Response(w, http.StatusConflict, nil)
