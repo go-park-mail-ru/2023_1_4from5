@@ -3,6 +3,7 @@ package grpcAuth
 import (
 	"context"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
+	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	"github.com/google/uuid"
@@ -33,10 +34,10 @@ func (h GrpcAuthHandler) SignIn(ctx context.Context, in *generatedAuth.LoginUser
 	return &generatedAuth.Token{Cookie: token, Error: err.Error()}, nil
 }
 
-func (h GrpcAuthHandler) IncUserVersion(ctx context.Context, in *generatedAuth.AccessDetails) (*models.Empty, error) {
+func (h GrpcAuthHandler) IncUserVersion(ctx context.Context, in *generatedAuth.AccessDetails) (*generatedCommon.Empty, error) {
 	idTmp, err := uuid.Parse(in.Id)
 	if err != nil {
-		return &models.Empty{Error: models.WrongData.Error()}, nil
+		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
 	}
 	user := models.AccessDetails{
 		Login:       in.Login,
@@ -46,9 +47,9 @@ func (h GrpcAuthHandler) IncUserVersion(ctx context.Context, in *generatedAuth.A
 
 	_, err = h.uc.IncUserVersion(ctx, user)
 	if err == nil {
-		return &models.Empty{Error: ""}, nil
+		return &generatedCommon.Empty{Error: ""}, nil
 	}
-	return &models.Empty{Error: err.Error()}, nil
+	return &generatedCommon.Empty{Error: err.Error()}, nil
 }
 
 func (h GrpcAuthHandler) SignUp(ctx context.Context, in *generatedAuth.User) (*generatedAuth.Token, error) {

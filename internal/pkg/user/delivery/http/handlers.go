@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/mailru/easyjson"
+	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"os"
@@ -21,13 +22,15 @@ type UserHandler struct {
 	usecase    user.UserUsecase
 	userClient generatedUser.UserServiceClient
 	authClient generatedAuth.AuthServiceClient
+	logger     *zap.SugaredLogger
 }
 
-func NewUserHandler(uc user.UserUsecase, userClient generatedUser.UserServiceClient, auc generatedAuth.AuthServiceClient) *UserHandler {
+func NewUserHandler(uc user.UserUsecase, userClient generatedUser.UserServiceClient, auc generatedAuth.AuthServiceClient, logger *zap.SugaredLogger) *UserHandler {
 	return &UserHandler{
 		usecase:    uc,
 		userClient: userClient,
 		authClient: auc,
+		logger:     logger,
 	}
 }
 
@@ -55,6 +58,7 @@ func (h *UserHandler) Follow(w http.ResponseWriter, r *http.Request) {
 		CreatorID: creatorId.String(),
 	})
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -182,7 +186,7 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
-	userProfile, err := h.usecase.GetProfile(r.Context(), *userInfo)
+	userProfile, err := h.usecase.GetProfile(r.Context(), userInfo.Id)
 	if err == models.InternalError {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
@@ -203,7 +207,7 @@ func (h *UserHandler) GetHomePage(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
-	homePage, err := h.usecase.GetHomePage(r.Context(), *userInfo)
+	homePage, err := h.usecase.GetHomePage(r.Context(), userInfo.Id)
 	if err == models.InternalError {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
@@ -293,7 +297,7 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	name, err := h.usecase.UpdatePhoto(r.Context(), *userDataJWT)
+	name, err := h.usecase.UpdatePhoto(r.Context(), userDataJWT.Id)
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
 	}

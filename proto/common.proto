@@ -7,3 +7,12 @@ package common;
 message Empty {
   string Error = 1;
 };
+
+message UUIDMessage{
+  string Value = 1;
+}
+
+message UUIDResponse{
+  string Value = 1;
+  string Error = 2;
+}

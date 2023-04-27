@@ -9,9 +9,9 @@ import (
 //go:generate mockgen -source=interfaces.go -destination=./mocks/user_mock.go -package=mock
 
 type UserUsecase interface {
-	GetProfile(ctx context.Context, details models.AccessDetails) (models.UserProfile, error)
-	GetHomePage(ctx context.Context, details models.AccessDetails) (models.UserHomePage, error)
-	UpdatePhoto(ctx context.Context, details models.AccessDetails) (uuid.UUID, error)
+	GetProfile(ctx context.Context, userId uuid.UUID) (models.UserProfile, error)
+	GetHomePage(ctx context.Context, userId uuid.UUID) (models.UserHomePage, error)
+	UpdatePhoto(ctx context.Context, userId uuid.UUID) (uuid.UUID, error)
 	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
 	UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error
 	Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int, error)

@@ -34,3 +34,16 @@ func (h GrpcUserHandler) Follow(ctx context.Context, in *generatedUser.FollowMes
 	}
 	return &generatedCommon.Empty{Error: ""}, nil
 }
+
+func (h GrpcUserHandler) Unfollow(ctx context.Context, in *generatedUser.FollowMessage) (*generatedCommon.Empty, error) {
+	userId, err := uuid.Parse(in.UserID)
+	creatorId, err := uuid.Parse(in.CreatorID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	err = h.uc.Follow(ctx, userId, creatorId)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}

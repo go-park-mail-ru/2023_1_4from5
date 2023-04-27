@@ -46,19 +46,17 @@ func (uc *UserUsecase) Subscribe(ctx context.Context, subscription models.Subscr
 	return uc.repo.Subscribe(ctx, subscription)
 }
 
-func (uc *UserUsecase) GetProfile(ctx context.Context, details models.AccessDetails) (models.UserProfile, error) {
-	userId := details.Id
+func (uc *UserUsecase) GetProfile(ctx context.Context, userId uuid.UUID) (models.UserProfile, error) {
 	return uc.repo.GetUserProfile(ctx, userId)
 }
 
-func (uc *UserUsecase) GetHomePage(ctx context.Context, details models.AccessDetails) (models.UserHomePage, error) {
-	userId := details.Id
+func (uc *UserUsecase) GetHomePage(ctx context.Context, userId uuid.UUID) (models.UserHomePage, error) {
 	return uc.repo.GetHomePage(ctx, userId)
 }
 
-func (uc *UserUsecase) UpdatePhoto(ctx context.Context, details models.AccessDetails) (uuid.UUID, error) {
+func (uc *UserUsecase) UpdatePhoto(ctx context.Context, userId uuid.UUID) (uuid.UUID, error) {
 	path := uuid.New()
-	err := uc.repo.UpdateProfilePhoto(ctx, details.Id, path)
+	err := uc.repo.UpdateProfilePhoto(ctx, userId, path)
 	if err != nil {
 		return uuid.Nil, models.InternalError
 	}

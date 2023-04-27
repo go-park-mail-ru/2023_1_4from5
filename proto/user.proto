@@ -7,8 +7,63 @@ option go_package = "internal/pkg/user/delivery/grpc/generated";
 message FollowMessage {
   string UserID = 1;
   string CreatorID = 2;
-};
+}
+
+message SubscriptionDetails{
+  string Id = 1;
+  string UserID = 2;
+  int64 MonthCount = 3;
+  int64 Money = 4;
+}
+
+message ImageID{
+  string Value = 1;
+  string Error = 2;
+}
+
+message UserProfile{
+  string Login = 1;
+  string Name = 2;
+  string ProfilePhoto = 3;
+  string Registration = 4;
+}
+message UpdatePasswordMessage{
+  string UserID = 1;
+  string Password = 2;
+}
+
+message UpdateProfileInfoMessage{
+  string Login = 1;
+  string Name = 2;
+  string UserID = 3;
+}
+
+message DonateMessage{
+  string CreatorID = 1;
+  int64 MoneyCount = 2;
+  string UserID = 3;
+}
+
+message DonateResponse{
+  int64 MoneyCount = 1;
+  string Error = 2;
+}
+
+message BecameCreatorInfoMessage{
+  string Name = 1;
+  string Description = 2;
+  string UserID = 3;
+}
+//TODO: GetHomePAge, ну то есть лента
 
 service UserService {
   rpc Follow(FollowMessage) returns (common.Empty) {}
+  rpc Unfollow(FollowMessage) returns (common.Empty) {}
+  rpc Subscribe(SubscriptionDetails) returns (common.Empty) {}
+  rpc GetProfile(common.UUIDMessage) returns (UserProfile) {}
+  rpc UpdatePhoto(common.UUIDMessage) returns (ImageID) {}
+  rpc UpdatePassword(UpdatePasswordMessage) returns (common.Empty) {}
+  rpc UpdateProfileInfo(UpdateProfileInfoMessage) returns (common.Empty) {}
+  rpc Donate(DonateMessage) returns (DonateResponse) {}
+  rpc BecomeCreator(BecameCreatorInfoMessage) returns (common.UUIDResponse) {}
 }

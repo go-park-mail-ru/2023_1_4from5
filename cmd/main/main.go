@@ -70,7 +70,7 @@ func run() error {
 	}
 
 	authConn, err := grpc.Dial(
-		"auth:8010",
+		":8010",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -93,7 +93,7 @@ func run() error {
 	userRepo := userRepository.NewUserRepo(db, zapSugar)
 	userUse := userUsecase.NewUserUsecase(userRepo, zapSugar)
 	userClient := generatedUser.NewUserServiceClient(userConn)
-	userHandler := userDelivery.NewUserHandler(userUse, userClient, authClient)
+	userHandler := userDelivery.NewUserHandler(userUse, userClient, authClient, zapSugar)
 
 	attachmentRepo := attachmentRepository.NewAttachmentRepo(db, zapSugar)
 	attachmentUse := attachmentUsecase.NewAttachmentUsecase(attachmentRepo, zapSugar)
