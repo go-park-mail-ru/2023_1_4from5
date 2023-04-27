@@ -10,7 +10,7 @@ import (
 )
 
 //go:generate mockgen -source=auth_grpc.pb.go -destination=auth_grpc.go -package=grpc
-//go:generate protoc  --go_out=./generated --go-grpc_out=./generated --proto_path=. auth.proto
+//go:generate protoc  --go_out=. --go-grpc_out=. --proto_path=. auth.proto
 
 type GrpcAuthHandler struct {
 	uc auth.AuthUsecase
