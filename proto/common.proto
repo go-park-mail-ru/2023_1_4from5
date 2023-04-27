@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+option go_package = "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto";
+
+package common;
+
+message Empty {
+  string Error = 1;
+};

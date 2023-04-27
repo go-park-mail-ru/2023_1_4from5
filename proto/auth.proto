@@ -1,7 +1,8 @@
-
 syntax = "proto3";
 
-option go_package = "internal/pkg/auth/delivery/grpc";
+option go_package = "internal/pkg/auth/delivery/grpc/generated";
+
+import "common.proto";
 
 message LoginUser {
   string Login = 1;
@@ -30,10 +31,6 @@ message Token {
   string Error = 2;
 };
 
-message Empty {
-   string Error = 1;
-};
-
 message UserVersion {
   int64 UserVersion = 1;
   string Error = 2;
@@ -49,6 +46,6 @@ service AuthService {
   rpc SignUp(User) returns (Token) {}
   rpc CheckUserVersion(AccessDetails) returns (UserVersion) {}
   rpc CheckUser(User) returns  (User) {}
-  rpc IncUserVersion(AccessDetails) returns (Empty) {}
+  rpc IncUserVersion(AccessDetails) returns (common.Empty) {}
   rpc EncryptPwd(EncryptPwdMg) returns (EncryptPwdMg) {}
 }

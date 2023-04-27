@@ -10,7 +10,6 @@ import (
 )
 
 //go:generate mockgen -source=auth_grpc.pb.go -destination=auth_grpc.go -package=grpc
-//go:generate protoc  --go_out=. --go-grpc_out=. --proto_path=. auth.proto
 
 type GrpcAuthHandler struct {
 	uc auth.AuthUsecase
@@ -34,10 +33,10 @@ func (h GrpcAuthHandler) SignIn(ctx context.Context, in *generatedAuth.LoginUser
 	return &generatedAuth.Token{Cookie: token, Error: err.Error()}, nil
 }
 
-func (h GrpcAuthHandler) IncUserVersion(ctx context.Context, in *generatedAuth.AccessDetails) (*generatedAuth.Empty, error) {
+func (h GrpcAuthHandler) IncUserVersion(ctx context.Context, in *generatedAuth.AccessDetails) (*models.Empty, error) {
 	idTmp, err := uuid.Parse(in.Id)
 	if err != nil {
-		return &generatedAuth.Empty{Error: models.WrongData.Error()}, nil
+		return &models.Empty{Error: models.WrongData.Error()}, nil
 	}
 	user := models.AccessDetails{
 		Login:       in.Login,
@@ -47,9 +46,9 @@ func (h GrpcAuthHandler) IncUserVersion(ctx context.Context, in *generatedAuth.A
 
 	_, err = h.uc.IncUserVersion(ctx, user)
 	if err == nil {
-		return &generatedAuth.Empty{Error: ""}, nil
+		return &models.Empty{Error: ""}, nil
 	}
-	return &generatedAuth.Empty{Error: err.Error()}, nil
+	return &models.Empty{Error: err.Error()}, nil
 }
 
 func (h GrpcAuthHandler) SignUp(ctx context.Context, in *generatedAuth.User) (*generatedAuth.Token, error) {

@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+import "common.proto";
+
+option go_package = "internal/pkg/user/delivery/grpc/generated";
+
+message FollowMessage {
+  string UserID = 1;
+  string CreatorID = 2;
+};
+
+service UserService {
+  rpc Follow(FollowMessage) returns (common.Empty) {}
+}
