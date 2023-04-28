@@ -145,7 +145,7 @@ func run() error {
 		user.HandleFunc("/donate", userHandler.Donate).Methods(http.MethodPost, http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/updatePassword", userHandler.UpdatePassword).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/updateData", userHandler.UpdateData).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
-		user.HandleFunc("/feed", userHandler.GetHomePage).Methods(http.MethodGet, http.MethodOptions)
+		user.HandleFunc("/feed", creatorHandler.GetFeed).Methods(http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/updateProfilePhoto", userHandler.UpdateProfilePhoto).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
 		user.HandleFunc("/becameCreator", userHandler.BecomeCreator).Methods(http.MethodPost, http.MethodOptions, http.MethodGet)
 		user.HandleFunc("/follow/{creator-uuid}", userHandler.Follow).Methods(http.MethodPost, http.MethodOptions)

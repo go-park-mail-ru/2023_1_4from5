@@ -23,6 +23,7 @@ const (
 	FindCreators      = `SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM creator WHERE (setweight(to_tsvector('russian', name),'A') || setweight(to_tsvector('russian', description), 'B') || setweight(to_tsvector('english', name),'A') || setweight(to_tsvector('english', description), 'B'))  @@ (plainto_tsquery('russian',$1)|| plainto_tsquery('english',$1)) LIMIT 30;`
 	CheckIfCreator    = `SELECT creator_id FROM "creator" WHERE user_id = $1`
 	UpdateCreatorData = `UPDATE creator SET name = $1, description = $2 WHERE creator_id = $3`
+	Feed              = `SELECT DISTINCT p.post_id, p.creator_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), c.name, c.profile_photo, c.creator_id, p.likes_count FROM follow f JOIN post p on p.creator_id = f.creator_id JOIN creator c on f.creator_id = c.creator_id LEFT JOIN post_subscription ps on p.post_id = ps.post_id JOIN user_subscription us on f.user_id = us.user_id and (ps.subscription_id = us.subscription_id or ps.subscription_id is null) LEFT JOIN "attachment" a on p.post_id = a.post_id WHERE f.user_id = $1 GROUP BY c.name, p.creator_id, creation_date, title, post_text, p.post_id, c.profile_photo, c.creator_id ORDER BY creation_date DESC LIMIT 50;`
 )
 
 type CreatorRepo struct {
@@ -305,4 +306,43 @@ func (r *CreatorRepo) CheckIfCreator(ctx context.Context, userID uuid.UUID) (uui
 		return uuid.Nil, models.NotFound
 	}
 	return creatorID, nil
+}
+
+func (r *CreatorRepo) GetFeed(ctx context.Context, userID uuid.UUID) ([]models.Post, error) {
+	var feed = make([]models.Post, 0)
+
+	rows, err := r.db.QueryContext(ctx, Feed, userID)
+	if err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
+		return nil, models.InternalError
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var post models.Post
+		attachs := make([]uuid.UUID, 0)
+		types := make([]sql.NullString, 0)
+		err = rows.Scan(&post.Id, &post.Creator, &post.Creation,
+			&post.Title, &post.Text, pq.Array(&attachs), pq.Array(&types), &post.CreatorName, &post.CreatorPhoto, &post.Creator, &post.LikesCount)
+		if err != nil {
+			r.logger.Error(err)
+			return nil, models.InternalError
+		}
+
+		post.IsAvailable = true
+
+		if post.IsLiked, err = r.IsLiked(ctx, userID, post.Id); err != nil {
+			return nil, models.InternalError
+		}
+
+		post.Attachments = make([]models.Attachment, 0, len(attachs))
+		for i, v := range attachs {
+			if v != uuid.Nil {
+				post.Attachments = append(post.Attachments, models.Attachment{Id: v, Type: types[i].String})
+			}
+		}
+
+		feed = append(feed, post)
+	}
+
+	return feed, nil
 }

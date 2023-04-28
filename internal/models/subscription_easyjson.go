@@ -36,6 +36,10 @@ func easyjsonFfbd3743DecodeGithubComGoParkMailRu202314from5InternalModels(in *jl
 			continue
 		}
 		switch key {
+		case "creator_id":
+			if data := in.UnsafeBytes(); in.Ok() {
+				in.AddError((out.CreatorId).UnmarshalText(data))
+			}
 		case "id":
 			if data := in.UnsafeBytes(); in.Ok() {
 				in.AddError((out.Id).UnmarshalText(data))
@@ -62,30 +66,24 @@ func easyjsonFfbd3743EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 	out.RawByte('{')
 	first := true
 	_ = first
+	{
+		const prefix string = ",\"creator_id\":"
+		out.RawString(prefix[1:])
+		out.RawText((in.CreatorId).MarshalText())
+	}
 	if true {
 		const prefix string = ",\"id\":"
-		first = false
-		out.RawString(prefix[1:])
+		out.RawString(prefix)
 		out.RawText((in.Id).MarshalText())
 	}
 	if true {
 		const prefix string = ",\"user_id\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.RawText((in.UserID).MarshalText())
 	}
 	{
 		const prefix string = ",\"month_count\":"
-		if first {
-			first = false
-			out.RawString(prefix[1:])
-		} else {
-			out.RawString(prefix)
-		}
+		out.RawString(prefix)
 		out.Int64(int64(in.MonthCount))
 	}
 	{

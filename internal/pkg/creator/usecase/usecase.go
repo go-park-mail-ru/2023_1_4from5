@@ -43,3 +43,7 @@ func (uc *CreatorUsecase) FindCreators(ctx context.Context, keyword string) ([]m
 func (uc *CreatorUsecase) GetAllCreators(ctx context.Context) ([]models.Creator, error) {
 	return uc.repo.GetAllCreators(ctx)
 }
+
+func (uc *CreatorUsecase) GetFeed(ctx context.Context, userID uuid.UUID) ([]models.Post, error) {
+	return uc.repo.GetFeed(ctx, userID)
+}

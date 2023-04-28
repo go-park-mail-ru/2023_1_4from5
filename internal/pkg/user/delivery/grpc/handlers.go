@@ -51,6 +51,13 @@ func (h GrpcUserHandler) Unfollow(ctx context.Context, in *generatedUser.FollowM
 
 func (h GrpcUserHandler) Subscribe(ctx context.Context, in *generatedUser.SubscriptionDetails) (*generatedCommon.Empty, error) {
 	userId, err := uuid.Parse(in.UserID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	creatorId, err := uuid.Parse(in.CreatorID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
 	subId, err := uuid.Parse(in.Id)
 	if err != nil {
 		return &generatedCommon.Empty{Error: err.Error()}, nil
@@ -58,6 +65,7 @@ func (h GrpcUserHandler) Subscribe(ctx context.Context, in *generatedUser.Subscr
 	err = h.uc.Subscribe(ctx, models.SubscriptionDetails{
 		Id:         subId,
 		UserID:     userId,
+		CreatorId:  creatorId,
 		Money:      in.Money,
 		MonthCount: in.MonthCount,
 	})

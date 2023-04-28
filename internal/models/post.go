@@ -11,6 +11,8 @@ import (
 type Post struct {
 	Id            uuid.UUID      `json:"id"`
 	Creator       uuid.UUID      `json:"creator"`
+	CreatorPhoto  uuid.UUID      `json:"creator_photo,omitempty"`
+	CreatorName   string         `json:"creator_name,omitempty"`
 	Creation      time.Time      `json:"creation_date"`
 	LikesCount    int64          `json:"likes_count"`
 	Title         string         `json:"title"`

@@ -58,14 +58,20 @@ message Post{
   string CreatorID = 2;
   string Creation = 3;
   int64 LikesCount = 4;
-  string  ProfilePhoto = 5;
-  string Title = 6;
-  string Text = 7;
-  bool IsAvailable = 8;
-  bool IsLiked = 9;
-  repeated Attachment PostAttachments = 10;
-  repeated common.Subscription Subscriptions = 11;
+  string CreatorPhoto = 5;
+  string CreatorName = 6;
+  string Title = 7;
+  string Text = 8;
+  bool IsAvailable = 9;
+  bool IsLiked = 10;
+  repeated Attachment PostAttachments = 11;
+  repeated common.Subscription Subscriptions = 12;
 };
+
+message PostsMessage{
+  repeated Post Posts = 1;
+  string Error = 2;
+}
 
 message Attachment{
   string ID = 1;
@@ -76,5 +82,6 @@ service CreatorService {
   rpc FindCreators(KeywordMessage) returns (CreatorsMessage) {}
   rpc GetPage(UserCreatorMessage) returns (CreatorPage) {}
   rpc UpdateCreatorData(UpdateCreatorInfo) returns (common.Empty) {}
+  rpc GetFeed(common.UUIDMessage) returns (PostsMessage) {}
 }
 

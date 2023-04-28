@@ -26,6 +26,7 @@ type CreatorServiceClient interface {
 	FindCreators(ctx context.Context, in *KeywordMessage, opts ...grpc.CallOption) (*CreatorsMessage, error)
 	GetPage(ctx context.Context, in *UserCreatorMessage, opts ...grpc.CallOption) (*CreatorPage, error)
 	UpdateCreatorData(ctx context.Context, in *UpdateCreatorInfo, opts ...grpc.CallOption) (*proto.Empty, error)
+	GetFeed(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*PostsMessage, error)
 }
 
 type creatorServiceClient struct {
@@ -63,6 +64,15 @@ func (c *creatorServiceClient) UpdateCreatorData(ctx context.Context, in *Update
 	return out, nil
 }
 
+func (c *creatorServiceClient) GetFeed(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*PostsMessage, error) {
+	out := new(PostsMessage)
+	err := c.cc.Invoke(ctx, "/CreatorService/GetFeed", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CreatorServiceServer is the server API for CreatorService service.
 // All implementations must embed UnimplementedCreatorServiceServer
 // for forward compatibility
@@ -70,6 +80,7 @@ type CreatorServiceServer interface {
 	FindCreators(context.Context, *KeywordMessage) (*CreatorsMessage, error)
 	GetPage(context.Context, *UserCreatorMessage) (*CreatorPage, error)
 	UpdateCreatorData(context.Context, *UpdateCreatorInfo) (*proto.Empty, error)
+	GetFeed(context.Context, *proto.UUIDMessage) (*PostsMessage, error)
 	mustEmbedUnimplementedCreatorServiceServer()
 }
 
@@ -85,6 +96,9 @@ func (UnimplementedCreatorServiceServer) GetPage(context.Context, *UserCreatorMe
 }
 func (UnimplementedCreatorServiceServer) UpdateCreatorData(context.Context, *UpdateCreatorInfo) (*proto.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateCreatorData not implemented")
+}
+func (UnimplementedCreatorServiceServer) GetFeed(context.Context, *proto.UUIDMessage) (*PostsMessage, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFeed not implemented")
 }
 func (UnimplementedCreatorServiceServer) mustEmbedUnimplementedCreatorServiceServer() {}
 
@@ -153,6 +167,24 @@ func _CreatorService_UpdateCreatorData_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CreatorService_GetFeed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(proto.UUIDMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).GetFeed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/GetFeed",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).GetFeed(ctx, req.(*proto.UUIDMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CreatorService_ServiceDesc is the grpc.ServiceDesc for CreatorService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -171,6 +203,10 @@ var CreatorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateCreatorData",
 			Handler:    _CreatorService_UpdateCreatorData_Handler,
+		},
+		{
+			MethodName: "GetFeed",
+			Handler:    _CreatorService_GetFeed_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

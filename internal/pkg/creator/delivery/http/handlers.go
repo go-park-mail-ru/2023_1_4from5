@@ -2,6 +2,7 @@ package http
 
 import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
+	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
@@ -13,6 +14,7 @@ import (
 	"github.com/mailru/easyjson"
 	"go.uber.org/zap"
 	"net/http"
+	"time"
 )
 
 type CreatorHandler struct {
@@ -31,6 +33,101 @@ func NewCreatorHandler(uc creator.CreatorUsecase, puc post.PostUsecase, creatorC
 		postUsecase:   puc,
 		logger:        logger,
 	}
+}
+
+func (h *CreatorHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: userDataJWT.UserVersion,
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
+		utils.Cookie(w, "", "SSID")
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+
+	out, err := h.creatorClient.GetFeed(r.Context(), &generatedCommon.UUIDMessage{Value: userDataJWT.Id.String()})
+
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if out.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	feed := make([]models.Post, len(out.Posts))
+
+	for i, post := range out.Posts {
+		postID, err := uuid.Parse(post.Id)
+		if err != nil {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+		creatorID, err := uuid.Parse(post.CreatorID)
+		if err != nil {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+		creatorPhoto, err := uuid.Parse(post.CreatorPhoto)
+		if err != nil {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+
+		reg, err := time.Parse("2006-01-02 15:04:05 -0700 -0700", post.Creation)
+
+		if err != nil {
+			h.logger.Error(err)
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+
+		feed[i] = models.Post{
+			Id:            postID,
+			Creator:       creatorID,
+			CreatorPhoto:  creatorPhoto,
+			CreatorName:   post.CreatorName,
+			Creation:      reg,
+			LikesCount:    post.LikesCount,
+			Title:         post.Title,
+			Text:          post.Text,
+			IsAvailable:   post.IsAvailable,
+			IsLiked:       post.IsLiked,
+			Subscriptions: nil,
+		}
+
+		for _, attach := range post.PostAttachments {
+			attachID, err := uuid.Parse(attach.ID)
+			if err != nil {
+				utils.Response(w, http.StatusInternalServerError, nil)
+				return
+			}
+			feed[i].Attachments = append(feed[i].Attachments, models.Attachment{
+				Id:   attachID,
+				Type: attach.Type,
+			})
+		}
+
+		feed[i].Sanitize()
+	}
+
+	utils.Response(w, http.StatusOK, feed)
 }
 
 func (h *CreatorHandler) GetAllCreators(w http.ResponseWriter, r *http.Request) {

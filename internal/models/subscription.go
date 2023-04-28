@@ -18,6 +18,7 @@ type Subscription struct {
 }
 
 type SubscriptionDetails struct {
+	CreatorId  uuid.UUID `json:"creator_id"`
 	Id         uuid.UUID `json:"id,omitempty"`
 	UserID     uuid.UUID `json:"user_id,omitempty"`
 	MonthCount int64     `json:"month_count"`

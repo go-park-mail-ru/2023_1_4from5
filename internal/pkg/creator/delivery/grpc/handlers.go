@@ -46,6 +46,45 @@ func (h GrpcCreatorHandler) FindCreators(ctx context.Context, in *generatedCreat
 	return &creatorsMessage, nil
 }
 
+func (h GrpcCreatorHandler) GetFeed(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedCreator.PostsMessage, error) {
+	userID, err := uuid.Parse(in.Value)
+	if err != nil {
+		return &generatedCreator.PostsMessage{Error: err.Error()}, nil
+	}
+	feed, err := h.uc.GetFeed(ctx, userID)
+	if err != nil {
+		return &generatedCreator.PostsMessage{Error: err.Error()}, nil
+	}
+
+	var postsProto generatedCreator.PostsMessage
+	for i, post := range feed {
+		postsProto.Posts = append(postsProto.Posts, &generatedCreator.Post{
+			Id:           post.Id.String(),
+			CreatorID:    post.Creator.String(),
+			Creation:     post.Creation.String(),
+			CreatorName:  post.CreatorName,
+			LikesCount:   post.LikesCount,
+			CreatorPhoto: post.CreatorPhoto.String(),
+			Title:        post.Title,
+			Text:         post.Text,
+			IsAvailable:  true,
+			IsLiked:      post.IsLiked,
+		})
+
+		for _, attach := range post.Attachments {
+			var attachsProto generatedCreator.Attachment
+			attachsProto.ID = attach.Id.String()
+			attachsProto.Type = attach.Type
+			postsProto.Posts[i].PostAttachments = append(postsProto.Posts[i].PostAttachments, &attachsProto)
+		}
+		postsProto.Posts[i].Subscriptions = nil
+
+	}
+	postsProto.Error = ""
+
+	return &postsProto, nil
+}
+
 func (h GrpcCreatorHandler) GetPage(ctx context.Context, in *generatedCreator.UserCreatorMessage) (*generatedCreator.CreatorPage, error) {
 	return nil, nil
 }

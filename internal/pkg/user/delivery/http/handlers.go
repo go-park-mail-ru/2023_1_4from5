@@ -138,7 +138,7 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	fmt.Println(userProfile.Registration)
+
 	reg, err := time.Parse("2006-01-02 15:04:05 -0700 -0700", userProfile.Registration)
 
 	if err != nil {
@@ -724,6 +724,7 @@ func (h *UserHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	out, err := h.userClient.Subscribe(r.Context(), &generatedUser.SubscriptionDetails{
+		CreatorID:  subscription.CreatorId.String(),
 		UserID:     userDataJWT.Id.String(),
 		Id:         subUUID,
 		MonthCount: subscription.MonthCount,
