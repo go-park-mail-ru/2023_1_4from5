@@ -220,11 +220,11 @@ func easyjson7c25d2a6DecodeGithubComGoParkMailRu202314from5InternalModels1(in *j
 				in.AddError((out.ProfilePhoto).UnmarshalText(data))
 			}
 		case "followers_count":
-			out.FollowersCount = int(in.Int())
+			out.FollowersCount = int64(in.Int64())
 		case "description":
 			out.Description = string(in.String())
 		case "posts_count":
-			out.PostsCount = int(in.Int())
+			out.PostsCount = int64(in.Int64())
 		default:
 			in.SkipRecursive()
 		}
@@ -267,7 +267,7 @@ func easyjson7c25d2a6EncodeGithubComGoParkMailRu202314from5InternalModels1(out *
 	{
 		const prefix string = ",\"followers_count\":"
 		out.RawString(prefix)
-		out.Int(int(in.FollowersCount))
+		out.Int64(int64(in.FollowersCount))
 	}
 	{
 		const prefix string = ",\"description\":"
@@ -277,7 +277,7 @@ func easyjson7c25d2a6EncodeGithubComGoParkMailRu202314from5InternalModels1(out *
 	{
 		const prefix string = ",\"posts_count\":"
 		out.RawString(prefix)
-		out.Int(int(in.PostsCount))
+		out.Int64(int64(in.PostsCount))
 	}
 	out.RawByte('}')
 }
@@ -331,9 +331,9 @@ func easyjson7c25d2a6DecodeGithubComGoParkMailRu202314from5InternalModels2(in *j
 		case "description":
 			out.Description = string(in.String())
 		case "money_needed":
-			out.MoneyNeeded = int(in.Int())
+			out.MoneyNeeded = int64(in.Int64())
 		case "money_got":
-			out.MoneyGot = int(in.Int())
+			out.MoneyGot = int64(in.Int64())
 		default:
 			in.SkipRecursive()
 		}
@@ -361,12 +361,12 @@ func easyjson7c25d2a6EncodeGithubComGoParkMailRu202314from5InternalModels2(out *
 	{
 		const prefix string = ",\"money_needed\":"
 		out.RawString(prefix)
-		out.Int(int(in.MoneyNeeded))
+		out.Int64(int64(in.MoneyNeeded))
 	}
 	{
 		const prefix string = ",\"money_got\":"
 		out.RawString(prefix)
-		out.Int(int(in.MoneyGot))
+		out.Int64(int64(in.MoneyGot))
 	}
 	out.RawByte('}')
 }

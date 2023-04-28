@@ -11,17 +11,17 @@ import (
 type AuthUsecase interface {
 	SignIn(ctx context.Context, user models.LoginUser) (string, error)
 	SignUp(ctx context.Context, user models.User) (string, error)
-	IncUserVersion(ctx context.Context, details models.AccessDetails) (int, error)
+	IncUserVersion(ctx context.Context, details models.AccessDetails) (int64, error)
 	CheckUser(ctx context.Context, user models.User) (models.User, error)
 	EncryptPwd(ctx context.Context, pwd string) string
-	CheckUserVersion(ctx context.Context, details models.AccessDetails) (int, error)
+	CheckUserVersion(ctx context.Context, details models.AccessDetails) (int64, error)
 }
 
 type AuthRepo interface {
 	CreateUser(ctx context.Context, user models.User) (models.User, error)
 	CheckUser(ctx context.Context, user models.User) (models.User, error)
-	IncUserVersion(ctx context.Context, userId uuid.UUID) (int, error)
-	CheckUserVersion(ctx context.Context, details models.AccessDetails) (int, error)
+	IncUserVersion(ctx context.Context, userId uuid.UUID) (int64, error)
+	CheckUserVersion(ctx context.Context, details models.AccessDetails) (int64, error)
 }
 
 type TokenGenerator interface {

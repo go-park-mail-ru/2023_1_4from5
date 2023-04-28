@@ -74,7 +74,7 @@ func run() error {
 	}
 
 	authConn, err := grpc.Dial(
-		":8010",
+		"auth:8010",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -83,7 +83,7 @@ func run() error {
 	}
 
 	userConn, err := grpc.Dial(
-		":8020",
+		"user:8020",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -92,7 +92,7 @@ func run() error {
 	}
 
 	creatorConn, err := grpc.Dial(
-		":8030",
+		"creator:8030",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -115,12 +115,13 @@ func run() error {
 	postUse := postUsecase.NewPostUsecase(postRepo, zapSugar)
 	postHandler := postDelivery.NewPostHandler(postUse, authClient, attachmentUse, zapSugar)
 
-	creatorClient := generatedCreator.NewCreatorServiceClient(creatorConn)
-	creatorHandler := creatorDelivery.NewCreatorHandler(creatorClient, authClient, postUse, zapSugar)
-
 	creatorRepo := creatorRepository.NewCreatorRepo(db, zapSugar)
 	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo, zapSugar)
-	creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse, authClient, postUse, zapSugar)
+
+	creatorClient := generatedCreator.NewCreatorServiceClient(creatorConn)
+	creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse, postUse, creatorClient, authClient, zapSugar)
+
+	//creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse, authClient, postUse, zapSugar)
 
 	subscriptionRepo := subscriptionRepository.NewSubscriptionRepo(db, zapSugar)
 	subscriptionUse := subscriptionUsecase.NewSubscriptionUsecase(subscriptionRepo, zapSugar)
@@ -135,7 +136,7 @@ func run() error {
 	{
 		auth.HandleFunc("/signUp", authHandler.SignUp).Methods(http.MethodPost, http.MethodOptions)
 		auth.HandleFunc("/signIn", authHandler.SignIn).Methods(http.MethodPost, http.MethodOptions)
-		auth.HandleFunc("/logout", authHandler.Logout).Methods(http.MethodGet, http.MethodOptions) //TODO:мб пут?
+		auth.HandleFunc("/logout", authHandler.Logout).Methods(http.MethodPut, http.MethodOptions)
 	}
 
 	user := r.PathPrefix("/user").Subrouter()

@@ -37,10 +37,6 @@ func easyjson5a72dc82DecodeGithubComGoParkMailRu202314from5InternalModels(in *jl
 			continue
 		}
 		switch key {
-		case "Id":
-			if data := in.UnsafeBytes(); in.Ok() {
-				in.AddError((out.Id).UnmarshalText(data))
-			}
 		case "title":
 			out.Title = string(in.String())
 		case "text":
@@ -85,13 +81,13 @@ func easyjson5a72dc82EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 	first := true
 	_ = first
 	{
-		const prefix string = ",\"Id\":"
-		out.RawString(prefix[1:])
-		out.RawText((in.Id).MarshalText())
-	}
-	{
 		const prefix string = ",\"title\":"
-		out.RawString(prefix)
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
 		out.String(string(in.Title))
 	}
 	{
@@ -173,7 +169,7 @@ func easyjson5a72dc82DecodeGithubComGoParkMailRu202314from5InternalModels1(in *j
 				in.AddError((out.Creation).UnmarshalJSON(data))
 			}
 		case "likes_count":
-			out.LikesCount = int(in.Int())
+			out.LikesCount = int64(in.Int64())
 		case "title":
 			out.Title = string(in.String())
 		case "text":
@@ -260,7 +256,7 @@ func easyjson5a72dc82EncodeGithubComGoParkMailRu202314from5InternalModels1(out *
 	{
 		const prefix string = ",\"likes_count\":"
 		out.RawString(prefix)
-		out.Int(int(in.LikesCount))
+		out.Int64(int64(in.LikesCount))
 	}
 	{
 		const prefix string = ",\"title\":"

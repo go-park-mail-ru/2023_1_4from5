@@ -196,7 +196,7 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
 		Login:       userDataJWT.Login,
 		Id:          userDataJWT.Id.String(),
-		UserVersion: int64(userDataJWT.UserVersion),
+		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
 		h.logger.Error(err)
@@ -262,6 +262,7 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 		if err != nil {
 			h.logger.Error(err)
 			utils.Response(w, http.StatusBadRequest, nil)
+			return
 		}
 	}
 
@@ -270,10 +271,12 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
+		return
 	}
 
 	if name.Error != "" {
 		utils.Response(w, http.StatusInternalServerError, nil)
+		return
 	}
 
 	f, err := os.Create(fmt.Sprintf("%s%s.jpg", models.FolderPath, name.Value))
@@ -287,6 +290,7 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 	if _, err = io.Copy(f, file); err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
+		return
 	}
 
 	utils.Response(w, http.StatusOK, name.Value)
@@ -303,7 +307,7 @@ func (h *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
 		Login:       userDataJWT.Login,
 		Id:          userDataJWT.Id.String(),
-		UserVersion: int64(userDataJWT.UserVersion),
+		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
@@ -407,7 +411,7 @@ func (h *UserHandler) Donate(w http.ResponseWriter, r *http.Request) {
 	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
 		Login:       userDataJWT.Login,
 		Id:          userDataJWT.Id.String(),
-		UserVersion: int64(userDataJWT.UserVersion),
+		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
@@ -475,7 +479,7 @@ func (h *UserHandler) UpdateData(w http.ResponseWriter, r *http.Request) {
 	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
 		Login:       userDataJWT.Login,
 		Id:          userDataJWT.Id.String(),
-		UserVersion: int64(userDataJWT.UserVersion),
+		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
@@ -537,7 +541,7 @@ func (h *UserHandler) BecomeCreator(w http.ResponseWriter, r *http.Request) {
 	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
 		Login:       userDataJWT.Login,
 		Id:          userDataJWT.Id.String(),
-		UserVersion: int64(userDataJWT.UserVersion),
+		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
@@ -657,6 +661,8 @@ func (h *UserHandler) UserSubscriptions(w http.ResponseWriter, r *http.Request) 
 func (h *UserHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
 
+	//TODO: проверить соответствие количества денег(и вообще в идеале не класть его и считать из month_count, и вообще должен лететь токен киви какой-нибудь)
+
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
@@ -665,7 +671,7 @@ func (h *UserHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
 		Login:       userDataJWT.Login,
 		Id:          userDataJWT.Id.String(),
-		UserVersion: int64(userDataJWT.UserVersion),
+		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)

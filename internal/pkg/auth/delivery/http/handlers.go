@@ -56,7 +56,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	if uv, err := h.client.IncUserVersion(r.Context(), &generatedAuth.AccessDetails{
 		Login:       userData.Login,
 		Id:          userData.Id.String(),
-		UserVersion: int64(userData.UserVersion),
+		UserVersion: userData.UserVersion,
 	}); err != nil || len(uv.Error) != 0 {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)

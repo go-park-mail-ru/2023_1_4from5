@@ -44,7 +44,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
 		Login:       userDataJWT.Login,
 		Id:          userDataJWT.Id.String(),
-		UserVersion: int64(userDataJWT.UserVersion),
+		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
@@ -246,7 +246,7 @@ func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
 	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
 		Login:       userDataJWT.Login,
 		Id:          userDataJWT.Id.String(),
-		UserVersion: int64(userDataJWT.UserVersion),
+		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
@@ -299,7 +299,7 @@ func (h *PostHandler) RemoveLike(w http.ResponseWriter, r *http.Request) {
 	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
 		Login:       userDataJWT.Login,
 		Id:          userDataJWT.Id.String(),
-		UserVersion: int64(userDataJWT.UserVersion),
+		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
@@ -341,7 +341,7 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
 		Login:       userDataJWT.Login,
 		Id:          userDataJWT.Id.String(),
-		UserVersion: int64(userDataJWT.UserVersion),
+		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
@@ -461,7 +461,7 @@ func (h *PostHandler) EditPost(w http.ResponseWriter, r *http.Request) {
 	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
 		Login:       userDataJWT.Login,
 		Id:          userDataJWT.Id.String(),
-		UserVersion: int64(userDataJWT.UserVersion),
+		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
@@ -545,7 +545,7 @@ func (h *PostHandler) AddAttach(w http.ResponseWriter, r *http.Request) {
 	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
 		Login:       userDataJWT.Login,
 		Id:          userDataJWT.Id.String(),
-		UserVersion: int64(userDataJWT.UserVersion),
+		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
@@ -680,7 +680,7 @@ func (h *PostHandler) DeleteAttach(w http.ResponseWriter, r *http.Request) {
 	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
 		Login:       userDataJWT.Login,
 		Id:          userDataJWT.Id.String(),
-		UserVersion: int64(userDataJWT.UserVersion),
+		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)

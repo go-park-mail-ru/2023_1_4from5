@@ -43,7 +43,7 @@ func (h *SubscriptionHandler) CreateSubscription(w http.ResponseWriter, r *http.
 	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
 		Login:       userDataJWT.Login,
 		Id:          userDataJWT.Id.String(),
-		UserVersion: int64(userDataJWT.UserVersion),
+		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
@@ -122,7 +122,7 @@ func (h *SubscriptionHandler) DeleteSubscription(w http.ResponseWriter, r *http.
 	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
 		Login:       userDataJWT.Login,
 		Id:          userDataJWT.Id.String(),
-		UserVersion: int64(userDataJWT.UserVersion),
+		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
@@ -192,7 +192,7 @@ func (h *SubscriptionHandler) EditSubscription(w http.ResponseWriter, r *http.Re
 	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
 		Login:       userDataJWT.Login,
 		Id:          userDataJWT.Id.String(),
-		UserVersion: int64(userDataJWT.UserVersion),
+		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)

@@ -13,7 +13,7 @@ message Creator{
   string UserID = 2;
   string CreatorName = 3;
   string CreatorPhoto = 4;
-  string  ProfilePhoto = 5;
+  string  CoverPhoto = 5;
   int64 FollowersCount = 6;
   string Description = 7;
   int64 PostsCount = 8;

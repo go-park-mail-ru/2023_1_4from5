@@ -276,7 +276,7 @@ func easyjson9e1087fdDecodeGithubComGoParkMailRu202314from5InternalModels2(in *j
 				in.AddError((out.Registration).UnmarshalJSON(data))
 			}
 		case "user_version":
-			out.UserVersion = int(in.Int())
+			out.UserVersion = int64(in.Int64())
 		default:
 			in.SkipRecursive()
 		}
@@ -324,7 +324,7 @@ func easyjson9e1087fdEncodeGithubComGoParkMailRu202314from5InternalModels2(out *
 	{
 		const prefix string = ",\"user_version\":"
 		out.RawString(prefix)
-		out.Int(int(in.UserVersion))
+		out.Int64(int64(in.UserVersion))
 	}
 	out.RawByte('}')
 }

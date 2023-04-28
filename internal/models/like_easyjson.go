@@ -37,7 +37,7 @@ func easyjson52421b6dDecodeGithubComGoParkMailRu202314from5InternalModels(in *jl
 		}
 		switch key {
 		case "likes_count":
-			out.LikesCount = int(in.Int())
+			out.LikesCount = int64(in.Int64())
 		case "post_id":
 			if data := in.UnsafeBytes(); in.Ok() {
 				in.AddError((out.PostID).UnmarshalText(data))
@@ -59,7 +59,7 @@ func easyjson52421b6dEncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 	{
 		const prefix string = ",\"likes_count\":"
 		out.RawString(prefix[1:])
-		out.Int(int(in.LikesCount))
+		out.Int64(int64(in.LikesCount))
 	}
 	{
 		const prefix string = ",\"post_id\":"

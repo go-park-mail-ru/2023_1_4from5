@@ -13,9 +13,9 @@ type Creator struct {
 	Name           string    `json:"name"`
 	CoverPhoto     uuid.UUID `json:"cover_photo"`
 	ProfilePhoto   uuid.UUID `json:"profile_photo"`
-	FollowersCount int       `json:"followers_count"`
+	FollowersCount int64     `json:"followers_count"`
 	Description    string    `json:"description"`
-	PostsCount     int       `json:"posts_count"`
+	PostsCount     int64     `json:"posts_count"`
 }
 
 type CreatorPage struct {
@@ -30,8 +30,8 @@ type CreatorPage struct {
 type Aim struct {
 	Creator     uuid.UUID `json:"creator_id"`
 	Description string    `json:"description"`
-	MoneyNeeded int       `json:"money_needed"`
-	MoneyGot    int       `json:"money_got"`
+	MoneyNeeded int64     `json:"money_needed"`
+	MoneyGot    int64     `json:"money_got"`
 }
 
 func (creator *Creator) Sanitize() {

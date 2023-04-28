@@ -4,6 +4,7 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator"
+	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
@@ -15,18 +16,20 @@ import (
 )
 
 type CreatorHandler struct {
-	usecase     creator.CreatorUsecase
-	authClient  generatedAuth.AuthServiceClient
-	postUsecase post.PostUsecase
-	logger      *zap.SugaredLogger
+	creatorClient generatedCreator.CreatorServiceClient
+	usecase       creator.CreatorUsecase
+	authClient    generatedAuth.AuthServiceClient
+	postUsecase   post.PostUsecase
+	logger        *zap.SugaredLogger
 }
 
-func NewCreatorHandler(uc creator.CreatorUsecase, auc generatedAuth.AuthServiceClient, puc post.PostUsecase, logger *zap.SugaredLogger) *CreatorHandler {
+func NewCreatorHandler(uc creator.CreatorUsecase, puc post.PostUsecase, creatorClient generatedCreator.CreatorServiceClient, authClient generatedAuth.AuthServiceClient, logger *zap.SugaredLogger) *CreatorHandler {
 	return &CreatorHandler{
-		usecase:     uc,
-		authClient:  auc,
-		postUsecase: puc,
-		logger:      logger,
+		usecase:       uc,
+		creatorClient: creatorClient,
+		authClient:    authClient,
+		postUsecase:   puc,
+		logger:        logger,
 	}
 }
 
@@ -49,14 +52,55 @@ func (h *CreatorHandler) FindCreator(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	creators, err := h.usecase.FindCreators(r.Context(), keyword)
-	if err == models.InternalError {
+	out, err := h.creatorClient.FindCreators(r.Context(), &generatedCreator.KeywordMessage{Keyword: keyword})
+	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
-	for i, _ := range creators {
+
+	if out.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	creators := make([]models.Creator, len(out.Creators))
+
+	for i, v := range out.Creators {
+		creatorId, err := uuid.Parse(v.Id)
+		if err != nil {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+		userId, err := uuid.Parse(v.UserID)
+		if err != nil {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+		creatorPhoto, err := uuid.Parse(v.CreatorPhoto)
+		if err != nil {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+		coverPhoto, err := uuid.Parse(v.CoverPhoto)
+		if err != nil {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+		creators[i] = models.Creator{
+			Id:             creatorId,
+			UserId:         userId,
+			Name:           v.CreatorName,
+			CoverPhoto:     coverPhoto,
+			ProfilePhoto:   creatorPhoto,
+			FollowersCount: v.FollowersCount,
+			Description:    v.Description,
+			PostsCount:     v.PostsCount,
+		}
+
 		creators[i].Sanitize()
 	}
+
 	utils.Response(w, http.StatusOK, creators)
 }
 

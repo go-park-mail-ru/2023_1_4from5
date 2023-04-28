@@ -1,4 +1,4 @@
-package proto
+package proto_gen
 
 //go:generate protoc  --go_out=..  --go-grpc_out=.. --proto_path=. auth.proto
 //go:generate protoc  --go_out=..  --go-grpc_out=.. --proto_path=. user.proto

@@ -42,7 +42,7 @@ func (h GrpcAuthHandler) IncUserVersion(ctx context.Context, in *generatedAuth.A
 	user := models.AccessDetails{
 		Login:       in.Login,
 		Id:          idTmp,
-		UserVersion: int(in.UserVersion), //TODO: перегнать все int поля в int64
+		UserVersion: in.UserVersion, //TODO: перегнать все int поля в int64
 	}
 
 	_, err = h.uc.IncUserVersion(ctx, user)
@@ -86,13 +86,13 @@ func (h GrpcAuthHandler) CheckUserVersion(ctx context.Context, in *generatedAuth
 	user := models.AccessDetails{
 		Login:       in.Login,
 		Id:          idTmp,
-		UserVersion: int(in.UserVersion),
+		UserVersion: in.UserVersion,
 	}
 
 	uv, err := h.uc.CheckUserVersion(ctx, user)
 	if err == nil {
 		return &generatedAuth.UserVersion{
-			UserVersion: int64(uv),
+			UserVersion: uv,
 			Error:       "",
 		}, nil
 	}

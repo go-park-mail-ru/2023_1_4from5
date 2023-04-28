@@ -9,7 +9,7 @@ import (
 type Token struct {
 	Login       string
 	Id          string
-	UserVersion int
+	UserVersion int64
 	jwt.StandardClaims
 }
 
@@ -20,5 +20,5 @@ type TokenView struct {
 type AccessDetails struct {
 	Login       string
 	Id          uuid.UUID
-	UserVersion int
+	UserVersion int64
 }

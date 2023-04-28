@@ -1,5 +1,6 @@
 syntax = "proto3";
 
+//option go_package = "internal/models/proto";
 option go_package = "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto";
 
 package common;
