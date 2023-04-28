@@ -20,8 +20,8 @@ message Creator{
 };
 
 message CreatorsMessage{
-  repeated Creator Creators = 9;
-  string Error = 10;
+  repeated Creator Creators = 1;
+  string Error = 2;
 };
 
 message UserCreatorMessage {
