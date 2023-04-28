@@ -110,7 +110,7 @@ type Donate struct {
 }
 
 func (creatorInfo *BecameCreatorInfo) IsValid() bool {
-	return (len(creatorInfo.Name) > 0 && len(creatorInfo.Name) < 40) && (len(creatorInfo.Name) > 0 && len(creatorInfo.Name) < 500)
+	return (len(creatorInfo.Name) > 0 && len(creatorInfo.Name) < 40) && (len(creatorInfo.Description) > 0 && len(creatorInfo.Description) < 500)
 }
 
 func (user *User) Sanitize() {

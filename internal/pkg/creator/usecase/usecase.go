@@ -28,6 +28,14 @@ func (uc *CreatorUsecase) CreateAim(ctx context.Context, aimInfo models.Aim) err
 	return uc.repo.CreateAim(ctx, aimInfo)
 }
 
+func (uc *CreatorUsecase) UpdateCreatorData(ctx context.Context, updateData models.UpdateCreatorInfo) error {
+	return uc.repo.UpdateCreatorData(ctx, updateData)
+}
+
+func (uc *CreatorUsecase) CheckIfCreator(ctx context.Context, userID uuid.UUID) (uuid.UUID, error) {
+	return uc.repo.CheckIfCreator(ctx, userID)
+}
+
 func (uc *CreatorUsecase) FindCreators(ctx context.Context, keyword string) ([]models.Creator, error) {
 	return uc.repo.FindCreators(ctx, keyword)
 }

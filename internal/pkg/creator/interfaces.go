@@ -13,6 +13,8 @@ type CreatorUsecase interface {
 	CreateAim(ctx context.Context, aimInfo models.Aim) error
 	GetAllCreators(ctx context.Context) ([]models.Creator, error)
 	FindCreators(ctx context.Context, keyword string) ([]models.Creator, error)
+	UpdateCreatorData(ctx context.Context, updateData models.UpdateCreatorInfo) error
+	CheckIfCreator(ctx context.Context, userID uuid.UUID) (uuid.UUID, error)
 }
 
 type CreatorRepo interface {
@@ -21,4 +23,6 @@ type CreatorRepo interface {
 	CreateAim(ctx context.Context, aimInfo models.Aim) error
 	GetAllCreators(ctx context.Context) ([]models.Creator, error)
 	FindCreators(ctx context.Context, keyword string) ([]models.Creator, error)
+	UpdateCreatorData(ctx context.Context, updateData models.UpdateCreatorInfo) error
+	CheckIfCreator(ctx context.Context, userID uuid.UUID) (uuid.UUID, error)
 }

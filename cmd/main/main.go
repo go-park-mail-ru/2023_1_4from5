@@ -74,7 +74,7 @@ func run() error {
 	}
 
 	authConn, err := grpc.Dial(
-		"auth:8010",
+		":8010",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -83,7 +83,7 @@ func run() error {
 	}
 
 	userConn, err := grpc.Dial(
-		"user:8020",
+		":8020",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -92,7 +92,7 @@ func run() error {
 	}
 
 	creatorConn, err := grpc.Dial(
-		"creator:8030",
+		":8030",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -160,7 +160,7 @@ func run() error {
 		creator.HandleFunc("/search/{keyword}", creatorHandler.FindCreator).Methods(http.MethodGet, http.MethodOptions)
 		creator.HandleFunc("/page/{creator-uuid}", creatorHandler.GetPage).Methods(http.MethodGet, http.MethodOptions)
 		creator.HandleFunc("/aim/create", creatorHandler.CreateAim).Methods(http.MethodPost, http.MethodOptions)
-		creator.HandleFunc("/subscription/create", creatorHandler.CreateAim).Methods(http.MethodPost, http.MethodOptions)
+		creator.HandleFunc("/updateData", creatorHandler.UpdateCreatorData).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
 	}
 
 	post := r.PathPrefix("/post").Subrouter()

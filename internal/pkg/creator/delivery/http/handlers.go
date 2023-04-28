@@ -194,3 +194,80 @@ func (h *CreatorHandler) CreateAim(w http.ResponseWriter, r *http.Request) {
 	}
 	utils.Response(w, http.StatusOK, nil)
 }
+
+func (h *CreatorHandler) UpdateCreatorData(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: userDataJWT.UserVersion,
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
+		utils.Cookie(w, "", "SSID")
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+	if r.Method == http.MethodGet {
+		tokenCSRF, err := token.GetCSRFToken(models.User{Login: userDataJWT.Login, Id: userDataJWT.Id, UserVersion: userDataJWT.UserVersion})
+		if err != nil {
+			utils.Response(w, http.StatusUnauthorized, nil)
+			return
+		}
+		utils.ResponseWithCSRF(w, tokenCSRF)
+		return
+	}
+
+	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
+	if err != nil || *userDataCSRF != *userDataJWT {
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+
+	updCreator := models.BecameCreatorInfo{}
+
+	creatorID, err := h.usecase.CheckIfCreator(r.Context(), userDataJWT.Id)
+
+	if err == models.NotFound {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	err = easyjson.UnmarshalFromReader(r.Body, &updCreator)
+	if err != nil || !(updCreator.IsValid()) {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	out, err := h.creatorClient.UpdateCreatorData(r.Context(), &generatedCreator.UpdateCreatorInfo{
+		CreatorName: updCreator.Name,
+		Description: updCreator.Description,
+		CreatorID:   creatorID.String(),
+	})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if out.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, nil)
+}

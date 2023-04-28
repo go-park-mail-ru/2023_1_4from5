@@ -29,6 +29,12 @@ message UserCreatorMessage {
   string CreatorID = 2;
 }
 
+message UpdateCreatorInfo {
+  string CreatorName = 1;
+  string Description = 2;
+  string CreatorID = 3;
+}
+
 message CreatorPage{
   Creator CreatorInfo = 1;
   Aim AimInfo = 2;
@@ -69,5 +75,6 @@ message Attachment{
 service CreatorService {
   rpc FindCreators(KeywordMessage) returns (CreatorsMessage) {}
   rpc GetPage(UserCreatorMessage) returns (CreatorPage) {}
+  rpc UpdateCreatorData(UpdateCreatorInfo) returns (common.Empty) {}
 }
 

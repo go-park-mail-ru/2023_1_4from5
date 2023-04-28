@@ -21,6 +21,8 @@ const (
 	AddAim            = `UPDATE creator SET aim = $1,  money_got = $2, money_needed = $3 WHERE creator_id = $4;`
 	CheckIfFollow     = `SELECT user_id FROM "follow" WHERE user_id = $1 AND creator_id = $2;`
 	FindCreators      = `SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM creator WHERE (setweight(to_tsvector('russian', name),'A') || setweight(to_tsvector('russian', description), 'B') || setweight(to_tsvector('english', name),'A') || setweight(to_tsvector('english', description), 'B'))  @@ (plainto_tsquery('russian',$1)|| plainto_tsquery('english',$1)) LIMIT 30;`
+	CheckIfCreator    = `SELECT creator_id FROM "creator" WHERE user_id = $1`
+	UpdateCreatorData = `UPDATE creator SET name = $1, description = $2 WHERE creator_id = $3`
 )
 
 type CreatorRepo struct {
@@ -282,4 +284,25 @@ func (r *CreatorRepo) FindCreators(ctx context.Context, keyword string) ([]model
 	}
 
 	return creators, nil
+}
+
+func (r *CreatorRepo) UpdateCreatorData(ctx context.Context, updateData models.UpdateCreatorInfo) error {
+	row := r.db.QueryRowContext(ctx, UpdateCreatorData, updateData.CreatorName, updateData.Description, updateData.CreatorID)
+	if err := row.Scan(); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
+		return models.InternalError
+	}
+	return nil
+}
+
+func (r *CreatorRepo) CheckIfCreator(ctx context.Context, userID uuid.UUID) (uuid.UUID, error) {
+	var creatorID uuid.UUID
+	row := r.db.QueryRowContext(ctx, CheckIfCreator, userID)
+	if err := row.Scan(&creatorID); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		r.logger.Error(err)
+		return uuid.Nil, models.InternalError
+	} else if errors.Is(err, sql.ErrNoRows) {
+		return uuid.Nil, models.NotFound
+	}
+	return creatorID, nil
 }

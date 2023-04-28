@@ -34,6 +34,12 @@ type Aim struct {
 	MoneyGot    int64     `json:"money_got"`
 }
 
+type UpdateCreatorInfo struct {
+	Description string    `json:"description"`
+	CreatorName string    `json:"creator_name"`
+	CreatorID   uuid.UUID `json:"-"`
+}
+
 func (creator *Creator) Sanitize() {
 	creator.Name = html.EscapeString(creator.Name)
 	creator.Description = html.EscapeString(creator.Description)
