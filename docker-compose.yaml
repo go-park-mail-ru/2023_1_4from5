@@ -22,6 +22,16 @@ services:
       - type: bind
         source: /var/log
         target: /var/log
+  creator:
+    build:
+      context: .
+      dockerfile: build/creator.Dockerfile
+    ports:
+      - "8030:8030"
+    volumes:
+      - type: bind
+        source: /var/log
+        target: /var/log
 
 
   postgres:
@@ -42,6 +52,7 @@ services:
       - postgres
       - auth
       - user
+      - creator
     build:
       context: .
       dockerfile: build/main.Dockerfile
