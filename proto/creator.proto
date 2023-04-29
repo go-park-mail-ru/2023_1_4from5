@@ -83,5 +83,6 @@ service CreatorService {
   rpc GetPage(UserCreatorMessage) returns (CreatorPage) {}
   rpc UpdateCreatorData(UpdateCreatorInfo) returns (common.Empty) {}
   rpc GetFeed(common.UUIDMessage) returns (PostsMessage) {}
+  rpc GetAllCreators(common.Empty)returns (CreatorsMessage) {}
 }
 

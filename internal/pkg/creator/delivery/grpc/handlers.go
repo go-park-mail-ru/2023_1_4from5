@@ -47,6 +47,29 @@ func (h GrpcCreatorHandler) FindCreators(ctx context.Context, in *generatedCreat
 	return &creatorsMessage, nil
 }
 
+func (h GrpcCreatorHandler) GetAllCreators(ctx context.Context, in *generatedCommon.Empty) (*generatedCreator.CreatorsMessage, error) {
+	creators, err := h.uc.GetAllCreators(ctx)
+	if err != nil {
+		return &generatedCreator.CreatorsMessage{Error: err.Error()}, nil
+	}
+	var creatorsMessage generatedCreator.CreatorsMessage
+	for _, v := range creators {
+		creatorsMessage.Creators = append(creatorsMessage.Creators, &generatedCreator.Creator{
+			Id:             v.Id.String(),
+			UserID:         v.UserId.String(),
+			CreatorName:    v.Name,
+			CreatorPhoto:   v.ProfilePhoto.String(),
+			CoverPhoto:     v.CoverPhoto.String(),
+			FollowersCount: v.FollowersCount,
+			Description:    v.Description,
+			PostsCount:     v.PostsCount,
+		})
+	}
+	creatorsMessage.Error = ""
+
+	return &creatorsMessage, nil
+}
+
 func (h GrpcCreatorHandler) GetFeed(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedCreator.PostsMessage, error) {
 	userID, err := uuid.Parse(in.Value)
 	if err != nil {

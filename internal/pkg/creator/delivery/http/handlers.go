@@ -131,12 +131,52 @@ func (h *CreatorHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CreatorHandler) GetAllCreators(w http.ResponseWriter, r *http.Request) {
-	creators, err := h.usecase.GetAllCreators(r.Context())
-	if err == models.InternalError {
+	out, err := h.creatorClient.GetAllCreators(r.Context(), &generatedCommon.Empty{Error: ""})
+	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
-	for i := range creators {
+
+	if out.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	creators := make([]models.Creator, len(out.Creators))
+
+	for i, v := range out.Creators {
+		creatorId, err := uuid.Parse(v.Id)
+		if err != nil {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+		userId, err := uuid.Parse(v.UserID)
+		if err != nil {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+		creatorPhoto, err := uuid.Parse(v.CreatorPhoto)
+		if err != nil {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+		coverPhoto, err := uuid.Parse(v.CoverPhoto)
+		if err != nil {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+		creators[i] = models.Creator{
+			Id:             creatorId,
+			UserId:         userId,
+			Name:           v.CreatorName,
+			CoverPhoto:     coverPhoto,
+			ProfilePhoto:   creatorPhoto,
+			FollowersCount: v.FollowersCount,
+			Description:    v.Description,
+			PostsCount:     v.PostsCount,
+		}
+
 		creators[i].Sanitize()
 	}
 	utils.Response(w, http.StatusOK, creators)
@@ -253,6 +293,23 @@ func (h *CreatorHandler) GetPage(w http.ResponseWriter, r *http.Request) {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
+	}
+
+	for _, sub := range creatorPage.Subscriptions {
+		subID, err := uuid.Parse(sub.Id)
+		if err != nil {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+		page.Subscriptions = append(page.Subscriptions, models.Subscription{
+			Id:           subID,
+			Creator:      creatorID,
+			CreatorName:  creatorPage.CreatorInfo.CreatorName,
+			CreatorPhoto: creatorPhoto,
+			MonthCost:    sub.MonthCost,
+			Title:        sub.Title,
+			Description:  sub.Description,
+		})
 	}
 
 	page.IsMyPage = creatorPage.IsMyPage
