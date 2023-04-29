@@ -1,7 +1,9 @@
 package http
 
 import (
+	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
+	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
@@ -12,7 +14,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mailru/easyjson"
 	"go.uber.org/zap"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 )
 
 type CreatorHandler struct {
@@ -43,6 +48,248 @@ func (h *CreatorHandler) GetAllCreators(w http.ResponseWriter, r *http.Request) 
 		creators[i].Sanitize()
 	}
 	utils.Response(w, http.StatusOK, creators)
+}
+
+func (h *CreatorHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: userDataJWT.UserVersion,
+	})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
+		utils.Cookie(w, "", "SSID")
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+	if r.Method == http.MethodGet {
+		tokenCSRF, err := token.GetCSRFToken(models.User{Login: userDataJWT.Login, Id: userDataJWT.Id, UserVersion: userDataJWT.UserVersion})
+		if err != nil {
+			utils.Response(w, http.StatusUnauthorized, nil)
+			return
+		}
+		utils.ResponseWithCSRF(w, tokenCSRF)
+		return
+	}
+	// check CSRF token
+	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
+	if err != nil || *userDataCSRF != *userDataJWT {
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+
+	creatorId, err := h.usecase.CheckIfCreator(r.Context(), userDataJWT.Id)
+	if creatorId == uuid.Nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	} else if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	err = r.ParseMultipartForm(models.MaxFileSize)
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	file, fileTmp, err := r.FormFile("upload")
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	// проверка типа файла
+	buf, _ := io.ReadAll(file)
+	file.Close()
+	if file, err = fileTmp.Open(); err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	if http.DetectContentType(buf) != "image/jpeg" && http.DetectContentType(buf) != "image/png" && http.DetectContentType(buf) != "image/jpg" {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	defer file.Close()
+
+	var oldName uuid.UUID
+	oldName, err = uuid.Parse(r.PostFormValue("path"))
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if oldName != uuid.Nil {
+		err = os.Remove(filepath.Join(models.FolderPath, fmt.Sprintf("%s.jpg", oldName.String())))
+		if err != nil {
+			h.logger.Error(err)
+			utils.Response(w, http.StatusBadRequest, nil)
+			return
+		}
+	}
+
+	name, err := h.creatorClient.UpdateProfilePhoto(r.Context(), &generatedCommon.UUIDMessage{
+		Value: creatorId.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if name.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	f, err := os.Create(fmt.Sprintf("%s%s.jpg", models.FolderPath, name.Value))
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	defer f.Close()
+
+	if _, err = io.Copy(f, file); err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, name.Value)
+
+}
+
+func (h *CreatorHandler) UpdateCoverPhoto(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: userDataJWT.UserVersion,
+	})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
+		utils.Cookie(w, "", "SSID")
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+	if r.Method == http.MethodGet {
+		tokenCSRF, err := token.GetCSRFToken(models.User{Login: userDataJWT.Login, Id: userDataJWT.Id, UserVersion: userDataJWT.UserVersion})
+		if err != nil {
+			utils.Response(w, http.StatusUnauthorized, nil)
+			return
+		}
+		utils.ResponseWithCSRF(w, tokenCSRF)
+		return
+	}
+	// check CSRF token
+	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
+	if err != nil || *userDataCSRF != *userDataJWT {
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+
+	creatorId, err := h.usecase.CheckIfCreator(r.Context(), userDataJWT.Id)
+	if creatorId == uuid.Nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	} else if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	err = r.ParseMultipartForm(models.MaxFileSize)
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	file, fileTmp, err := r.FormFile("upload")
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	// проверка типа файла
+	buf, _ := io.ReadAll(file)
+	file.Close()
+	if file, err = fileTmp.Open(); err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	if http.DetectContentType(buf) != "image/jpeg" && http.DetectContentType(buf) != "image/png" && http.DetectContentType(buf) != "image/jpg" {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	defer file.Close()
+
+	var oldName uuid.UUID
+	oldName, err = uuid.Parse(r.PostFormValue("path"))
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if oldName != uuid.Nil {
+		err = os.Remove(filepath.Join(models.FolderPath, fmt.Sprintf("%s.jpg", oldName.String())))
+		if err != nil {
+			h.logger.Error(err)
+			utils.Response(w, http.StatusBadRequest, nil)
+			return
+		}
+	}
+
+	name, err := h.creatorClient.UpdateCoverPhoto(r.Context(), &generatedCommon.UUIDMessage{
+		Value: creatorId.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if name.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	f, err := os.Create(fmt.Sprintf("%s%s.jpg", models.FolderPath, name.Value))
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	defer f.Close()
+
+	if _, err = io.Copy(f, file); err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, name.Value)
+
 }
 
 func (h *CreatorHandler) FindCreator(w http.ResponseWriter, r *http.Request) {
@@ -147,7 +394,7 @@ func (h *CreatorHandler) CreateAim(w http.ResponseWriter, r *http.Request) {
 	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
 		Login:       userDataJWT.Login,
 		Id:          userDataJWT.Id.String(),
-		UserVersion: int64(userDataJWT.UserVersion),
+		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)

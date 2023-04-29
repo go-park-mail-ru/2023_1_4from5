@@ -224,7 +224,7 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = r.ParseMultipartForm(4 << 20) // maxMemory
+	err = r.ParseMultipartForm(models.MaxFileSize) // maxMemory
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return

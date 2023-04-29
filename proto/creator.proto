@@ -76,5 +76,7 @@ service CreatorService {
   rpc FindCreators(KeywordMessage) returns (CreatorsMessage) {}
   rpc GetPage(UserCreatorMessage) returns (CreatorPage) {}
   rpc UpdateCreatorData(UpdateCreatorInfo) returns (common.Empty) {}
+  rpc UpdateProfilePhoto(common.UUIDMessage) returns (common.UUIDResponse) {}
+  rpc UpdateCoverPhoto(common.UUIDMessage) returns (common.UUIDResponse) {}
 }
 

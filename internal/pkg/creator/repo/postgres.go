@@ -11,18 +11,20 @@ import (
 )
 
 const (
-	CreatorInfo       = `SELECT user_id, name, cover_photo, followers_count, description, posts_count, aim, money_got, money_needed, profile_photo FROM "creator" WHERE creator_id=$1;`
-	GetCreatorSubs    = `SELECT subscription_id, month_cost, title, description FROM "subscription" WHERE creator_id=$1;`
-	GetAllCreators    = `SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM "creator" LIMIT 100;`
-	CreatorPosts      = `SELECT "post".post_id, creation_date, title, post_text, likes_count, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE creator_id = $1 GROUP BY "post".post_id, creation_date, title, post_text ORDER BY creation_date DESC;`
-	UserSubscriptions = `SELECT array_agg(subscription_id) FROM "user_subscription" WHERE user_id=$1;`
-	IsLiked           = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2`
-	GetSubInfo        = `SELECT creator_id, month_cost, title, description FROM "subscription" WHERE subscription_id = $1;`
-	AddAim            = `UPDATE creator SET aim = $1,  money_got = $2, money_needed = $3 WHERE creator_id = $4;`
-	CheckIfFollow     = `SELECT user_id FROM "follow" WHERE user_id = $1 AND creator_id = $2;`
-	FindCreators      = `SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM creator WHERE (setweight(to_tsvector('russian', name),'A') || setweight(to_tsvector('russian', description), 'B') || setweight(to_tsvector('english', name),'A') || setweight(to_tsvector('english', description), 'B'))  @@ (plainto_tsquery('russian',$1)|| plainto_tsquery('english',$1)) LIMIT 30;`
-	CheckIfCreator    = `SELECT creator_id FROM "creator" WHERE user_id = $1`
-	UpdateCreatorData = `UPDATE creator SET name = $1, description = $2 WHERE creator_id = $3`
+	CreatorInfo        = `SELECT user_id, name, cover_photo, followers_count, description, posts_count, aim, money_got, money_needed, profile_photo FROM "creator" WHERE creator_id=$1;`
+	GetCreatorSubs     = `SELECT subscription_id, month_cost, title, description FROM "subscription" WHERE creator_id=$1;`
+	GetAllCreators     = `SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM "creator" LIMIT 100;`
+	CreatorPosts       = `SELECT "post".post_id, creation_date, title, post_text, likes_count, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE creator_id = $1 GROUP BY "post".post_id, creation_date, title, post_text ORDER BY creation_date DESC;`
+	UserSubscriptions  = `SELECT array_agg(subscription_id) FROM "user_subscription" WHERE user_id=$1;`
+	IsLiked            = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2`
+	GetSubInfo         = `SELECT creator_id, month_cost, title, description FROM "subscription" WHERE subscription_id = $1;`
+	AddAim             = `UPDATE creator SET aim = $1,  money_got = $2, money_needed = $3 WHERE creator_id = $4;`
+	CheckIfFollow      = `SELECT user_id FROM "follow" WHERE user_id = $1 AND creator_id = $2;`
+	FindCreators       = `SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM creator WHERE (setweight(to_tsvector('russian', name),'A') || setweight(to_tsvector('russian', description), 'B') || setweight(to_tsvector('english', name),'A') || setweight(to_tsvector('english', description), 'B'))  @@ (plainto_tsquery('russian',$1)|| plainto_tsquery('english',$1)) LIMIT 30;`
+	CheckIfCreator     = `SELECT creator_id FROM "creator" WHERE user_id = $1`
+	UpdateCreatorData  = `UPDATE creator SET name = $1, description = $2 WHERE creator_id = $3`
+	UpdateProfilePhoto = `UPDATE "creator" SET profile_photo = $1 WHERE creator_id = $2;`
+	UpdateCoverPhoto   = `UPDATE "creator" SET cover_photo = $1 WHERE creator_id = $2;`
 )
 
 type CreatorRepo struct {
@@ -305,4 +307,22 @@ func (r *CreatorRepo) CheckIfCreator(ctx context.Context, userID uuid.UUID) (uui
 		return uuid.Nil, models.NotFound
 	}
 	return creatorID, nil
+}
+
+func (r *CreatorRepo) UpdateProfilePhoto(ctx context.Context, creatorId, path uuid.UUID) error {
+	row := r.db.QueryRowContext(ctx, UpdateProfilePhoto, path, creatorId)
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		r.logger.Error(err)
+		return models.InternalError
+	}
+	return nil
+}
+
+func (r *CreatorRepo) UpdateCoverPhoto(ctx context.Context, creatorId, path uuid.UUID) error {
+	row := r.db.QueryRowContext(ctx, UpdateCoverPhoto, path, creatorId)
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		r.logger.Error(err)
+		return models.InternalError
+	}
+	return nil
 }

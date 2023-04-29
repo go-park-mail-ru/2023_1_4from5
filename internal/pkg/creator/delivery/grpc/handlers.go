@@ -64,3 +64,31 @@ func (h GrpcCreatorHandler) UpdateCreatorData(ctx context.Context, in *generated
 	}
 	return &generatedCommon.Empty{Error: ""}, nil
 }
+
+func (h GrpcCreatorHandler) UpdateProfilePhoto(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedCommon.UUIDResponse, error) {
+	userId, err := uuid.Parse(in.Value)
+	if err != nil {
+		return &generatedCommon.UUIDResponse{Error: err.Error()}, nil
+	}
+	imageId, err := h.uc.UpdateProfilePhoto(ctx, userId)
+	if err != nil {
+		return &generatedCommon.UUIDResponse{Error: err.Error()}, nil
+	}
+	return &generatedCommon.UUIDResponse{
+		Value: imageId.String(),
+		Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) UpdateCoverPhoto(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedCommon.UUIDResponse, error) {
+	userId, err := uuid.Parse(in.Value)
+	if err != nil {
+		return &generatedCommon.UUIDResponse{Error: err.Error()}, nil
+	}
+	imageId, err := h.uc.UpdateCoverPhoto(ctx, userId)
+	if err != nil {
+		return &generatedCommon.UUIDResponse{Error: err.Error()}, nil
+	}
+	return &generatedCommon.UUIDResponse{
+		Value: imageId.String(),
+		Error: ""}, nil
+}

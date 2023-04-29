@@ -121,8 +121,6 @@ func run() error {
 	creatorClient := generatedCreator.NewCreatorServiceClient(creatorConn)
 	creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse, postUse, creatorClient, authClient, zapSugar)
 
-	//creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse, authClient, postUse, zapSugar)
-
 	subscriptionRepo := subscriptionRepository.NewSubscriptionRepo(db, zapSugar)
 	subscriptionUse := subscriptionUsecase.NewSubscriptionUsecase(subscriptionRepo, zapSugar)
 	subscriptionHandler := subscriptionDelivery.NewSubscriptionHandler(subscriptionUse, authClient, userUse, zapSugar)
@@ -161,6 +159,8 @@ func run() error {
 		creator.HandleFunc("/page/{creator-uuid}", creatorHandler.GetPage).Methods(http.MethodGet, http.MethodOptions)
 		creator.HandleFunc("/aim/create", creatorHandler.CreateAim).Methods(http.MethodPost, http.MethodOptions)
 		creator.HandleFunc("/updateData", creatorHandler.UpdateCreatorData).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
+		creator.HandleFunc("/updateProfilePhoto", creatorHandler.UpdateProfilePhoto).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
+		creator.HandleFunc("/updateCoverPhoto", creatorHandler.UpdateCoverPhoto).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
 	}
 
 	post := r.PathPrefix("/post").Subrouter()

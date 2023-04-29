@@ -43,3 +43,21 @@ func (uc *CreatorUsecase) FindCreators(ctx context.Context, keyword string) ([]m
 func (uc *CreatorUsecase) GetAllCreators(ctx context.Context) ([]models.Creator, error) {
 	return uc.repo.GetAllCreators(ctx)
 }
+
+func (uc *CreatorUsecase) UpdateProfilePhoto(ctx context.Context, creatorId uuid.UUID) (uuid.UUID, error) {
+	path := uuid.New()
+	err := uc.repo.UpdateProfilePhoto(ctx, creatorId, path)
+	if err != nil {
+		return uuid.Nil, models.InternalError
+	}
+	return path, nil
+}
+
+func (uc *CreatorUsecase) UpdateCoverPhoto(ctx context.Context, creatorId uuid.UUID) (uuid.UUID, error) {
+	path := uuid.New()
+	err := uc.repo.UpdateCoverPhoto(ctx, creatorId, path)
+	if err != nil {
+		return uuid.Nil, models.InternalError
+	}
+	return path, nil
+}

@@ -15,6 +15,8 @@ type CreatorUsecase interface {
 	FindCreators(ctx context.Context, keyword string) ([]models.Creator, error)
 	UpdateCreatorData(ctx context.Context, updateData models.UpdateCreatorInfo) error
 	CheckIfCreator(ctx context.Context, userID uuid.UUID) (uuid.UUID, error)
+	UpdateProfilePhoto(ctx context.Context, creatorId uuid.UUID) (uuid.UUID, error)
+	UpdateCoverPhoto(ctx context.Context, creatorId uuid.UUID) (uuid.UUID, error)
 }
 
 type CreatorRepo interface {
@@ -25,4 +27,6 @@ type CreatorRepo interface {
 	FindCreators(ctx context.Context, keyword string) ([]models.Creator, error)
 	UpdateCreatorData(ctx context.Context, updateData models.UpdateCreatorInfo) error
 	CheckIfCreator(ctx context.Context, userID uuid.UUID) (uuid.UUID, error)
+	UpdateProfilePhoto(ctx context.Context, creatorId, path uuid.UUID) error
+	UpdateCoverPhoto(ctx context.Context, creatorId, path uuid.UUID) error
 }

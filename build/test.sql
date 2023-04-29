@@ -22,3 +22,18 @@ join creator c on c.creator_id = subscription.creator_id
 WHERE us.user_id = $1;
 
 SELECT array_agg(subscription_id) FROM "user_subscription" WHERE user_id=$1;
+
+SELECT p.post_id,
+       p.creator_id,
+       creation_date,
+       title,
+       post_text,
+       array_agg(attachment_id),
+       array_agg(attachment_type)
+FROM user_subscription US
+         JOIN post_subscription ps on us.subscription_id = ps.subscription_id
+         JOIN post p on ps.post_id = p.post_id
+         LEFT JOIN "attachment" a on p.post_id = a.post_id
+WHERE user_id = 'a1664774-e00a-436b-b412-43de8a023863'
+GROUP BY p.post_id, creation_date, title, post_text;
+
