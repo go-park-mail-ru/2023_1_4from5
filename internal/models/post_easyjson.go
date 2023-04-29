@@ -164,6 +164,12 @@ func easyjson5a72dc82DecodeGithubComGoParkMailRu202314from5InternalModels1(in *j
 			if data := in.UnsafeBytes(); in.Ok() {
 				in.AddError((out.Creator).UnmarshalText(data))
 			}
+		case "creator_photo":
+			if data := in.UnsafeBytes(); in.Ok() {
+				in.AddError((out.CreatorPhoto).UnmarshalText(data))
+			}
+		case "creator_name":
+			out.CreatorName = string(in.String())
 		case "creation_date":
 			if data := in.Raw(); in.Ok() {
 				in.AddError((out.Creation).UnmarshalJSON(data))
@@ -247,6 +253,16 @@ func easyjson5a72dc82EncodeGithubComGoParkMailRu202314from5InternalModels1(out *
 		const prefix string = ",\"creator\":"
 		out.RawString(prefix)
 		out.RawText((in.Creator).MarshalText())
+	}
+	if true {
+		const prefix string = ",\"creator_photo\":"
+		out.RawString(prefix)
+		out.RawText((in.CreatorPhoto).MarshalText())
+	}
+	if in.CreatorName != "" {
+		const prefix string = ",\"creator_name\":"
+		out.RawString(prefix)
+		out.String(string(in.CreatorName))
 	}
 	{
 		const prefix string = ",\"creation_date\":"
