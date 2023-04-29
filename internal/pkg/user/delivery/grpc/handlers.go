@@ -89,6 +89,8 @@ func (h GrpcUserHandler) GetProfile(ctx context.Context, in *generatedCommon.UUI
 		Name:         profile.Name,
 		ProfilePhoto: profile.ProfilePhoto.String(),
 		Registration: profile.Registration.String(),
+		IsCreator:    profile.IsCreator,
+		CreatorID:    profile.CreatorId.String(),
 		Error:        ""}, nil
 }
 

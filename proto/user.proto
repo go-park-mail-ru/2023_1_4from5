@@ -27,7 +27,9 @@ message UserProfile{
   string Name = 2;
   string ProfilePhoto = 3;
   string Registration = 4;
-  string Error = 5;
+  bool IsCreator = 5;
+  string CreatorID = 6;
+  string Error = 7;
 }
 message UpdatePasswordMessage{
   string UserID = 1;

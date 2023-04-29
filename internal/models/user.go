@@ -80,12 +80,6 @@ type UserProfile struct {
 	Name         string    `json:"name" example:"Danila Polyakov"`
 	ProfilePhoto uuid.UUID `json:"profile_photo"`
 	Registration time.Time `json:"registration"`
-}
-
-type UserHomePage struct {
-	Name         string    `json:"name" example:"Danila Polyakov"`
-	ProfilePhoto uuid.UUID `json:"profile_photo"`
-	Posts        []Post    `json:"posts"`
 	IsCreator    bool      `json:"is_creator"`
 	CreatorId    uuid.UUID `json:"creator_id"`
 }
@@ -121,11 +115,4 @@ func (user *User) Sanitize() {
 func (userProfile *UserProfile) Sanitize() {
 	userProfile.Login = html.EscapeString(userProfile.Login)
 	userProfile.Name = html.EscapeString(userProfile.Name)
-}
-
-func (userHomePage *UserHomePage) Sanitize() {
-	userHomePage.Name = html.EscapeString(userHomePage.Name)
-	for i := range userHomePage.Posts {
-		userHomePage.Posts[i].Sanitize()
-	}
 }

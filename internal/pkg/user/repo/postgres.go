@@ -51,6 +51,10 @@ func (ur *UserRepo) GetUserProfile(ctx context.Context, id uuid.UUID) (models.Us
 	} else if errors.Is(sql.ErrNoRows, err) {
 		return models.UserProfile{}, models.NotFound
 	}
+	var err error
+	if profile.CreatorId, profile.IsCreator, err = ur.CheckIfCreator(ctx, id); err != nil {
+		return models.UserProfile{}, models.InternalError
+	}
 	return profile, nil
 }
 

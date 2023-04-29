@@ -335,7 +335,7 @@ func (h *CreatorHandler) GetPage(w http.ResponseWriter, r *http.Request) {
 
 	page.Sanitize()
 
-	utils.Response(w, http.StatusOK, creatorPage)
+	utils.Response(w, http.StatusOK, page)
 }
 
 func (h *CreatorHandler) CreateAim(w http.ResponseWriter, r *http.Request) {

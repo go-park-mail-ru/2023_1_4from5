@@ -150,10 +150,18 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	creatorID, err := uuid.Parse(userProfile.CreatorID)
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
 	profile := models.UserProfile{
 		Login:        userProfile.Login,
 		Registration: reg,
 		ProfilePhoto: photo,
+		CreatorId:    creatorID,
+		IsCreator:    userProfile.IsCreator,
 		Name:         userProfile.Name,
 	}
 
