@@ -54,10 +54,6 @@ func (uc *UserUsecase) GetProfile(ctx context.Context, userId uuid.UUID) (models
 	return uc.repo.GetUserProfile(ctx, userId)
 }
 
-func (uc *UserUsecase) GetHomePage(ctx context.Context, userId uuid.UUID) (models.UserHomePage, error) {
-	return uc.repo.GetHomePage(ctx, userId)
-}
-
 func (uc *UserUsecase) UpdatePhoto(ctx context.Context, userId uuid.UUID) (uuid.UUID, error) {
 	path := uuid.New()
 	err := uc.repo.UpdateProfilePhoto(ctx, userId, path)

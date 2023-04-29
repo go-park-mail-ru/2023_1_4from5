@@ -188,3 +188,18 @@ func (h GrpcUserHandler) UserSubscriptions(ctx context.Context, in *generatedCom
 	subsProto.Error = ""
 	return &subsProto, nil
 }
+
+func (h GrpcUserHandler) CheckIfCreator(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedUser.CheckCreatorMessage, error) {
+	userId, err := uuid.Parse(in.Value)
+	if err != nil {
+		return &generatedUser.CheckCreatorMessage{Error: err.Error()}, nil
+	}
+	creatorId, flag, err := h.uc.CheckIfCreator(ctx, userId)
+	if err != nil {
+		return &generatedUser.CheckCreatorMessage{Error: err.Error()}, nil
+	}
+	return &generatedUser.CheckCreatorMessage{
+		ID:        creatorId.String(),
+		IsCreator: flag,
+		Error:     ""}, nil
+}

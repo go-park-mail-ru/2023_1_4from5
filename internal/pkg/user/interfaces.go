@@ -10,7 +10,6 @@ import (
 
 type UserUsecase interface {
 	GetProfile(ctx context.Context, userId uuid.UUID) (models.UserProfile, error)
-	GetHomePage(ctx context.Context, userId uuid.UUID) (models.UserHomePage, error)
 	UpdatePhoto(ctx context.Context, userId uuid.UUID) (uuid.UUID, error)
 	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
 	UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error
@@ -25,7 +24,6 @@ type UserUsecase interface {
 
 type UserRepo interface {
 	GetUserProfile(ctx context.Context, id uuid.UUID) (models.UserProfile, error)
-	GetHomePage(ctx context.Context, id uuid.UUID) (models.UserHomePage, error)
 	UpdateProfilePhoto(ctx context.Context, userID uuid.UUID, path uuid.UUID) error
 	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
 	UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error

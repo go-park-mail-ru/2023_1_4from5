@@ -78,26 +78,6 @@ func (ur *UserRepo) UserSubscriptions(ctx context.Context, userId uuid.UUID) ([]
 	return subs, nil
 }
 
-func (ur *UserRepo) GetHomePage(ctx context.Context, id uuid.UUID) (models.UserHomePage, error) {
-	var page models.UserHomePage
-
-	row := ur.db.QueryRowContext(ctx, UserNamePhoto, id)
-	if err := row.Scan(&page.Name, &page.ProfilePhoto); err != nil && !errors.Is(sql.ErrNoRows, err) {
-		ur.logger.Error(err)
-		return models.UserHomePage{}, models.InternalError
-	} else if errors.Is(sql.ErrNoRows, err) {
-		return models.UserHomePage{}, models.NotFound
-	}
-	row = ur.db.QueryRowContext(ctx, CheckIfCreator, id)
-	if err := row.Scan(&page.CreatorId); err != nil && !errors.Is(sql.ErrNoRows, err) {
-		ur.logger.Error(err)
-		return models.UserHomePage{}, models.InternalError
-	} else if err == nil {
-		page.IsCreator = true
-	}
-	return page, nil
-}
-
 func (ur *UserRepo) UpdateProfilePhoto(ctx context.Context, userID uuid.UUID, path uuid.UUID) error {
 	row := ur.db.QueryRowContext(ctx, UpdateProfilePhoto, path, userID)
 	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {

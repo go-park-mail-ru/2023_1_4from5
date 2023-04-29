@@ -72,10 +72,10 @@ func (h GrpcCreatorHandler) GetFeed(ctx context.Context, in *generatedCommon.UUI
 		})
 
 		for _, attach := range post.Attachments {
-			var attachsProto generatedCreator.Attachment
-			attachsProto.ID = attach.Id.String()
-			attachsProto.Type = attach.Type
-			postsProto.Posts[i].PostAttachments = append(postsProto.Posts[i].PostAttachments, &attachsProto)
+			postsProto.Posts[i].PostAttachments = append(postsProto.Posts[i].PostAttachments, &generatedCreator.Attachment{
+				ID:   attach.Id.String(),
+				Type: attach.Type,
+			})
 		}
 		postsProto.Posts[i].Subscriptions = nil
 
@@ -86,7 +86,87 @@ func (h GrpcCreatorHandler) GetFeed(ctx context.Context, in *generatedCommon.UUI
 }
 
 func (h GrpcCreatorHandler) GetPage(ctx context.Context, in *generatedCreator.UserCreatorMessage) (*generatedCreator.CreatorPage, error) {
-	return nil, nil
+	creatorID, err := uuid.Parse(in.CreatorID)
+	if err != nil {
+		return &generatedCreator.CreatorPage{Error: err.Error()}, nil
+	}
+	userID, err := uuid.Parse(in.CreatorID)
+	if err != nil {
+		return &generatedCreator.CreatorPage{Error: err.Error()}, nil
+	}
+
+	page, err := h.uc.GetPage(ctx, userID, creatorID)
+	if err != nil {
+		return &generatedCreator.CreatorPage{Error: err.Error()}, nil
+	}
+
+	var creatorPage generatedCreator.CreatorPage
+	creatorPage.AimInfo = &generatedCreator.Aim{
+		Creator:     page.Aim.Creator.String(),
+		Description: page.Aim.Description,
+		MoneyNeeded: page.Aim.MoneyNeeded,
+		MoneyGot:    page.Aim.MoneyGot,
+	}
+	creatorPage.Error = ""
+	creatorPage.IsMyPage = page.IsMyPage
+	creatorPage.Follows = page.Follows
+	for _, sub := range page.Subscriptions {
+		creatorPage.Subscriptions = append(creatorPage.Subscriptions, &generatedCommon.Subscription{
+			Id:           sub.Id.String(),
+			Creator:      sub.Creator.String(),
+			CreatorName:  sub.CreatorName,
+			CreatorPhoto: sub.CreatorPhoto.String(),
+			MonthCost:    sub.MonthCost,
+			Title:        sub.Title,
+			Description:  sub.Description,
+		})
+	}
+
+	creatorPage.CreatorInfo = &generatedCreator.Creator{
+		Id:             page.CreatorInfo.Id.String(),
+		UserID:         page.CreatorInfo.UserId.String(),
+		CreatorName:    page.CreatorInfo.Name,
+		CreatorPhoto:   page.CreatorInfo.ProfilePhoto.String(),
+		CoverPhoto:     page.CreatorInfo.CoverPhoto.String(),
+		FollowersCount: page.CreatorInfo.FollowersCount,
+		Description:    page.CreatorInfo.Description,
+		PostsCount:     page.CreatorInfo.PostsCount,
+	}
+	for i, post := range page.Posts {
+		creatorPage.Posts = append(creatorPage.Posts, &generatedCreator.Post{
+			Id:           post.Id.String(),
+			CreatorID:    post.Creator.String(),
+			Creation:     post.Creation.String(),
+			CreatorName:  post.CreatorName,
+			LikesCount:   post.LikesCount,
+			CreatorPhoto: post.CreatorPhoto.String(),
+			Title:        post.Title,
+			Text:         post.Text,
+			IsAvailable:  post.IsAvailable,
+			IsLiked:      post.IsLiked,
+		})
+
+		for _, attach := range post.Attachments {
+			creatorPage.Posts[i].PostAttachments = append(creatorPage.Posts[i].PostAttachments, &generatedCreator.Attachment{
+				ID:   attach.Id.String(),
+				Type: attach.Type,
+			})
+		}
+
+		for _, sub := range post.Subscriptions {
+			creatorPage.Posts[i].Subscriptions = append(creatorPage.Posts[i].Subscriptions, &generatedCommon.Subscription{
+				Id:           sub.Id.String(),
+				Creator:      sub.Creator.String(),
+				CreatorName:  sub.CreatorName,
+				CreatorPhoto: sub.CreatorPhoto.String(),
+				MonthCost:    sub.MonthCost,
+				Title:        sub.Title,
+				Description:  sub.Description,
+			})
+		}
+	}
+
+	return &creatorPage, nil
 }
 
 func (h GrpcCreatorHandler) UpdateCreatorData(ctx context.Context, in *generatedCreator.UpdateCreatorInfo) (*generatedCommon.Empty, error) {

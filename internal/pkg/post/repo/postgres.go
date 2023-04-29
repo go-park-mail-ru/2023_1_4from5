@@ -11,24 +11,25 @@ import (
 )
 
 const (
-	InsertPost              = `INSERT INTO "post"(post_id, creator_id, title, post_text) VALUES($1, $2, $3, $4);`
-	InsertAttach            = `INSERT INTO "attachment"(attachment_id, post_id, attachment_type) VALUES($1, $2, $3);`
-	IncPostCount            = `UPDATE "creator" SET posts_count = posts_count+1 WHERE creator_id = $1;`
-	UpdatePostInfo          = `UPDATE "post" SET title = $1, post_text = $2 WHERE post_id = $3;`
-	DeletePostSubscriptions = `DELETE FROM "post_subscription" WHERE post_id = $1;`
-	AddSubscriptionsToPost  = `INSERT INTO "post_subscription"(post_id, subscription_id) VALUES($1,$2);`
-	DeletePost              = `DELETE FROM  "post" WHERE post_id = $1;`
-	DeletePostSubscription  = `DELETE FROM "post_subscription" WHERE post_id = $1`
-	GetUserId               = `SELECT user_id FROM "post" JOIN "creator" c on c.creator_id = "post".creator_id WHERE post_id = $1`
-	AddLike                 = `INSERT INTO "like_post"(post_id, user_id) VALUES($1, $2);`
-	RemoveLike              = `DELETE FROM "like_post" WHERE post_id = $1 AND user_id = $2;`
-	UpdateLikeCount         = `UPDATE "post" SET likes_count = likes_count + $1 WHERE post_id = $2 RETURNING likes_count;`
-	IsLiked                 = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2;`
-	DeleteLikes             = `DELETE FROM "like_post" WHERE post_id = $1;`
-	IsPostAvailable         = `SELECT user_id FROM "user_subscription" INNER JOIN "post_subscription" p on "user_subscription".subscription_id = p.subscription_id WHERE user_id = $1 AND post_id = $2 AND expire_date > now()`
-	IsCreator               = `SELECT user_id FROM "creator" WHERE creator_id = $1;`
-	GetPost                 = `SELECT "post".post_id, "post".creator_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE "post".post_id = $1 GROUP BY "post".post_id, creation_date, title, post_text;`
-	GetSubInfo              = `SELECT creator_id, month_cost, title, description FROM "subscription" WHERE subscription_id = $1;`
+	InsertPost                 = `INSERT INTO "post"(post_id, creator_id, title, post_text) VALUES($1, $2, $3, $4);`
+	InsertAttach               = `INSERT INTO "attachment"(attachment_id, post_id, attachment_type) VALUES($1, $2, $3);`
+	IncPostCount               = `UPDATE "creator" SET posts_count = posts_count+1 WHERE creator_id = $1;`
+	UpdatePostInfo             = `UPDATE "post" SET title = $1, post_text = $2 WHERE post_id = $3;`
+	DeletePostSubscriptions    = `DELETE FROM "post_subscription" WHERE post_id = $1;`
+	AddSubscriptionsToPost     = `INSERT INTO "post_subscription"(post_id, subscription_id) VALUES($1,$2);`
+	DeletePost                 = `DELETE FROM  "post" WHERE post_id = $1;`
+	DeletePostSubscription     = `DELETE FROM "post_subscription" WHERE post_id = $1`
+	GetUserId                  = `SELECT user_id FROM "post" JOIN "creator" c on c.creator_id = "post".creator_id WHERE post_id = $1`
+	AddLike                    = `INSERT INTO "like_post"(post_id, user_id) VALUES($1, $2);`
+	RemoveLike                 = `DELETE FROM "like_post" WHERE post_id = $1 AND user_id = $2;`
+	UpdateLikeCount            = `UPDATE "post" SET likes_count = likes_count + $1 WHERE post_id = $2 RETURNING likes_count;`
+	IsLiked                    = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2;`
+	DeleteLikes                = `DELETE FROM "like_post" WHERE post_id = $1;`
+	IsPostAvailableWithSub     = `SELECT user_id FROM "user_subscription" INNER JOIN "post_subscription" p on "user_subscription".subscription_id = p.subscription_id WHERE user_id = $1 AND post_id = $2 AND expire_date > now()`
+	IsPostAvailableForEveryone = `SELECT post_id FROM post_subscription WHERE post_id = $1`
+	IsCreator                  = `SELECT user_id FROM "creator" WHERE creator_id = $1;`
+	GetPost                    = `SELECT "post".post_id, "post".creator_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE "post".post_id = $1 GROUP BY "post".post_id, creation_date, title, post_text;`
+	GetSubInfo                 = `SELECT creator_id, month_cost, title, description FROM "subscription" WHERE subscription_id = $1;`
 )
 
 type PostRepo struct {
@@ -45,7 +46,8 @@ func NewPostRepo(db *sql.DB, logger *zap.SugaredLogger) *PostRepo {
 
 func (r *PostRepo) IsPostAvailable(ctx context.Context, userID, postID uuid.UUID) error {
 	var userIDtmp uuid.UUID
-	row := r.db.QueryRowContext(ctx, IsPostAvailable, userID, postID)
+	var postIDtmp uuid.UUID
+	row := r.db.QueryRowContext(ctx, IsPostAvailableWithSub, userID, postID)
 	if err := row.Scan(&userIDtmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		r.logger.Error(err)
 		return models.InternalError
@@ -53,6 +55,13 @@ func (r *PostRepo) IsPostAvailable(ctx context.Context, userID, postID uuid.UUID
 		if ok, err := r.IsPostOwner(ctx, userID, postID); err == models.InternalError {
 			return models.InternalError
 		} else if ok {
+			return nil
+		}
+		row = r.db.QueryRowContext(ctx, IsPostAvailableForEveryone, postID)
+		if err = row.Scan(&postIDtmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
+			r.logger.Error(err)
+			return models.InternalError
+		} else if errors.Is(sql.ErrNoRows, err) {
 			return nil
 		}
 		return models.WrongData

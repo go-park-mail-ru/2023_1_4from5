@@ -6,7 +6,6 @@ import (
 	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user"
 	generatedUser "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/google/uuid"
@@ -21,15 +20,13 @@ import (
 )
 
 type UserHandler struct {
-	usecase    user.UserUsecase
 	userClient generatedUser.UserServiceClient
 	authClient generatedAuth.AuthServiceClient
 	logger     *zap.SugaredLogger
 }
 
-func NewUserHandler(uc user.UserUsecase, userClient generatedUser.UserServiceClient, auc generatedAuth.AuthServiceClient, logger *zap.SugaredLogger) *UserHandler {
+func NewUserHandler(userClient generatedUser.UserServiceClient, auc generatedAuth.AuthServiceClient, logger *zap.SugaredLogger) *UserHandler {
 	return &UserHandler{
-		usecase:    uc,
 		userClient: userClient,
 		authClient: auc,
 		logger:     logger,
@@ -163,26 +160,6 @@ func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	profile.Sanitize()
 
 	utils.Response(w, http.StatusOK, profile)
-}
-
-func (h *UserHandler) GetHomePage(w http.ResponseWriter, r *http.Request) {
-	userInfo, err := token.ExtractJWTTokenMetadata(r)
-	if err != nil {
-		utils.Response(w, http.StatusUnauthorized, nil)
-		return
-	}
-	homePage, err := h.usecase.GetHomePage(r.Context(), userInfo.Id)
-	if err == models.InternalError {
-		utils.Response(w, http.StatusInternalServerError, nil)
-		return
-	}
-	if err == models.NotFound {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
-
-	homePage.Sanitize()
-	utils.Response(w, http.StatusOK, homePage)
 }
 
 func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request) {
@@ -569,10 +546,19 @@ func (h *UserHandler) BecomeCreator(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, isAlsoCreator, err := h.usecase.CheckIfCreator(r.Context(), userDataJWT.Id); err != nil {
+	out, err := h.userClient.CheckIfCreator(r.Context(), &generatedCommon.UUIDMessage{Value: userDataJWT.Id.String()})
+	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
-	} else if isAlsoCreator {
+	}
+
+	if out.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if out.IsCreator {
 		utils.Response(w, http.StatusConflict, nil)
 		return
 	}

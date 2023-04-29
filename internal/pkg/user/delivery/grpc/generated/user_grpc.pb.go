@@ -33,6 +33,7 @@ type UserServiceClient interface {
 	Donate(ctx context.Context, in *DonateMessage, opts ...grpc.CallOption) (*DonateResponse, error)
 	BecomeCreator(ctx context.Context, in *BecameCreatorInfoMessage, opts ...grpc.CallOption) (*proto.UUIDResponse, error)
 	UserSubscriptions(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*SubscriptionsMessage, error)
+	CheckIfCreator(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*CheckCreatorMessage, error)
 }
 
 type userServiceClient struct {
@@ -133,6 +134,15 @@ func (c *userServiceClient) UserSubscriptions(ctx context.Context, in *proto.UUI
 	return out, nil
 }
 
+func (c *userServiceClient) CheckIfCreator(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*CheckCreatorMessage, error) {
+	out := new(CheckCreatorMessage)
+	err := c.cc.Invoke(ctx, "/UserService/CheckIfCreator", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -147,6 +157,7 @@ type UserServiceServer interface {
 	Donate(context.Context, *DonateMessage) (*DonateResponse, error)
 	BecomeCreator(context.Context, *BecameCreatorInfoMessage) (*proto.UUIDResponse, error)
 	UserSubscriptions(context.Context, *proto.UUIDMessage) (*SubscriptionsMessage, error)
+	CheckIfCreator(context.Context, *proto.UUIDMessage) (*CheckCreatorMessage, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -183,6 +194,9 @@ func (UnimplementedUserServiceServer) BecomeCreator(context.Context, *BecameCrea
 }
 func (UnimplementedUserServiceServer) UserSubscriptions(context.Context, *proto.UUIDMessage) (*SubscriptionsMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserSubscriptions not implemented")
+}
+func (UnimplementedUserServiceServer) CheckIfCreator(context.Context, *proto.UUIDMessage) (*CheckCreatorMessage, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckIfCreator not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 
@@ -377,6 +391,24 @@ func _UserService_UserSubscriptions_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_CheckIfCreator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(proto.UUIDMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).CheckIfCreator(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/UserService/CheckIfCreator",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).CheckIfCreator(ctx, req.(*proto.UUIDMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -423,6 +455,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UserSubscriptions",
 			Handler:    _UserService_UserSubscriptions_Handler,
+		},
+		{
+			MethodName: "CheckIfCreator",
+			Handler:    _UserService_CheckIfCreator_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

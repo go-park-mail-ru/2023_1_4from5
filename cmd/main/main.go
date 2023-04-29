@@ -105,8 +105,9 @@ func run() error {
 
 	userRepo := userRepository.NewUserRepo(db, zapSugar)
 	userUse := userUsecase.NewUserUsecase(userRepo, zapSugar)
+
 	userClient := generatedUser.NewUserServiceClient(userConn)
-	userHandler := userDelivery.NewUserHandler(userUse, userClient, authClient, zapSugar)
+	userHandler := userDelivery.NewUserHandler(userClient, authClient, zapSugar)
 
 	attachmentRepo := attachmentRepository.NewAttachmentRepo(db, zapSugar)
 	attachmentUse := attachmentUsecase.NewAttachmentUsecase(attachmentRepo, zapSugar)

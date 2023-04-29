@@ -61,7 +61,8 @@ FROM follow f --берём авторов на каких подписаны
          JOIN creator c on f.creator_id = c.creator_id
          LEFT JOIN post_subscription ps on p.post_id = ps.post_id --подписки при которых пост доступен или null
          JOIN user_subscription us
-              on f.user_id = us.user_id and (ps.subscription_id = us.subscription_id or ps.subscription_id is null)--оставляем только доступные посты
+              on f.user_id = us.user_id and
+                 ((ps.subscription_id = us.subscription_id and expire_date > now()) or ps.subscription_id is null)--оставляем только доступные посты
          LEFT JOIN "attachment" a on p.post_id = a.post_id
 WHERE f.user_id = 'a1664774-e00a-436b-b412-43de8a023863'
 GROUP BY c.name, p.creator_id, creation_date, title, post_text, p.post_id, c.profile_photo
@@ -111,4 +112,4 @@ ORDER BY creation_date DESC
 LIMIT 50;
 
 
-
+--isPostAvailable
