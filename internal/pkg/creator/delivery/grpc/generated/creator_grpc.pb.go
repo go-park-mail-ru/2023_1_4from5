@@ -28,6 +28,16 @@ type CreatorServiceClient interface {
 	UpdateCreatorData(ctx context.Context, in *UpdateCreatorInfo, opts ...grpc.CallOption) (*proto.Empty, error)
 	GetFeed(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*PostsMessage, error)
 	GetAllCreators(ctx context.Context, in *proto.Empty, opts ...grpc.CallOption) (*CreatorsMessage, error)
+	IsCreator(ctx context.Context, in *UserCreatorMessage, opts ...grpc.CallOption) (*FlagMessage, error)
+	CreateAim(ctx context.Context, in *Aim, opts ...grpc.CallOption) (*proto.Empty, error)
+	CheckIfCreator(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.UUIDResponse, error)
+	CreatePost(ctx context.Context, in *PostCreationData, opts ...grpc.CallOption) (*proto.Empty, error)
+	GetPost(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*PostsMessage, error)
+	DeletePost(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.Empty, error)
+	IsPostOwner(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*FlagMessage, error)
+	AddLike(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*Like, error)
+	RemoveLike(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*Like, error)
+	EditPost(ctx context.Context, in *PostEditData, opts ...grpc.CallOption) (*proto.Empty, error)
 }
 
 type creatorServiceClient struct {
@@ -83,6 +93,96 @@ func (c *creatorServiceClient) GetAllCreators(ctx context.Context, in *proto.Emp
 	return out, nil
 }
 
+func (c *creatorServiceClient) IsCreator(ctx context.Context, in *UserCreatorMessage, opts ...grpc.CallOption) (*FlagMessage, error) {
+	out := new(FlagMessage)
+	err := c.cc.Invoke(ctx, "/CreatorService/IsCreator", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) CreateAim(ctx context.Context, in *Aim, opts ...grpc.CallOption) (*proto.Empty, error) {
+	out := new(proto.Empty)
+	err := c.cc.Invoke(ctx, "/CreatorService/CreateAim", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) CheckIfCreator(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.UUIDResponse, error) {
+	out := new(proto.UUIDResponse)
+	err := c.cc.Invoke(ctx, "/CreatorService/CheckIfCreator", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) CreatePost(ctx context.Context, in *PostCreationData, opts ...grpc.CallOption) (*proto.Empty, error) {
+	out := new(proto.Empty)
+	err := c.cc.Invoke(ctx, "/CreatorService/CreatePost", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) GetPost(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*PostsMessage, error) {
+	out := new(PostsMessage)
+	err := c.cc.Invoke(ctx, "/CreatorService/GetPost", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) DeletePost(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.Empty, error) {
+	out := new(proto.Empty)
+	err := c.cc.Invoke(ctx, "/CreatorService/DeletePost", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) IsPostOwner(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*FlagMessage, error) {
+	out := new(FlagMessage)
+	err := c.cc.Invoke(ctx, "/CreatorService/IsPostOwner", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) AddLike(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*Like, error) {
+	out := new(Like)
+	err := c.cc.Invoke(ctx, "/CreatorService/AddLike", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) RemoveLike(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*Like, error) {
+	out := new(Like)
+	err := c.cc.Invoke(ctx, "/CreatorService/RemoveLike", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) EditPost(ctx context.Context, in *PostEditData, opts ...grpc.CallOption) (*proto.Empty, error) {
+	out := new(proto.Empty)
+	err := c.cc.Invoke(ctx, "/CreatorService/EditPost", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CreatorServiceServer is the server API for CreatorService service.
 // All implementations must embed UnimplementedCreatorServiceServer
 // for forward compatibility
@@ -92,6 +192,16 @@ type CreatorServiceServer interface {
 	UpdateCreatorData(context.Context, *UpdateCreatorInfo) (*proto.Empty, error)
 	GetFeed(context.Context, *proto.UUIDMessage) (*PostsMessage, error)
 	GetAllCreators(context.Context, *proto.Empty) (*CreatorsMessage, error)
+	IsCreator(context.Context, *UserCreatorMessage) (*FlagMessage, error)
+	CreateAim(context.Context, *Aim) (*proto.Empty, error)
+	CheckIfCreator(context.Context, *proto.UUIDMessage) (*proto.UUIDResponse, error)
+	CreatePost(context.Context, *PostCreationData) (*proto.Empty, error)
+	GetPost(context.Context, *PostUserMessage) (*PostsMessage, error)
+	DeletePost(context.Context, *proto.UUIDMessage) (*proto.Empty, error)
+	IsPostOwner(context.Context, *PostUserMessage) (*FlagMessage, error)
+	AddLike(context.Context, *PostUserMessage) (*Like, error)
+	RemoveLike(context.Context, *PostUserMessage) (*Like, error)
+	EditPost(context.Context, *PostEditData) (*proto.Empty, error)
 	mustEmbedUnimplementedCreatorServiceServer()
 }
 
@@ -113,6 +223,36 @@ func (UnimplementedCreatorServiceServer) GetFeed(context.Context, *proto.UUIDMes
 }
 func (UnimplementedCreatorServiceServer) GetAllCreators(context.Context, *proto.Empty) (*CreatorsMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllCreators not implemented")
+}
+func (UnimplementedCreatorServiceServer) IsCreator(context.Context, *UserCreatorMessage) (*FlagMessage, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IsCreator not implemented")
+}
+func (UnimplementedCreatorServiceServer) CreateAim(context.Context, *Aim) (*proto.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateAim not implemented")
+}
+func (UnimplementedCreatorServiceServer) CheckIfCreator(context.Context, *proto.UUIDMessage) (*proto.UUIDResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckIfCreator not implemented")
+}
+func (UnimplementedCreatorServiceServer) CreatePost(context.Context, *PostCreationData) (*proto.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreatePost not implemented")
+}
+func (UnimplementedCreatorServiceServer) GetPost(context.Context, *PostUserMessage) (*PostsMessage, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPost not implemented")
+}
+func (UnimplementedCreatorServiceServer) DeletePost(context.Context, *proto.UUIDMessage) (*proto.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeletePost not implemented")
+}
+func (UnimplementedCreatorServiceServer) IsPostOwner(context.Context, *PostUserMessage) (*FlagMessage, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IsPostOwner not implemented")
+}
+func (UnimplementedCreatorServiceServer) AddLike(context.Context, *PostUserMessage) (*Like, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddLike not implemented")
+}
+func (UnimplementedCreatorServiceServer) RemoveLike(context.Context, *PostUserMessage) (*Like, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveLike not implemented")
+}
+func (UnimplementedCreatorServiceServer) EditPost(context.Context, *PostEditData) (*proto.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EditPost not implemented")
 }
 func (UnimplementedCreatorServiceServer) mustEmbedUnimplementedCreatorServiceServer() {}
 
@@ -217,6 +357,186 @@ func _CreatorService_GetAllCreators_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CreatorService_IsCreator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserCreatorMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).IsCreator(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/IsCreator",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).IsCreator(ctx, req.(*UserCreatorMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_CreateAim_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Aim)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).CreateAim(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/CreateAim",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).CreateAim(ctx, req.(*Aim))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_CheckIfCreator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(proto.UUIDMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).CheckIfCreator(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/CheckIfCreator",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).CheckIfCreator(ctx, req.(*proto.UUIDMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_CreatePost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PostCreationData)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).CreatePost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/CreatePost",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).CreatePost(ctx, req.(*PostCreationData))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_GetPost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PostUserMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).GetPost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/GetPost",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).GetPost(ctx, req.(*PostUserMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_DeletePost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(proto.UUIDMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).DeletePost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/DeletePost",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).DeletePost(ctx, req.(*proto.UUIDMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_IsPostOwner_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PostUserMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).IsPostOwner(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/IsPostOwner",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).IsPostOwner(ctx, req.(*PostUserMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_AddLike_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PostUserMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).AddLike(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/AddLike",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).AddLike(ctx, req.(*PostUserMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_RemoveLike_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PostUserMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).RemoveLike(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/RemoveLike",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).RemoveLike(ctx, req.(*PostUserMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_EditPost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PostEditData)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).EditPost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/EditPost",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).EditPost(ctx, req.(*PostEditData))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CreatorService_ServiceDesc is the grpc.ServiceDesc for CreatorService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -243,6 +563,46 @@ var CreatorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAllCreators",
 			Handler:    _CreatorService_GetAllCreators_Handler,
+		},
+		{
+			MethodName: "IsCreator",
+			Handler:    _CreatorService_IsCreator_Handler,
+		},
+		{
+			MethodName: "CreateAim",
+			Handler:    _CreatorService_CreateAim_Handler,
+		},
+		{
+			MethodName: "CheckIfCreator",
+			Handler:    _CreatorService_CheckIfCreator_Handler,
+		},
+		{
+			MethodName: "CreatePost",
+			Handler:    _CreatorService_CreatePost_Handler,
+		},
+		{
+			MethodName: "GetPost",
+			Handler:    _CreatorService_GetPost_Handler,
+		},
+		{
+			MethodName: "DeletePost",
+			Handler:    _CreatorService_DeletePost_Handler,
+		},
+		{
+			MethodName: "IsPostOwner",
+			Handler:    _CreatorService_IsPostOwner_Handler,
+		},
+		{
+			MethodName: "AddLike",
+			Handler:    _CreatorService_AddLike_Handler,
+		},
+		{
+			MethodName: "RemoveLike",
+			Handler:    _CreatorService_RemoveLike_Handler,
+		},
+		{
+			MethodName: "EditPost",
+			Handler:    _CreatorService_EditPost_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

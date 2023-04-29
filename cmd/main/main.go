@@ -8,8 +8,6 @@ import (
 	authDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/http"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	creatorDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/http"
-	creatorRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/repo"
-	creatorUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/usecase"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
 	postDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/delivery/http"
 	postRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/repo"
@@ -116,11 +114,11 @@ func run() error {
 	postUse := postUsecase.NewPostUsecase(postRepo, zapSugar)
 	postHandler := postDelivery.NewPostHandler(postUse, authClient, attachmentUse, zapSugar)
 
-	creatorRepo := creatorRepository.NewCreatorRepo(db, zapSugar)
-	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo, zapSugar)
+	//creatorRepo := creatorRepository.NewCreatorRepo(db, zapSugar)
+	//creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo, zapSugar)
 
 	creatorClient := generatedCreator.NewCreatorServiceClient(creatorConn)
-	creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse, postUse, creatorClient, authClient, zapSugar)
+	creatorHandler := creatorDelivery.NewCreatorHandler(creatorClient, authClient, zapSugar)
 
 	//creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse, authClient, postUse, zapSugar)
 

@@ -4,9 +4,7 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/google/uuid"
@@ -19,18 +17,14 @@ import (
 
 type CreatorHandler struct {
 	creatorClient generatedCreator.CreatorServiceClient
-	usecase       creator.CreatorUsecase
 	authClient    generatedAuth.AuthServiceClient
-	postUsecase   post.PostUsecase
 	logger        *zap.SugaredLogger
 }
 
-func NewCreatorHandler(uc creator.CreatorUsecase, puc post.PostUsecase, creatorClient generatedCreator.CreatorServiceClient, authClient generatedAuth.AuthServiceClient, logger *zap.SugaredLogger) *CreatorHandler {
+func NewCreatorHandler(creatorClient generatedCreator.CreatorServiceClient, authClient generatedAuth.AuthServiceClient, logger *zap.SugaredLogger) *CreatorHandler {
 	return &CreatorHandler{
-		usecase:       uc,
 		creatorClient: creatorClient,
 		authClient:    authClient,
-		postUsecase:   puc,
 		logger:        logger,
 	}
 }
@@ -428,25 +422,44 @@ func (h *CreatorHandler) CreateAim(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isCreator, err := h.postUsecase.IsCreator(r.Context(), userDataJWT.Id, aimInfo.Creator)
-
-	if err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
+	isCreator, err := h.creatorClient.IsCreator(r.Context(), &generatedCreator.UserCreatorMessage{
+		UserID:    userDataJWT.Id.String(),
+		CreatorID: aimInfo.Creator.String(),
+	})
 
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 
-	if !isCreator {
+	if isCreator.Error == models.WrongData.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if isCreator.Error == models.InternalError.Error() {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if !isCreator.Flag {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
 
-	err = h.usecase.CreateAim(r.Context(), aimInfo)
-	if err == models.InternalError {
+	out, err := h.creatorClient.CreateAim(r.Context(), &generatedCreator.Aim{
+		Creator:     aimInfo.Creator.String(),
+		Description: aimInfo.Description,
+		MoneyNeeded: aimInfo.MoneyNeeded,
+		MoneyGot:    aimInfo.MoneyGot,
+	})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if out.Error == models.InternalError.Error() {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -467,6 +480,7 @@ func (h *CreatorHandler) UpdateCreatorData(w http.ResponseWriter, r *http.Reques
 		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -493,14 +507,19 @@ func (h *CreatorHandler) UpdateCreatorData(w http.ResponseWriter, r *http.Reques
 
 	updCreator := models.BecameCreatorInfo{}
 
-	creatorID, err := h.usecase.CheckIfCreator(r.Context(), userDataJWT.Id)
+	creatorID, err := h.creatorClient.CheckIfCreator(r.Context(), &generatedCommon.UUIDMessage{Value: userDataJWT.Id.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
 
-	if err == models.NotFound {
+	if creatorID.Error == models.NotFound.Error() {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
 
-	if err != nil {
+	if creatorID.Error != "" {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}

@@ -29,6 +29,11 @@ message UserCreatorMessage {
   string CreatorID = 2;
 }
 
+message PostUserMessage {
+  string UserID = 1;
+  string PostID = 2;
+}
+
 message UpdateCreatorInfo {
   string CreatorName = 1;
   string Description = 2;
@@ -71,12 +76,44 @@ message Post{
 message PostsMessage{
   repeated Post Posts = 1;
   string Error = 2;
-}
+};
+
+message PostMessage{
+  Post Posts = 1;
+  string Error = 2;
+};
 
 message Attachment{
   string ID = 1;
   string Type = 2;
 };
+
+message FlagMessage{
+  bool Flag = 1;
+  string Error = 2;
+};
+
+message PostCreationData{
+  string Id = 1;
+  Creator Creator = 2;
+  string Title = 3;
+  string Text = 4;
+  repeated Attachment Attachments = 5;
+  repeated string AvailableSubscriptions = 6;
+};
+
+message PostEditData{
+  string Id = 1;
+  string Title = 2;
+  string Text = 3;
+  repeated string AvailableSubscriptions = 4;
+}
+
+message Like {
+  int64 LikesCount = 1;
+  string PostID = 2;
+  string Error = 3;
+}
 
 service CreatorService {
   rpc FindCreators(KeywordMessage) returns (CreatorsMessage) {}
@@ -84,5 +121,15 @@ service CreatorService {
   rpc UpdateCreatorData(UpdateCreatorInfo) returns (common.Empty) {}
   rpc GetFeed(common.UUIDMessage) returns (PostsMessage) {}
   rpc GetAllCreators(common.Empty)returns (CreatorsMessage) {}
+  rpc IsCreator(UserCreatorMessage) returns (FlagMessage){}
+  rpc CreateAim(Aim) returns (common.Empty){}
+  rpc CheckIfCreator(common.UUIDMessage) returns (common.UUIDResponse){}
+  rpc CreatePost(PostCreationData) returns (common.Empty) {}
+  rpc GetPost(PostUserMessage) returns (PostsMessage) {}
+  rpc DeletePost(common.UUIDMessage) returns (common.Empty) {}
+  rpc IsPostOwner(PostUserMessage) returns (FlagMessage) {}
+  rpc AddLike(PostUserMessage) returns (Like) {}
+  rpc  RemoveLike(PostUserMessage) returns (Like) {}
+  rpc  EditPost(PostEditData) returns (common.Empty) {}
 }
 
