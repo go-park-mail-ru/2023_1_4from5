@@ -125,10 +125,17 @@ func run() error {
 	subscriptionUse := subscriptionUsecase.NewSubscriptionUsecase(subscriptionRepo, zapSugar)
 	subscriptionHandler := subscriptionDelivery.NewSubscriptionHandler(subscriptionUse, authClient, userUse, zapSugar)
 
-	logMw := middleware.NewLoggerMiddleware(zapSugar)
 	r := mux.NewRouter().PathPrefix("/api").Subrouter()
+
 	r.Use(middleware.CORSMiddleware)
+
+	logMw := middleware.NewLoggerMiddleware(zapSugar)
 	r.Use(logMw.LogRequest)
+
+	//metricsMw := middleware.NewMetricsMiddleware()
+	//metricsMw.Register(middleware.ServiceMainName)
+	//r.PathPrefix("/api/metrics").Handler(promhttp.Handler())
+	//r.Use(metricsMw.LogMetrics)
 
 	auth := r.PathPrefix("/auth").Subrouter()
 	{
