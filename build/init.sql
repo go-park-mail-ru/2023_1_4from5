@@ -189,6 +189,27 @@ create table follow
             references "creator" (creator_id)
 );
 
+CREATE TEXT SEARCH DICTIONARY russian_ispell (
+    TEMPLATE = ispell,
+    DictFile = russian,
+    AffFile = russian,
+    StopWords = russian
+    );
+
+CREATE TEXT SEARCH CONFIGURATION ru (COPY = russian);
+
+ALTER TEXT SEARCH CONFIGURATION ru
+    ALTER MAPPING FOR hword, hword_part, word
+        WITH russian_ispell, russian_stem;
+
+CREATE INDEX idx_gin_creator_name_eng ON creator USING gin (to_tsvector('english', name));
+CREATE INDEX idx_gin_creator_description_eng ON creator USING gin (to_tsvector('english', description));
+CREATE INDEX idx_gin_creator_name_rus ON creator USING gin (to_tsvector('russian', name));
+CREATE INDEX idx_gin_creator_description_rus ON creator USING gin (to_tsvector('russian', description));
+CREATE INDEX idx_creator_name ON creator (LOWER(name) varchar_pattern_ops);
+CREATE INDEX idx_creator_description ON creator (LOWER(description) varchar_pattern_ops);
+CREATE INDEX idx_creator_user_id ON creator (user_id);
+
 CREATE OR REPLACE FUNCTION make_tsvector(name TEXT, priority "char")
     RETURNS tsvector AS
 $$
