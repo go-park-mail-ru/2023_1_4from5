@@ -10,6 +10,8 @@ import (
 	creatorUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/usecase"
 	postRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/repo"
 	postUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/usecase"
+	subscriptionRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription/repo"
+	subscriptionUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription/usecase"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -55,6 +57,9 @@ func run() error {
 	db.SetMaxIdleConns(25)
 	db.SetConnMaxLifetime(5 * time.Minute)
 
+	subscriptionRepo := subscriptionRepository.NewSubscriptionRepo(db, zapSugar)
+	subscriptionUse := subscriptionUsecase.NewSubscriptionUsecase(subscriptionRepo, zapSugar)
+
 	postRepo := postRepository.NewPostRepo(db, zapSugar)
 	postUse := postUsecase.NewPostUsecase(postRepo, zapSugar)
 
@@ -63,7 +68,7 @@ func run() error {
 
 	creatorRepo := creatorRepository.NewCreatorRepo(db, zapSugar)
 	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo, zapSugar)
-	service := grpcCreator.NewGrpcCreatorHandler(creatorUse, postUse, attachmentUse)
+	service := grpcCreator.NewGrpcCreatorHandler(creatorUse, postUse, attachmentUse, subscriptionUse)
 
 	srv, ok := net.Listen("tcp", ":8030")
 	if ok != nil {

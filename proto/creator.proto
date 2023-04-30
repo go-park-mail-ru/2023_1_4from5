@@ -29,6 +29,11 @@ message UserCreatorMessage {
   string CreatorID = 2;
 }
 
+message SubscriptionCreatorMessage {
+  string SubscriptionID = 1;
+  string CreatorID = 2;
+}
+
 message PostUserMessage {
   string UserID = 1;
   string PostID = 2;
@@ -154,5 +159,9 @@ service CreatorService {
   rpc GetFileExtension(KeywordMessage) returns (Extension) {}
   rpc UpdateProfilePhoto(common.UUIDMessage) returns (common.UUIDResponse) {}
   rpc UpdateCoverPhoto(common.UUIDMessage) returns (common.UUIDResponse) {}
+
+  rpc CreateSubscription(common.Subscription) returns (common.Empty) {}
+  rpc DeleteSubscription(SubscriptionCreatorMessage) returns (common.Empty) {}
+  rpc EditSubscription(common.Subscription) returns (common.Empty) {}
 }
 

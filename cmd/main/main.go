@@ -9,12 +9,8 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
 	postDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/delivery/http"
 	subscriptionDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription/delivery/http"
-	subscriptionRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription/repo"
-	subscriptionUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription/usecase"
 	generatedUser "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/grpc/generated"
 	userDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/http"
-	userRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/repo"
-	userUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/usecase"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
@@ -95,30 +91,14 @@ func run() error {
 	}
 
 	authClient := generatedAuth.NewAuthServiceClient(authConn)
-	authHandler := authDelivery.NewAuthHandler(authClient, zapSugar)
-
-	userRepo := userRepository.NewUserRepo(db, zapSugar)
-	userUse := userUsecase.NewUserUsecase(userRepo, zapSugar)
-
 	userClient := generatedUser.NewUserServiceClient(userConn)
-	userHandler := userDelivery.NewUserHandler(userClient, authClient, zapSugar)
-
-	//attachmentRepo := attachmentRepository.NewAttachmentRepo(db, zapSugar)
-	//attachmentUse := attachmentUsecase.NewAttachmentUsecase(attachmentRepo, zapSugar)
-
-	//postRepo := postRepository.NewPostRepo(db, zapSugar)
-	//postUse := postUsecase.NewPostUsecase(postRepo, zapSugar)
-
-	//creatorRepo := creatorRepository.NewCreatorRepo(db, zapSugar)
-	//creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo, zapSugar)
-
 	creatorClient := generatedCreator.NewCreatorServiceClient(creatorConn)
+
+	authHandler := authDelivery.NewAuthHandler(authClient, zapSugar)
+	userHandler := userDelivery.NewUserHandler(userClient, authClient, zapSugar)
 	creatorHandler := creatorDelivery.NewCreatorHandler(creatorClient, authClient, zapSugar)
 	postHandler := postDelivery.NewPostHandler(authClient, creatorClient, zapSugar)
-
-	subscriptionRepo := subscriptionRepository.NewSubscriptionRepo(db, zapSugar)
-	subscriptionUse := subscriptionUsecase.NewSubscriptionUsecase(subscriptionRepo, zapSugar)
-	subscriptionHandler := subscriptionDelivery.NewSubscriptionHandler(subscriptionUse, authClient, userUse, zapSugar)
+	subscriptionHandler := subscriptionDelivery.NewSubscriptionHandler(authClient, creatorClient, userClient, zapSugar)
 
 	r := mux.NewRouter().PathPrefix("/api").Subrouter()
 

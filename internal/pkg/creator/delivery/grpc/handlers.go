@@ -8,6 +8,7 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription"
 	"github.com/google/uuid"
 	"golang.org/x/net/context"
 )
@@ -16,14 +17,16 @@ type GrpcCreatorHandler struct {
 	uc  creator.CreatorUsecase
 	puc post.PostUsecase
 	auc attachment.AttachmentUsecase
+	suc subscription.SubscriptionUsecase
 	generatedCreator.CreatorServiceServer
 }
 
-func NewGrpcCreatorHandler(uc creator.CreatorUsecase, puc post.PostUsecase, auc attachment.AttachmentUsecase) *GrpcCreatorHandler {
+func NewGrpcCreatorHandler(uc creator.CreatorUsecase, puc post.PostUsecase, auc attachment.AttachmentUsecase, suc subscription.SubscriptionUsecase) *GrpcCreatorHandler {
 	return &GrpcCreatorHandler{
 		uc:  uc,
 		puc: puc,
 		auc: auc,
+		suc: suc,
 	}
 }
 
@@ -550,4 +553,65 @@ func (h GrpcCreatorHandler) UpdateCoverPhoto(ctx context.Context, in *generatedC
 	return &generatedCommon.UUIDResponse{
 		Value: imageId.String(),
 		Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) CreateSubscription(ctx context.Context, in *generatedCommon.Subscription) (*generatedCommon.Empty, error) {
+	subId, err := uuid.Parse(in.Id)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	creatorId, err := uuid.Parse(in.Creator)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	err = h.suc.CreateSubscription(ctx, models.Subscription{
+		Id:          subId,
+		Creator:     creatorId,
+		CreatorName: in.CreatorName,
+		MonthCost:   in.MonthCost,
+		Title:       in.Title,
+		Description: in.Description,
+	})
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) EditSubscription(ctx context.Context, in *generatedCommon.Subscription) (*generatedCommon.Empty, error) {
+	subId, err := uuid.Parse(in.Id)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	creatorId, err := uuid.Parse(in.Creator)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	err = h.suc.EditSubscription(ctx, models.Subscription{
+		Id:          subId,
+		Creator:     creatorId,
+		MonthCost:   in.MonthCost,
+		Title:       in.Title,
+		Description: in.Description,
+	})
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) DeleteSubscription(ctx context.Context, in *generatedCreator.SubscriptionCreatorMessage) (*generatedCommon.Empty, error) {
+	subId, err := uuid.Parse(in.SubscriptionID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	creatorId, err := uuid.Parse(in.CreatorID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	err = h.suc.DeleteSubscription(ctx, subId, creatorId)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
 }
