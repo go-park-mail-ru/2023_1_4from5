@@ -18,6 +18,7 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -103,15 +104,6 @@ func run() error {
 	userClient := generatedUser.NewUserServiceClient(userConn)
 	userHandler := userDelivery.NewUserHandler(userClient, authClient, zapSugar)
 
-	//attachmentRepo := attachmentRepository.NewAttachmentRepo(db, zapSugar)
-	//attachmentUse := attachmentUsecase.NewAttachmentUsecase(attachmentRepo, zapSugar)
-
-	//postRepo := postRepository.NewPostRepo(db, zapSugar)
-	//postUse := postUsecase.NewPostUsecase(postRepo, zapSugar)
-
-	//creatorRepo := creatorRepository.NewCreatorRepo(db, zapSugar)
-	//creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo, zapSugar)
-
 	creatorClient := generatedCreator.NewCreatorServiceClient(creatorConn)
 	creatorHandler := creatorDelivery.NewCreatorHandler(creatorClient, authClient, zapSugar)
 	postHandler := postDelivery.NewPostHandler(authClient, creatorClient, zapSugar)
@@ -127,10 +119,10 @@ func run() error {
 	logMw := middleware.NewLoggerMiddleware(zapSugar)
 	r.Use(logMw.LogRequest)
 
-	//metricsMw := middleware.NewMetricsMiddleware()
-	//metricsMw.Register(middleware.ServiceMainName)
-	//r.PathPrefix("/api/metrics").Handler(promhttp.Handler())
-	//r.Use(metricsMw.LogMetrics)
+	metricsMw := middleware.NewMetricsMiddleware()
+	metricsMw.Register(middleware.ServiceMainName)
+	r.PathPrefix("/metrics").Handler(promhttp.Handler())
+	r.Use(metricsMw.LogMetrics)
 
 	auth := r.PathPrefix("/auth").Subrouter()
 	{

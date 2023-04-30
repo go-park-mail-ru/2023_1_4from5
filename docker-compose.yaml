@@ -46,9 +46,9 @@ services:
       - type: bind
         source: /home/ubuntu/db_data
         target: /var/lib/postgresql/data
-      - type: bind
-        source: /home/ubuntu/tsearch_data
-        target: /usr/share/postgresql/14/tsearch_data
+#      - type: bind
+#        source: /home/ubuntu/tsearch_data
+#        target: /usr/share/postgresql/14/tsearch_data
 
   main:
     depends_on:
@@ -68,3 +68,27 @@ services:
       - type: bind
         source: /var/log
         target: /var/log
+
+  prometheus:
+#    depends_on:
+#      - main
+    image: prom/prometheus:latest
+    volumes:
+      - type: bind
+#        source: /home/ubuntu/2023_1_4from5/prometheus.yml вообще по идее можно относительные пути указывать, или не стоит ,
+        source: ./prometheus.yml
+        target: /etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    depends_on:
+      - prometheus
+    image: grafana/grafana-oss:latest
+    volumes:
+      - type: bind
+#        source: /home/ubuntu/grafana-data
+        source: ./grafana-data
+        target: /var/lib/grafana
+    ports:
+      - "3000:3000"
