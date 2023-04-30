@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post"
@@ -14,13 +15,15 @@ import (
 type GrpcCreatorHandler struct {
 	uc  creator.CreatorUsecase
 	puc post.PostUsecase
+	auc attachment.AttachmentUsecase
 	generatedCreator.CreatorServiceServer
 }
 
-func NewGrpcCreatorHandler(uc creator.CreatorUsecase, puc post.PostUsecase) *GrpcCreatorHandler {
+func NewGrpcCreatorHandler(uc creator.CreatorUsecase, puc post.PostUsecase, auc attachment.AttachmentUsecase) *GrpcCreatorHandler {
 	return &GrpcCreatorHandler{
 		uc:  uc,
 		puc: puc,
+		auc: auc,
 	}
 }
 
@@ -257,4 +260,266 @@ func (h GrpcCreatorHandler) CheckIfCreator(ctx context.Context, in *generatedCom
 		return &generatedCommon.UUIDResponse{Error: err.Error(), Value: creatorID.String()}, nil
 	}
 	return &generatedCommon.UUIDResponse{Error: "", Value: creatorID.String()}, nil
+}
+
+func (h GrpcCreatorHandler) CreatePost(ctx context.Context, in *generatedCreator.PostCreationData) (*generatedCommon.Empty, error) {
+	ID, err := uuid.Parse(in.Id)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	creatorID, err := uuid.Parse(in.Id)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+
+	var attachs []models.AttachmentData
+	for _, attach := range in.Attachments {
+		attachID, err := uuid.Parse(attach.ID)
+		if err != nil {
+			return &generatedCommon.Empty{Error: err.Error()}, nil
+		}
+		attachs = append(attachs, models.AttachmentData{
+			Id:   attachID,
+			Data: nil,
+			Type: attach.Type,
+		})
+	}
+
+	var subs []uuid.UUID
+	for _, sub := range in.AvailableSubscriptions {
+		subID, err := uuid.Parse(sub)
+		if err != nil {
+			return &generatedCommon.Empty{Error: err.Error()}, nil
+		}
+		subs = append(subs, subID)
+	}
+
+	err = h.puc.CreatePost(ctx, models.PostCreationData{
+		Id:                     ID,
+		Creator:                creatorID,
+		Title:                  in.Title,
+		Text:                   in.Text,
+		Attachments:            attachs,
+		AvailableSubscriptions: subs,
+	})
+
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) DeleteAttachmentsFiles(ctx context.Context, in *generatedCreator.Attachments) (*generatedCommon.Empty, error) {
+	var attachs []models.Attachment
+	for _, attach := range in.Attachments {
+		attachID, err := uuid.Parse(attach.ID)
+		if err != nil {
+			return &generatedCommon.Empty{Error: err.Error()}, nil
+		}
+
+		attachs = append(attachs, models.Attachment{
+			Id:   attachID,
+			Type: attach.Type,
+		})
+	}
+
+	err := h.auc.DeleteAttachmentsFiles(ctx, attachs...)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) DeleteAttachmentsByPostID(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedCommon.Empty, error) {
+	postID, err := uuid.Parse(in.Value)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+
+	err = h.auc.DeleteAttachmentsByPostID(ctx, postID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) DeleteAttachment(ctx context.Context, in *generatedCreator.PostAttachMessage) (*generatedCommon.Empty, error) {
+	postID, err := uuid.Parse(in.PostID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+
+	attachID, err := uuid.Parse(in.Attachment.ID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+
+	err = h.auc.DeleteAttachment(ctx, postID, models.Attachment{
+		Id:   attachID,
+		Type: in.Attachment.Type,
+	})
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) AddAttach(ctx context.Context, in *generatedCreator.PostAttachMessage) (*generatedCommon.Empty, error) {
+	postID, err := uuid.Parse(in.PostID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+
+	attachID, err := uuid.Parse(in.Attachment.ID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+
+	err = h.auc.AddAttach(ctx, postID, models.Attachment{
+		Id:   attachID,
+		Type: in.Attachment.Type,
+	})
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) GetFileExtension(ctx context.Context, in *generatedCreator.KeywordMessage) (*generatedCreator.Extension, error) {
+	extension, flag := h.auc.GetFileExtension(ctx, in.Keyword)
+
+	return &generatedCreator.Extension{
+		Extension: extension,
+		Flag:      flag,
+	}, nil
+}
+
+func (h GrpcCreatorHandler) IsPostOwner(ctx context.Context, in *generatedCreator.PostUserMessage) (*generatedCreator.FlagMessage, error) {
+	postID, err := uuid.Parse(in.PostID)
+	if err != nil {
+		return &generatedCreator.FlagMessage{Error: err.Error()}, nil
+	}
+
+	userID, err := uuid.Parse(in.UserID)
+	if err != nil {
+		return &generatedCreator.FlagMessage{Error: err.Error()}, nil
+	}
+
+	flag, err := h.puc.IsPostOwner(ctx, userID, postID)
+	if err != nil {
+		return &generatedCreator.FlagMessage{Error: err.Error()}, nil
+	}
+	return &generatedCreator.FlagMessage{Flag: flag, Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) DeletePost(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedCommon.Empty, error) {
+	postID, err := uuid.Parse(in.Value)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+
+	err = h.puc.DeletePost(ctx, postID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) GetPost(ctx context.Context, in *generatedCreator.PostUserMessage) (*generatedCreator.PostMessage, error) {
+	postID, err := uuid.Parse(in.PostID)
+	if err != nil {
+		return &generatedCreator.PostMessage{Error: err.Error()}, nil
+	}
+
+	userID, err := uuid.Parse(in.UserID)
+	if err != nil {
+		return &generatedCreator.PostMessage{Error: err.Error()}, nil
+	}
+
+	post, err := h.puc.GetPost(ctx, postID, userID)
+	if err != nil {
+		return &generatedCreator.PostMessage{Error: err.Error()}, nil
+	}
+
+	return &generatedCreator.PostMessage{Error: "", Post: &generatedCreator.Post{
+		Id:           post.Id.String(),
+		CreatorID:    post.Creator.String(),
+		Creation:     post.Creation.String(),
+		CreatorName:  post.CreatorName,
+		LikesCount:   post.LikesCount,
+		CreatorPhoto: post.CreatorPhoto.String(),
+		Title:        post.Title,
+		Text:         post.Text,
+		IsAvailable:  post.IsAvailable,
+		IsLiked:      post.IsLiked,
+	}}, nil
+}
+
+func (h GrpcCreatorHandler) EditPost(ctx context.Context, in *generatedCreator.PostEditData) (*generatedCommon.Empty, error) {
+	postID, err := uuid.Parse(in.Id)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	var subs []uuid.UUID
+	for _, sub := range in.AvailableSubscriptions {
+		subID, err := uuid.Parse(sub)
+		if err != nil {
+			return &generatedCommon.Empty{Error: err.Error()}, nil
+		}
+		subs = append(subs, subID)
+	}
+	err = h.puc.EditPost(ctx, models.PostEditData{
+		Id:                     postID,
+		Title:                  in.Title,
+		Text:                   in.Text,
+		AvailableSubscriptions: subs,
+	})
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) RemoveLike(ctx context.Context, in *generatedCreator.PostUserMessage) (*generatedCreator.Like, error) {
+	postID, err := uuid.Parse(in.PostID)
+	if err != nil {
+		return &generatedCreator.Like{Error: err.Error()}, nil
+	}
+
+	userID, err := uuid.Parse(in.UserID)
+	if err != nil {
+		return &generatedCreator.Like{Error: err.Error()}, nil
+	}
+	like, err := h.puc.RemoveLike(ctx, userID, postID)
+	if err != nil {
+		return &generatedCreator.Like{Error: err.Error()}, nil
+	}
+
+	return &generatedCreator.Like{
+		LikesCount: like.LikesCount,
+		PostID:     like.PostID.String(),
+		Error:      "",
+	}, nil
+}
+
+func (h GrpcCreatorHandler) AddLike(ctx context.Context, in *generatedCreator.PostUserMessage) (*generatedCreator.Like, error) {
+	postID, err := uuid.Parse(in.PostID)
+	if err != nil {
+		return &generatedCreator.Like{Error: err.Error()}, nil
+	}
+
+	userID, err := uuid.Parse(in.UserID)
+	if err != nil {
+		return &generatedCreator.Like{Error: err.Error()}, nil
+	}
+	like, err := h.puc.AddLike(ctx, userID, postID)
+	if err != nil {
+		return &generatedCreator.Like{Error: err.Error()}, nil
+	}
+
+	return &generatedCreator.Like{
+		LikesCount: like.LikesCount,
+		PostID:     like.PostID.String(),
+		Error:      "",
+	}, nil
 }

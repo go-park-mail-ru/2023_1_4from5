@@ -43,6 +43,7 @@ func (h *CreatorHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
 		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}

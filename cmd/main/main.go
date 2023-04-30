@@ -2,16 +2,12 @@ package main
 
 import (
 	"database/sql"
-	attachmentRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment/repo"
-	attachmentUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment/usecase"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	authDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/http"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	creatorDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/http"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
 	postDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/delivery/http"
-	postRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/repo"
-	postUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/usecase"
 	subscriptionDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription/delivery/http"
 	subscriptionRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription/repo"
 	subscriptionUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription/usecase"
@@ -72,7 +68,7 @@ func run() error {
 	}
 
 	authConn, err := grpc.Dial(
-		"auth:8010",
+		":8010",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -81,7 +77,7 @@ func run() error {
 	}
 
 	userConn, err := grpc.Dial(
-		"user:8020",
+		":8020",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -90,7 +86,7 @@ func run() error {
 	}
 
 	creatorConn, err := grpc.Dial(
-		"creator:8030",
+		":8030",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -107,18 +103,18 @@ func run() error {
 	userClient := generatedUser.NewUserServiceClient(userConn)
 	userHandler := userDelivery.NewUserHandler(userClient, authClient, zapSugar)
 
-	attachmentRepo := attachmentRepository.NewAttachmentRepo(db, zapSugar)
-	attachmentUse := attachmentUsecase.NewAttachmentUsecase(attachmentRepo, zapSugar)
+	//attachmentRepo := attachmentRepository.NewAttachmentRepo(db, zapSugar)
+	//attachmentUse := attachmentUsecase.NewAttachmentUsecase(attachmentRepo, zapSugar)
 
-	postRepo := postRepository.NewPostRepo(db, zapSugar)
-	postUse := postUsecase.NewPostUsecase(postRepo, zapSugar)
-	postHandler := postDelivery.NewPostHandler(postUse, authClient, attachmentUse, zapSugar)
+	//postRepo := postRepository.NewPostRepo(db, zapSugar)
+	//postUse := postUsecase.NewPostUsecase(postRepo, zapSugar)
 
 	//creatorRepo := creatorRepository.NewCreatorRepo(db, zapSugar)
 	//creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo, zapSugar)
 
 	creatorClient := generatedCreator.NewCreatorServiceClient(creatorConn)
 	creatorHandler := creatorDelivery.NewCreatorHandler(creatorClient, authClient, zapSugar)
+	postHandler := postDelivery.NewPostHandler(authClient, creatorClient, zapSugar)
 
 	//creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse, authClient, postUse, zapSugar)
 

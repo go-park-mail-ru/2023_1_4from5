@@ -3,9 +3,9 @@ package http
 import (
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment"
+	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post"
+	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/google/uuid"
@@ -16,21 +16,20 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type PostHandler struct {
-	usecase           post.PostUsecase
-	authClient        generatedAuth.AuthServiceClient
-	attachmentUsecase attachment.AttachmentUsecase
-	logger            *zap.SugaredLogger
+	authClient    generatedAuth.AuthServiceClient
+	creatorClient generatedCreator.CreatorServiceClient
+	logger        *zap.SugaredLogger
 }
 
-func NewPostHandler(uc post.PostUsecase, auc generatedAuth.AuthServiceClient, attuc attachment.AttachmentUsecase, logger *zap.SugaredLogger) *PostHandler {
+func NewPostHandler(auc generatedAuth.AuthServiceClient, csc generatedCreator.CreatorServiceClient, logger *zap.SugaredLogger) *PostHandler {
 	return &PostHandler{
-		usecase:           uc,
-		authClient:        auc,
-		attachmentUsecase: attuc,
-		logger:            logger,
+		authClient:    auc,
+		creatorClient: csc,
+		logger:        logger,
 	}
 }
 
@@ -93,12 +92,10 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok, err = h.usecase.IsCreator(r.Context(), userDataJWT.Id, postData.Creator)
-
-	if err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
+	out, err := h.creatorClient.IsCreator(r.Context(), &generatedCreator.UserCreatorMessage{
+		UserID:    userDataJWT.Id.String(),
+		CreatorID: postData.Creator.String(),
+	})
 
 	if err != nil {
 		h.logger.Error(err)
@@ -106,7 +103,18 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ok {
+	if out.Error == models.WrongData.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if out.Error != "" {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if !out.Flag {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -185,50 +193,120 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	postData.Id = uuid.New()
-	if err = h.usecase.CreatePost(r.Context(), postData); err != nil {
-		_ = h.attachmentUsecase.DeleteAttachmentsFiles(r.Context(), postData.Attachments...)
+	var attachProto []*generatedCreator.Attachment
+	for _, attach := range postData.Attachments {
+		attachProto = append(attachProto, &generatedCreator.Attachment{
+			ID:   attach.Id.String(),
+			Type: attach.Type,
+		})
+	}
+
+	var subsProto []string
+	for _, sub := range postData.AvailableSubscriptions {
+		subsProto = append(subsProto, sub.String())
+	}
+
+	errMessage, err := h.creatorClient.CreatePost(r.Context(), &generatedCreator.PostCreationData{
+		Id:                     postData.Id.String(),
+		Creator:                postData.Creator.String(),
+		Title:                  postData.Title,
+		Text:                   postData.Text,
+		Attachments:            attachProto,
+		AvailableSubscriptions: subsProto,
+	})
+
+	if err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 
+	if errMessage.Error != "" {
+		_, _ = h.creatorClient.DeleteAttachmentsFiles(r.Context(), &generatedCreator.Attachments{Attachments: attachProto})
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
 	for i, attach := range postData.Attachments {
-		fmt.Println(attach.Type)
-		attachmentType, ok := h.attachmentUsecase.GetFileExtension(attach.Type)
-		if !ok {
-			if err = h.attachmentUsecase.DeleteAttachmentsFiles(r.Context(), postData.Attachments[:i]...); err != nil {
-				h.logger.Error(err)
-				_ = h.usecase.DeletePost(r.Context(), postData.Id)
-				utils.Response(w, http.StatusInternalServerError, nil)
-				return
-			}
-			utils.Response(w, http.StatusUnsupportedMediaType, nil)
-			_ = h.usecase.DeletePost(r.Context(), postData.Id)
+		attachmentType, err := h.creatorClient.GetFileExtension(r.Context(), &generatedCreator.KeywordMessage{Keyword: attach.Type})
+
+		if err != nil {
+			h.logger.Error(err)
+			utils.Response(w, http.StatusInternalServerError, nil)
 			return
 		}
-		f, err := os.Create(fmt.Sprintf("%s.%s", filepath.Join(models.FolderPath, attach.Id.String()), attachmentType))
-		if err != nil {
-			if err = h.attachmentUsecase.DeleteAttachmentsFiles(r.Context(), postData.Attachments[:i]...); err != nil {
+
+		if !attachmentType.Flag {
+			errMessage, err = h.creatorClient.DeleteAttachmentsFiles(r.Context(), &generatedCreator.Attachments{Attachments: attachProto[:i]})
+
+			if err != nil {
 				h.logger.Error(err)
-				_ = h.usecase.DeletePost(r.Context(), postData.Id)
 				utils.Response(w, http.StatusInternalServerError, nil)
 				return
 			}
+
+			if errMessage.Error != "" {
+				utils.Response(w, http.StatusInternalServerError, nil)
+				return
+			}
+			errMessage, err = h.creatorClient.DeletePost(r.Context(), &generatedCommon.UUIDMessage{Value: postData.Id.String()})
+
+			if err != nil {
+				h.logger.Error(err)
+				utils.Response(w, http.StatusInternalServerError, nil)
+				return
+			}
+
+			if errMessage.Error != "" {
+				utils.Response(w, http.StatusInternalServerError, nil)
+				return
+			}
+
+			utils.Response(w, http.StatusUnsupportedMediaType, nil)
+			return
+		}
+		f, err := os.Create(fmt.Sprintf("%s.%s", filepath.Join(models.FolderPath, attach.Id.String()), attachmentType.Extension))
+		if err != nil {
 			h.logger.Error(err)
-			_ = h.usecase.DeletePost(r.Context(), postData.Id)
+			errMessage, err = h.creatorClient.DeleteAttachmentsFiles(r.Context(), &generatedCreator.Attachments{Attachments: attachProto[:i]})
+
+			if err != nil {
+				h.logger.Error(err)
+				utils.Response(w, http.StatusInternalServerError, nil)
+				return
+			}
+
+			if errMessage.Error != "" {
+				utils.Response(w, http.StatusInternalServerError, nil)
+				return
+			}
+			errMessage, err = h.creatorClient.DeletePost(r.Context(), &generatedCommon.UUIDMessage{Value: postData.Id.String()})
+			if err != nil {
+				h.logger.Error(err)
+			}
 			utils.Response(w, http.StatusInternalServerError, nil)
 			return
 		}
 
 		if _, err := io.Copy(f, attach.Data); err != nil {
-			if err := h.attachmentUsecase.DeleteAttachmentsFiles(r.Context(), postData.Attachments[:i]...); err != nil {
+			h.logger.Error(err)
+			errMessage, err = h.creatorClient.DeleteAttachmentsFiles(r.Context(), &generatedCreator.Attachments{Attachments: attachProto[:i]})
+
+			if err != nil {
 				h.logger.Error(err)
-				_ = h.usecase.DeletePost(r.Context(), postData.Id)
 				utils.Response(w, http.StatusInternalServerError, nil)
 				return
 			}
-			h.logger.Error(err)
-			_ = h.usecase.DeletePost(r.Context(), postData.Id)
+
+			if errMessage.Error != "" {
+				utils.Response(w, http.StatusInternalServerError, nil)
+				return
+			}
+
+			errMessage, err = h.creatorClient.DeletePost(r.Context(), &generatedCommon.UUIDMessage{Value: postData.Id.String()})
+			if err != nil {
+				h.logger.Error(err)
+			}
 			utils.Response(w, http.StatusInternalServerError, nil)
 			return
 		}
@@ -266,26 +344,47 @@ func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	postOwner, err := h.usecase.IsPostOwner(r.Context(), userDataJWT.Id, like.PostID)
+	isPostOwner, err := h.creatorClient.IsPostOwner(r.Context(), &generatedCreator.PostUserMessage{
+		UserID: (*userDataJWT).Id.String(),
+		PostID: like.PostID.String(),
+	})
+
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
-	if postOwner {
+
+	if isPostOwner.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if isPostOwner.Flag {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
 
-	like, err = h.usecase.AddLike(r.Context(), userDataJWT.Id, like.PostID)
-	if err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
+	likeProto, err := h.creatorClient.AddLike(r.Context(), &generatedCreator.PostUserMessage{
+		UserID: userDataJWT.Id.String(),
+		PostID: like.PostID.String(),
+	})
 
-	if err == models.InternalError {
+	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
+
+	if likeProto.Error == models.WrongData.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	if likeProto.Error == models.InternalError.Error() {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	like.LikesCount = likeProto.LikesCount
 	utils.Response(w, http.StatusOK, like)
 }
 
@@ -302,6 +401,7 @@ func (h *PostHandler) RemoveLike(w http.ResponseWriter, r *http.Request) {
 		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -318,16 +418,27 @@ func (h *PostHandler) RemoveLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	like, err = h.usecase.RemoveLike(r.Context(), userDataJWT.Id, like.PostID)
-	if err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
-	if err == models.InternalError {
+	likeProto, err := h.creatorClient.RemoveLike(r.Context(), &generatedCreator.PostUserMessage{
+		UserID: userDataJWT.Id.String(),
+		PostID: like.PostID.String(),
+	})
+
+	if err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
+
+	if likeProto.Error == models.WrongData.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	if likeProto.Error == models.InternalError.Error() {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	like.LikesCount = likeProto.LikesCount
 	utils.Response(w, http.StatusOK, like)
 }
 
@@ -344,6 +455,7 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -383,11 +495,10 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok, err = h.usecase.IsPostOwner(r.Context(), (*userDataJWT).Id, postID)
-	if err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
+	isPostOwner, err := h.creatorClient.IsPostOwner(r.Context(), &generatedCreator.PostUserMessage{
+		UserID: (*userDataJWT).Id.String(),
+		PostID: postID.String(),
+	})
 
 	if err != nil {
 		h.logger.Error(err)
@@ -395,22 +506,45 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ok {
+	if isPostOwner.Error == models.WrongData.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if isPostOwner.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if !isPostOwner.Flag {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
-	err = h.attachmentUsecase.DeleteAttachmentsByPostID(r.Context(), postID)
-	if err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
+	out, err := h.creatorClient.DeleteAttachmentsByPostID(r.Context(), &generatedCommon.UUIDMessage{Value: postID.String()})
+
 	if err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
-	if err = h.usecase.DeletePost(r.Context(), postID); err != nil {
+
+	if out.Error == models.WrongData.Error() {
 		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	if out.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	out, err = h.creatorClient.DeletePost(r.Context(), &generatedCommon.UUIDMessage{Value: postID.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if out.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 
@@ -431,19 +565,88 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post, err := h.usecase.GetPost(r.Context(), postID, userDataJWT.Id)
+	postProto, err := h.creatorClient.GetPost(r.Context(), &generatedCreator.PostUserMessage{
+		UserID: userDataJWT.Id.String(),
+		PostID: postID.String(),
+	})
 
-	if err == models.Forbbiden {
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if postProto.Error == models.Forbbiden.Error() {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
-	if err == models.WrongData {
+	if postProto.Error == models.WrongData.Error() {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
+	if postProto.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	creatorID, err := uuid.Parse(postProto.Post.CreatorID)
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
+	}
+	creatorPhoto, err := uuid.Parse(postProto.Post.CreatorPhoto)
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	reg, err := time.Parse("2006-01-02 15:04:05 -0700 -0700", postProto.Post.Creation)
+
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	post := models.Post{
+		Id:           postID,
+		Creator:      creatorID,
+		CreatorPhoto: creatorPhoto,
+		CreatorName:  postProto.Post.CreatorName,
+		Creation:     reg,
+		LikesCount:   postProto.Post.LikesCount,
+		Title:        postProto.Post.Title,
+		Text:         postProto.Post.Text,
+		IsAvailable:  postProto.Post.IsAvailable,
+		IsLiked:      postProto.Post.IsLiked,
+	}
+
+	for _, attach := range postProto.Post.PostAttachments {
+		attachID, err := uuid.Parse(attach.ID)
+		if err != nil {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+		post.Attachments = append(post.Attachments, models.Attachment{
+			Id:   attachID,
+			Type: attach.Type,
+		})
+	}
+
+	for _, sub := range postProto.Post.Subscriptions {
+		subID, err := uuid.Parse(sub.Id)
+		if err != nil {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+		post.Subscriptions = append(post.Subscriptions, models.Subscription{
+			Id:           subID,
+			Creator:      creatorID,
+			CreatorName:  post.CreatorName,
+			CreatorPhoto: creatorPhoto,
+			MonthCost:    sub.MonthCost,
+			Title:        sub.Title,
+			Description:  sub.Description,
+		})
 	}
 
 	post.Sanitize()
@@ -500,11 +703,10 @@ func (h *PostHandler) EditPost(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	ok, err = h.usecase.IsPostOwner(r.Context(), (*userDataJWT).Id, postEditData.Id)
-	if err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
+	isPostOwner, err := h.creatorClient.IsPostOwner(r.Context(), &generatedCreator.PostUserMessage{
+		UserID: (*userDataJWT).Id.String(),
+		PostID: postEditData.Id.String(),
+	})
 
 	if err != nil {
 		h.logger.Error(err)
@@ -512,7 +714,17 @@ func (h *PostHandler) EditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ok {
+	if isPostOwner.Error == models.WrongData.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if isPostOwner.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if !isPostOwner.Flag {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -527,7 +739,23 @@ func (h *PostHandler) EditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = h.usecase.EditPost(r.Context(), postEditData); err != nil {
+	var subs []string
+	for _, v := range postEditData.AvailableSubscriptions {
+		subs = append(subs, v.String())
+	}
+	out, err := h.creatorClient.EditPost(r.Context(), &generatedCreator.PostEditData{
+		Id:                     postEditData.Id.String(),
+		Title:                  postEditData.Title,
+		Text:                   postEditData.Text,
+		AvailableSubscriptions: subs,
+	})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if out.Error != "" {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -588,11 +816,10 @@ func (h *PostHandler) AddAttach(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok, err = h.usecase.IsPostOwner(r.Context(), (*userDataJWT).Id, postID)
-	if err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
+	isPostOwner, err := h.creatorClient.IsPostOwner(r.Context(), &generatedCreator.PostUserMessage{
+		UserID: (*userDataJWT).Id.String(),
+		PostID: postID.String(),
+	})
 
 	if err != nil {
 		h.logger.Error(err)
@@ -600,7 +827,17 @@ func (h *PostHandler) AddAttach(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ok {
+	if isPostOwner.Error == models.WrongData.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if isPostOwner.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if !isPostOwner.Flag {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -643,8 +880,13 @@ func (h *PostHandler) AddAttach(w http.ResponseWriter, r *http.Request) {
 	attach.Type = http.DetectContentType(buf)
 	attach.Id = uuid.New()
 
-	attachmentType, ok := h.attachmentUsecase.GetFileExtension(attach.Type)
-	if !ok {
+	attachmentType, err := h.creatorClient.GetFileExtension(r.Context(), &generatedCreator.KeywordMessage{Keyword: attach.Type})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if !attachmentType.Flag {
 		utils.Response(w, http.StatusUnsupportedMediaType, nil)
 		return
 	}
@@ -662,11 +904,31 @@ func (h *PostHandler) AddAttach(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = f.Close()
 
-	if err = h.attachmentUsecase.AddAttach(r.Context(), postID, attach); err != nil {
-		_ = h.attachmentUsecase.DeleteAttachmentsFiles(r.Context(), attach)
+	out, err := h.creatorClient.AddAttach(r.Context(), &generatedCreator.PostAttachMessage{
+		PostID: postID.String(),
+		Attachment: &generatedCreator.Attachment{
+			ID:   attach.Id.String(),
+			Type: attach.Type,
+		},
+	})
+
+	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
+		return
 	}
 
+	if out.Error != "" {
+		var attachProto = []*generatedCreator.Attachment{&generatedCreator.Attachment{ID: attach.Id.String(), Type: attach.Type}}
+		_, err = h.creatorClient.DeleteAttachmentsFiles(r.Context(), &generatedCreator.Attachments{Attachments: attachProto})
+
+		if err != nil {
+			h.logger.Error(err)
+		}
+
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
 	utils.Response(w, http.StatusOK, nil)
 }
 
@@ -728,11 +990,10 @@ func (h *PostHandler) DeleteAttach(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	ok, err = h.usecase.IsPostOwner(r.Context(), (*userDataJWT).Id, postID)
-	if err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
+	isPostOwner, err := h.creatorClient.IsPostOwner(r.Context(), &generatedCreator.PostUserMessage{
+		UserID: (*userDataJWT).Id.String(),
+		PostID: postID.String(),
+	})
 
 	if err != nil {
 		h.logger.Error(err)
@@ -740,17 +1001,41 @@ func (h *PostHandler) DeleteAttach(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ok {
+	if isPostOwner.Error == models.WrongData.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if isPostOwner.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if !isPostOwner.Flag {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
 
-	err = h.attachmentUsecase.DeleteAttachment(r.Context(), postID, models.AttachmentData{Id: attachInfo.Id, Type: attachInfo.Type})
-	if err == models.WrongData {
+	out, err := h.creatorClient.DeleteAttachment(r.Context(), &generatedCreator.PostAttachMessage{
+		PostID: postID.String(),
+		Attachment: &generatedCreator.Attachment{
+			ID:   attachInfo.Id.String(),
+			Type: attachInfo.Type,
+		},
+	})
+
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if out.Error == models.WrongData.Error() {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	if err != nil {
+
+	if out.Error != "" {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return

@@ -32,12 +32,17 @@ type CreatorServiceClient interface {
 	CreateAim(ctx context.Context, in *Aim, opts ...grpc.CallOption) (*proto.Empty, error)
 	CheckIfCreator(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.UUIDResponse, error)
 	CreatePost(ctx context.Context, in *PostCreationData, opts ...grpc.CallOption) (*proto.Empty, error)
-	GetPost(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*PostsMessage, error)
+	GetPost(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*PostMessage, error)
 	DeletePost(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.Empty, error)
 	IsPostOwner(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*FlagMessage, error)
 	AddLike(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*Like, error)
 	RemoveLike(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*Like, error)
 	EditPost(ctx context.Context, in *PostEditData, opts ...grpc.CallOption) (*proto.Empty, error)
+	DeleteAttachmentsFiles(ctx context.Context, in *Attachments, opts ...grpc.CallOption) (*proto.Empty, error)
+	DeleteAttachmentsByPostID(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.Empty, error)
+	DeleteAttachment(ctx context.Context, in *PostAttachMessage, opts ...grpc.CallOption) (*proto.Empty, error)
+	AddAttach(ctx context.Context, in *PostAttachMessage, opts ...grpc.CallOption) (*proto.Empty, error)
+	GetFileExtension(ctx context.Context, in *KeywordMessage, opts ...grpc.CallOption) (*Extension, error)
 }
 
 type creatorServiceClient struct {
@@ -129,8 +134,8 @@ func (c *creatorServiceClient) CreatePost(ctx context.Context, in *PostCreationD
 	return out, nil
 }
 
-func (c *creatorServiceClient) GetPost(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*PostsMessage, error) {
-	out := new(PostsMessage)
+func (c *creatorServiceClient) GetPost(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*PostMessage, error) {
+	out := new(PostMessage)
 	err := c.cc.Invoke(ctx, "/CreatorService/GetPost", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -183,6 +188,51 @@ func (c *creatorServiceClient) EditPost(ctx context.Context, in *PostEditData, o
 	return out, nil
 }
 
+func (c *creatorServiceClient) DeleteAttachmentsFiles(ctx context.Context, in *Attachments, opts ...grpc.CallOption) (*proto.Empty, error) {
+	out := new(proto.Empty)
+	err := c.cc.Invoke(ctx, "/CreatorService/DeleteAttachmentsFiles", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) DeleteAttachmentsByPostID(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.Empty, error) {
+	out := new(proto.Empty)
+	err := c.cc.Invoke(ctx, "/CreatorService/DeleteAttachmentsByPostID", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) DeleteAttachment(ctx context.Context, in *PostAttachMessage, opts ...grpc.CallOption) (*proto.Empty, error) {
+	out := new(proto.Empty)
+	err := c.cc.Invoke(ctx, "/CreatorService/DeleteAttachment", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) AddAttach(ctx context.Context, in *PostAttachMessage, opts ...grpc.CallOption) (*proto.Empty, error) {
+	out := new(proto.Empty)
+	err := c.cc.Invoke(ctx, "/CreatorService/AddAttach", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) GetFileExtension(ctx context.Context, in *KeywordMessage, opts ...grpc.CallOption) (*Extension, error) {
+	out := new(Extension)
+	err := c.cc.Invoke(ctx, "/CreatorService/GetFileExtension", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CreatorServiceServer is the server API for CreatorService service.
 // All implementations must embed UnimplementedCreatorServiceServer
 // for forward compatibility
@@ -196,12 +246,17 @@ type CreatorServiceServer interface {
 	CreateAim(context.Context, *Aim) (*proto.Empty, error)
 	CheckIfCreator(context.Context, *proto.UUIDMessage) (*proto.UUIDResponse, error)
 	CreatePost(context.Context, *PostCreationData) (*proto.Empty, error)
-	GetPost(context.Context, *PostUserMessage) (*PostsMessage, error)
+	GetPost(context.Context, *PostUserMessage) (*PostMessage, error)
 	DeletePost(context.Context, *proto.UUIDMessage) (*proto.Empty, error)
 	IsPostOwner(context.Context, *PostUserMessage) (*FlagMessage, error)
 	AddLike(context.Context, *PostUserMessage) (*Like, error)
 	RemoveLike(context.Context, *PostUserMessage) (*Like, error)
 	EditPost(context.Context, *PostEditData) (*proto.Empty, error)
+	DeleteAttachmentsFiles(context.Context, *Attachments) (*proto.Empty, error)
+	DeleteAttachmentsByPostID(context.Context, *proto.UUIDMessage) (*proto.Empty, error)
+	DeleteAttachment(context.Context, *PostAttachMessage) (*proto.Empty, error)
+	AddAttach(context.Context, *PostAttachMessage) (*proto.Empty, error)
+	GetFileExtension(context.Context, *KeywordMessage) (*Extension, error)
 	mustEmbedUnimplementedCreatorServiceServer()
 }
 
@@ -236,7 +291,7 @@ func (UnimplementedCreatorServiceServer) CheckIfCreator(context.Context, *proto.
 func (UnimplementedCreatorServiceServer) CreatePost(context.Context, *PostCreationData) (*proto.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePost not implemented")
 }
-func (UnimplementedCreatorServiceServer) GetPost(context.Context, *PostUserMessage) (*PostsMessage, error) {
+func (UnimplementedCreatorServiceServer) GetPost(context.Context, *PostUserMessage) (*PostMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPost not implemented")
 }
 func (UnimplementedCreatorServiceServer) DeletePost(context.Context, *proto.UUIDMessage) (*proto.Empty, error) {
@@ -253,6 +308,21 @@ func (UnimplementedCreatorServiceServer) RemoveLike(context.Context, *PostUserMe
 }
 func (UnimplementedCreatorServiceServer) EditPost(context.Context, *PostEditData) (*proto.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EditPost not implemented")
+}
+func (UnimplementedCreatorServiceServer) DeleteAttachmentsFiles(context.Context, *Attachments) (*proto.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteAttachmentsFiles not implemented")
+}
+func (UnimplementedCreatorServiceServer) DeleteAttachmentsByPostID(context.Context, *proto.UUIDMessage) (*proto.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteAttachmentsByPostID not implemented")
+}
+func (UnimplementedCreatorServiceServer) DeleteAttachment(context.Context, *PostAttachMessage) (*proto.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteAttachment not implemented")
+}
+func (UnimplementedCreatorServiceServer) AddAttach(context.Context, *PostAttachMessage) (*proto.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddAttach not implemented")
+}
+func (UnimplementedCreatorServiceServer) GetFileExtension(context.Context, *KeywordMessage) (*Extension, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFileExtension not implemented")
 }
 func (UnimplementedCreatorServiceServer) mustEmbedUnimplementedCreatorServiceServer() {}
 
@@ -537,6 +607,96 @@ func _CreatorService_EditPost_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CreatorService_DeleteAttachmentsFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Attachments)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).DeleteAttachmentsFiles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/DeleteAttachmentsFiles",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).DeleteAttachmentsFiles(ctx, req.(*Attachments))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_DeleteAttachmentsByPostID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(proto.UUIDMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).DeleteAttachmentsByPostID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/DeleteAttachmentsByPostID",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).DeleteAttachmentsByPostID(ctx, req.(*proto.UUIDMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_DeleteAttachment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PostAttachMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).DeleteAttachment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/DeleteAttachment",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).DeleteAttachment(ctx, req.(*PostAttachMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_AddAttach_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PostAttachMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).AddAttach(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/AddAttach",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).AddAttach(ctx, req.(*PostAttachMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_GetFileExtension_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(KeywordMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).GetFileExtension(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/GetFileExtension",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).GetFileExtension(ctx, req.(*KeywordMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CreatorService_ServiceDesc is the grpc.ServiceDesc for CreatorService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -603,6 +763,26 @@ var CreatorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EditPost",
 			Handler:    _CreatorService_EditPost_Handler,
+		},
+		{
+			MethodName: "DeleteAttachmentsFiles",
+			Handler:    _CreatorService_DeleteAttachmentsFiles_Handler,
+		},
+		{
+			MethodName: "DeleteAttachmentsByPostID",
+			Handler:    _CreatorService_DeleteAttachmentsByPostID_Handler,
+		},
+		{
+			MethodName: "DeleteAttachment",
+			Handler:    _CreatorService_DeleteAttachment_Handler,
+		},
+		{
+			MethodName: "AddAttach",
+			Handler:    _CreatorService_AddAttach_Handler,
+		},
+		{
+			MethodName: "GetFileExtension",
+			Handler:    _CreatorService_GetFileExtension_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

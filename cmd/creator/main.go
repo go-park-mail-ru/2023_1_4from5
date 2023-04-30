@@ -2,6 +2,8 @@ package main
 
 import (
 	"database/sql"
+	attachmentRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment/repo"
+	attachmentUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment/usecase"
 	grpcCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	creatorRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/repo"
@@ -56,9 +58,12 @@ func run() error {
 	postRepo := postRepository.NewPostRepo(db, zapSugar)
 	postUse := postUsecase.NewPostUsecase(postRepo, zapSugar)
 
+	attachmentRepo := attachmentRepository.NewAttachmentRepo(db, zapSugar)
+	attachmentUse := attachmentUsecase.NewAttachmentUsecase(attachmentRepo, zapSugar)
+
 	creatorRepo := creatorRepository.NewCreatorRepo(db, zapSugar)
 	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo, zapSugar)
-	service := grpcCreator.NewGrpcCreatorHandler(creatorUse, postUse)
+	service := grpcCreator.NewGrpcCreatorHandler(creatorUse, postUse, attachmentUse)
 
 	srv, ok := net.Listen("tcp", ":8030")
 	if ok != nil {

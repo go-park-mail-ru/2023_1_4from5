@@ -79,7 +79,7 @@ message PostsMessage{
 };
 
 message PostMessage{
-  Post Posts = 1;
+  Post Post = 1;
   string Error = 2;
 };
 
@@ -88,14 +88,23 @@ message Attachment{
   string Type = 2;
 };
 
+message Attachments{
+  repeated Attachment Attachments = 1;
+}
+
 message FlagMessage{
   bool Flag = 1;
   string Error = 2;
 };
 
+message Extension {
+  string Extension = 1;
+  bool Flag = 2;
+}
+
 message PostCreationData{
   string Id = 1;
-  Creator Creator = 2;
+  string Creator = 2;
   string Title = 3;
   string Text = 4;
   repeated Attachment Attachments = 5;
@@ -107,6 +116,11 @@ message PostEditData{
   string Title = 2;
   string Text = 3;
   repeated string AvailableSubscriptions = 4;
+}
+
+message PostAttachMessage{
+  string postID = 1;
+  Attachment Attachment = 2;
 }
 
 message Like {
@@ -124,12 +138,19 @@ service CreatorService {
   rpc IsCreator(UserCreatorMessage) returns (FlagMessage){}
   rpc CreateAim(Aim) returns (common.Empty){}
   rpc CheckIfCreator(common.UUIDMessage) returns (common.UUIDResponse){}
+
   rpc CreatePost(PostCreationData) returns (common.Empty) {}
-  rpc GetPost(PostUserMessage) returns (PostsMessage) {}
+  rpc GetPost(PostUserMessage) returns (PostMessage) {}
   rpc DeletePost(common.UUIDMessage) returns (common.Empty) {}
   rpc IsPostOwner(PostUserMessage) returns (FlagMessage) {}
   rpc AddLike(PostUserMessage) returns (Like) {}
-  rpc  RemoveLike(PostUserMessage) returns (Like) {}
-  rpc  EditPost(PostEditData) returns (common.Empty) {}
+  rpc RemoveLike(PostUserMessage) returns (Like) {}
+  rpc EditPost(PostEditData) returns (common.Empty) {}
+
+  rpc DeleteAttachmentsFiles(Attachments) returns (common.Empty) {}
+  rpc DeleteAttachmentsByPostID(common.UUIDMessage) returns (common.Empty) {}
+  rpc DeleteAttachment(PostAttachMessage) returns (common.Empty) {}
+  rpc AddAttach(PostAttachMessage) returns (common.Empty) {}
+  rpc GetFileExtension(KeywordMessage) returns (Extension) {}
 }
 
