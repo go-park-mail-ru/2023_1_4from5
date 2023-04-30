@@ -267,7 +267,7 @@ func (h GrpcCreatorHandler) CreatePost(ctx context.Context, in *generatedCreator
 	if err != nil {
 		return &generatedCommon.Empty{Error: err.Error()}, nil
 	}
-	creatorID, err := uuid.Parse(in.Id)
+	creatorID, err := uuid.Parse(in.Creator)
 	if err != nil {
 		return &generatedCommon.Empty{Error: err.Error()}, nil
 	}

@@ -837,7 +837,7 @@ func (h *PostHandler) AddAttach(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusUnsupportedMediaType, nil)
 		return
 	}
-	f, err := os.Create(fmt.Sprintf("%s.%s", filepath.Join(models.FolderPath, attach.Id.String()), attachmentType))
+	f, err := os.Create(fmt.Sprintf("%s.%s", filepath.Join(models.FolderPath, attach.Id.String()), attachmentType.Extension))
 	if err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)

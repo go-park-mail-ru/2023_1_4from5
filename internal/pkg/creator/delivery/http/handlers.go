@@ -175,12 +175,14 @@ func (h *CreatorHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Reque
 
 	err = r.ParseMultipartForm(models.MaxFileSize)
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 
 	file, fileTmp, err := r.FormFile("upload")
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -216,7 +218,7 @@ func (h *CreatorHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Reque
 	}
 
 	name, err := h.creatorClient.UpdateProfilePhoto(r.Context(), &generatedCommon.UUIDMessage{
-		Value: creatorId.String()})
+		Value: creatorId.Value})
 	if err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
@@ -350,7 +352,7 @@ func (h *CreatorHandler) UpdateCoverPhoto(w http.ResponseWriter, r *http.Request
 	}
 
 	name, err := h.creatorClient.UpdateCoverPhoto(r.Context(), &generatedCommon.UUIDMessage{
-		Value: creatorId.String()})
+		Value: creatorId.Value})
 	if err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
@@ -610,7 +612,7 @@ func (h *CreatorHandler) UpdateCreatorData(w http.ResponseWriter, r *http.Reques
 	out, err := h.creatorClient.UpdateCreatorData(r.Context(), &generatedCreator.UpdateCreatorInfo{
 		CreatorName: updCreator.Name,
 		Description: updCreator.Description,
-		CreatorID:   creatorID.String(),
+		CreatorID:   creatorID.Value,
 	})
 	if err != nil {
 		h.logger.Error(err)
