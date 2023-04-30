@@ -189,4 +189,20 @@ create table follow
             references "creator" (creator_id)
 );
 
+CREATE OR REPLACE FUNCTION make_tsvector(name TEXT, priority "char")
+    RETURNS tsvector AS
+$$
+BEGIN
+    RETURN (setweight(to_tsvector('english', name), priority) ||
+            setweight(to_tsvector('russian', name), priority));
+END
+$$ LANGUAGE 'plpgsql' IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION make_tsrank(param TEXT, phrase TEXT, lang regconfig)
+    RETURNS tsvector AS
+$$
+BEGIN
+    RETURN ts_rank(to_tsvector(lang, param), plainto_tsquery(lang, phrase));
+END
+$$ LANGUAGE 'plpgsql' IMMUTABLE;
 
