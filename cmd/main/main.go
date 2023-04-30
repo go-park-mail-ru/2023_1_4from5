@@ -64,7 +64,7 @@ func run() error {
 	}
 
 	authConn, err := grpc.Dial(
-		":8010",
+		"auth:8010",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -73,7 +73,7 @@ func run() error {
 	}
 
 	userConn, err := grpc.Dial(
-		":8020",
+		"user:8020",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -82,7 +82,7 @@ func run() error {
 	}
 
 	creatorConn, err := grpc.Dial(
-		":8030",
+		"auth:8030",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
