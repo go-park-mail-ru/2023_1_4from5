@@ -3,6 +3,7 @@ package models
 // easyjson -all ./internal/models/subscription.go
 
 import (
+	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	"github.com/google/uuid"
 	"html"
 )
@@ -32,4 +33,27 @@ func (subscription *Subscription) Sanitize() {
 
 func (subscription *Subscription) IsValid() bool {
 	return 0 < len(subscription.Title) && len(subscription.Title) < 41 && len(subscription.Description) < 201
+}
+
+func (subscription *Subscription) ProtoSubscriptionToModel(sub *generatedCommon.Subscription) error {
+	subID, err := uuid.Parse(sub.Id)
+	if err != nil {
+		return err
+	}
+	creatorID, err := uuid.Parse(sub.Creator)
+	if err != nil {
+		return err
+	}
+	creatorPhoto, err := uuid.Parse(sub.CreatorPhoto)
+	if err != nil {
+		return err
+	}
+	subscription.Id = subID
+	subscription.Creator = creatorID
+	subscription.CreatorName = sub.CreatorName
+	subscription.CreatorPhoto = creatorPhoto
+	subscription.MonthCost = sub.MonthCost
+	subscription.Title = sub.Title
+	subscription.Description = sub.Description
+	return nil
 }

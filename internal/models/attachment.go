@@ -1,6 +1,7 @@
 package models
 
 import (
+	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	"github.com/google/uuid"
 	"io"
 )
@@ -24,4 +25,15 @@ type AttachmentData struct {
 	Id   uuid.UUID
 	Data io.Reader
 	Type string
+}
+
+func (attachment *Attachment) AttachToModel(attach *generatedCreator.Attachment) error {
+	attachID, err := uuid.Parse(attach.ID)
+	if err != nil {
+		return err
+	}
+
+	attachment.Id = attachID
+	attachment.Type = attach.Type
+	return nil
 }

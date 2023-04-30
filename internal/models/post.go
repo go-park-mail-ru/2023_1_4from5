@@ -3,6 +3,7 @@ package models
 // easyjson -all ./internal/models/post.go
 
 import (
+	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	"github.com/google/uuid"
 	"html"
 	"time"
@@ -50,4 +51,54 @@ func (post *Post) Sanitize() {
 	for i := range post.Subscriptions {
 		post.Subscriptions[i].Sanitize()
 	}
+}
+
+func (post *Post) PostToModel(postInfo *generatedCreator.Post) error {
+	postID, err := uuid.Parse(postInfo.Id)
+	if err != nil {
+		return err
+	}
+	creatorID, err := uuid.Parse(postInfo.CreatorID)
+	if err != nil {
+		return err
+	}
+	creatorPhoto, err := uuid.Parse(postInfo.CreatorPhoto)
+	if err != nil {
+		return err
+	}
+
+	reg, err := time.Parse("2006-01-02 15:04:05 -0700 -0700", postInfo.Creation)
+	if err != nil {
+		return err
+	}
+
+	post.Id = postID
+	post.Creator = creatorID
+	post.CreatorPhoto = creatorPhoto
+	post.CreatorName = postInfo.CreatorName
+	post.Creation = reg
+	post.LikesCount = postInfo.LikesCount
+	post.Title = postInfo.Title
+	post.Text = postInfo.Text
+	post.IsAvailable = postInfo.IsAvailable
+	post.IsLiked = postInfo.IsLiked
+
+	for _, sub := range postInfo.Subscriptions {
+		var subscription Subscription
+		err = subscription.ProtoSubscriptionToModel(sub)
+		if err != nil {
+			return err
+		}
+		post.Subscriptions = append(post.Subscriptions, subscription)
+	}
+
+	for _, attach := range postInfo.PostAttachments {
+		var attachment Attachment
+		err = attachment.AttachToModel(attach)
+		if err != nil {
+			return err
+		}
+		post.Attachments = append(post.Attachments, attachment)
+	}
+	return nil
 }

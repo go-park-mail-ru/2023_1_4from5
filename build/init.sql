@@ -182,10 +182,10 @@ create table donation
 create table follow
 (
     user_id    uuid not null
-        constraint donation_user_user_id_fk
+        constraint follow_user_user_id_fk
             references "user" (user_id),
     creator_id uuid not null
-        constraint donation_creator_creator_id_fk
+        constraint follow_creator_creator_id_fk
             references "creator" (creator_id)
 );
 

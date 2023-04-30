@@ -12,7 +12,6 @@ import (
 	"github.com/mailru/easyjson"
 	"go.uber.org/zap"
 	"net/http"
-	"time"
 )
 
 type CreatorHandler struct {
@@ -69,56 +68,12 @@ func (h *CreatorHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
 	feed := make([]models.Post, len(out.Posts))
 
 	for i, post := range out.Posts {
-		postID, err := uuid.Parse(post.Id)
-		if err != nil {
-			utils.Response(w, http.StatusInternalServerError, nil)
-			return
-		}
-		creatorID, err := uuid.Parse(post.CreatorID)
-		if err != nil {
-			utils.Response(w, http.StatusInternalServerError, nil)
-			return
-		}
-		creatorPhoto, err := uuid.Parse(post.CreatorPhoto)
-		if err != nil {
-			utils.Response(w, http.StatusInternalServerError, nil)
-			return
-		}
-
-		reg, err := time.Parse("2006-01-02 15:04:05 -0700 -0700", post.Creation)
-
+		err = feed[i].PostToModel(post)
 		if err != nil {
 			h.logger.Error(err)
 			utils.Response(w, http.StatusInternalServerError, nil)
 			return
 		}
-
-		feed[i] = models.Post{
-			Id:            postID,
-			Creator:       creatorID,
-			CreatorPhoto:  creatorPhoto,
-			CreatorName:   post.CreatorName,
-			Creation:      reg,
-			LikesCount:    post.LikesCount,
-			Title:         post.Title,
-			Text:          post.Text,
-			IsAvailable:   post.IsAvailable,
-			IsLiked:       post.IsLiked,
-			Subscriptions: nil,
-		}
-
-		for _, attach := range post.PostAttachments {
-			attachID, err := uuid.Parse(attach.ID)
-			if err != nil {
-				utils.Response(w, http.StatusInternalServerError, nil)
-				return
-			}
-			feed[i].Attachments = append(feed[i].Attachments, models.Attachment{
-				Id:   attachID,
-				Type: attach.Type,
-			})
-		}
-
 		feed[i].Sanitize()
 	}
 
@@ -140,38 +95,13 @@ func (h *CreatorHandler) GetAllCreators(w http.ResponseWriter, r *http.Request) 
 
 	creators := make([]models.Creator, len(out.Creators))
 
-	for i, v := range out.Creators {
-		creatorId, err := uuid.Parse(v.Id)
+	for i, creator := range out.Creators {
+		err = creators[i].CreatorToModel(creator)
 		if err != nil {
+			h.logger.Error(err)
 			utils.Response(w, http.StatusInternalServerError, nil)
 			return
 		}
-		userId, err := uuid.Parse(v.UserID)
-		if err != nil {
-			utils.Response(w, http.StatusInternalServerError, nil)
-			return
-		}
-		creatorPhoto, err := uuid.Parse(v.CreatorPhoto)
-		if err != nil {
-			utils.Response(w, http.StatusInternalServerError, nil)
-			return
-		}
-		coverPhoto, err := uuid.Parse(v.CoverPhoto)
-		if err != nil {
-			utils.Response(w, http.StatusInternalServerError, nil)
-			return
-		}
-		creators[i] = models.Creator{
-			Id:             creatorId,
-			UserId:         userId,
-			Name:           v.CreatorName,
-			CoverPhoto:     coverPhoto,
-			ProfilePhoto:   creatorPhoto,
-			FollowersCount: v.FollowersCount,
-			Description:    v.Description,
-			PostsCount:     v.PostsCount,
-		}
-
 		creators[i].Sanitize()
 	}
 	utils.Response(w, http.StatusOK, creators)
@@ -198,38 +128,13 @@ func (h *CreatorHandler) FindCreator(w http.ResponseWriter, r *http.Request) {
 
 	creators := make([]models.Creator, len(out.Creators))
 
-	for i, v := range out.Creators {
-		creatorId, err := uuid.Parse(v.Id)
+	for i, creator := range out.Creators {
+		err = creators[i].CreatorToModel(creator)
 		if err != nil {
+			h.logger.Error(err)
 			utils.Response(w, http.StatusInternalServerError, nil)
 			return
 		}
-		userId, err := uuid.Parse(v.UserID)
-		if err != nil {
-			utils.Response(w, http.StatusInternalServerError, nil)
-			return
-		}
-		creatorPhoto, err := uuid.Parse(v.CreatorPhoto)
-		if err != nil {
-			utils.Response(w, http.StatusInternalServerError, nil)
-			return
-		}
-		coverPhoto, err := uuid.Parse(v.CoverPhoto)
-		if err != nil {
-			utils.Response(w, http.StatusInternalServerError, nil)
-			return
-		}
-		creators[i] = models.Creator{
-			Id:             creatorId,
-			UserId:         userId,
-			Name:           v.CreatorName,
-			CoverPhoto:     coverPhoto,
-			ProfilePhoto:   creatorPhoto,
-			FollowersCount: v.FollowersCount,
-			Description:    v.Description,
-			PostsCount:     v.PostsCount,
-		}
-
 		creators[i].Sanitize()
 	}
 
@@ -248,7 +153,7 @@ func (h *CreatorHandler) GetPage(w http.ResponseWriter, r *http.Request) {
 		tmpUserInfo = &userInfo
 	}
 
-	creatorID, err := uuid.Parse(creatorUUID)
+	_, err = uuid.Parse(creatorUUID)
 	if err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusBadRequest, nil)
@@ -276,113 +181,11 @@ func (h *CreatorHandler) GetPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var page models.CreatorPage
-
-	creatorPhoto, err := uuid.Parse(creatorPage.CreatorInfo.CreatorPhoto)
+	page, err = h.CreatorPageToModel(creatorPage)
 	if err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
-	}
-	coverPhoto, err := uuid.Parse(creatorPage.CreatorInfo.CoverPhoto)
-	if err != nil {
-		h.logger.Error(err)
-		utils.Response(w, http.StatusInternalServerError, nil)
-		return
-	}
-
-	for _, sub := range creatorPage.Subscriptions {
-		subID, err := uuid.Parse(sub.Id)
-		if err != nil {
-			utils.Response(w, http.StatusInternalServerError, nil)
-			return
-		}
-		page.Subscriptions = append(page.Subscriptions, models.Subscription{
-			Id:           subID,
-			Creator:      creatorID,
-			CreatorName:  creatorPage.CreatorInfo.CreatorName,
-			CreatorPhoto: creatorPhoto,
-			MonthCost:    sub.MonthCost,
-			Title:        sub.Title,
-			Description:  sub.Description,
-		})
-	}
-
-	page.IsMyPage = creatorPage.IsMyPage
-	page.Follows = creatorPage.Follows
-	page.Aim = models.Aim{
-		Creator:     creatorID,
-		Description: creatorPage.AimInfo.Description,
-		MoneyNeeded: creatorPage.AimInfo.MoneyNeeded,
-		MoneyGot:    creatorPage.AimInfo.MoneyGot,
-	}
-	page.CreatorInfo = models.Creator{
-		Id:             creatorID,
-		UserId:         userInfo.Id,
-		Name:           creatorPage.CreatorInfo.CreatorName,
-		CoverPhoto:     coverPhoto,
-		ProfilePhoto:   creatorPhoto,
-		FollowersCount: creatorPage.CreatorInfo.FollowersCount,
-		Description:    creatorPage.CreatorInfo.Description,
-		PostsCount:     creatorPage.CreatorInfo.PostsCount,
-	}
-	page.Posts = make([]models.Post, len(creatorPage.Posts))
-	for i, post := range creatorPage.Posts {
-
-		postID, err := uuid.Parse(post.Id)
-		if err != nil {
-			utils.Response(w, http.StatusInternalServerError, nil)
-			return
-		}
-
-		reg, err := time.Parse("2006-01-02 15:04:05 -0700 -0700", post.Creation)
-
-		if err != nil {
-			h.logger.Error(err)
-			utils.Response(w, http.StatusInternalServerError, nil)
-			return
-		}
-
-		page.Posts[i] = models.Post{
-			Id:           postID,
-			Creator:      creatorID,
-			CreatorPhoto: creatorPhoto,
-			CreatorName:  post.CreatorName,
-			Creation:     reg,
-			LikesCount:   post.LikesCount,
-			Title:        post.Title,
-			Text:         post.Text,
-			IsAvailable:  post.IsAvailable,
-			IsLiked:      post.IsLiked,
-		}
-
-		for _, attach := range post.PostAttachments {
-			attachID, err := uuid.Parse(attach.ID)
-			if err != nil {
-				utils.Response(w, http.StatusInternalServerError, nil)
-				return
-			}
-			page.Posts[i].Attachments = append(page.Posts[i].Attachments, models.Attachment{
-				Id:   attachID,
-				Type: attach.Type,
-			})
-		}
-
-		for _, sub := range post.Subscriptions {
-			subID, err := uuid.Parse(sub.Id)
-			if err != nil {
-				utils.Response(w, http.StatusInternalServerError, nil)
-				return
-			}
-			page.Posts[i].Subscriptions = append(page.Posts[i].Subscriptions, models.Subscription{
-				Id:           subID,
-				Creator:      creatorID,
-				CreatorName:  creatorPage.CreatorInfo.CreatorName,
-				CreatorPhoto: creatorPhoto,
-				MonthCost:    sub.MonthCost,
-				Title:        sub.Title,
-				Description:  sub.Description,
-			})
-		}
 	}
 
 	page.Sanitize()
@@ -400,7 +203,7 @@ func (h *CreatorHandler) CreateAim(w http.ResponseWriter, r *http.Request) {
 	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
 		Login:       userDataJWT.Login,
 		Id:          userDataJWT.Id.String(),
-		UserVersion: int64(userDataJWT.UserVersion),
+		UserVersion: userDataJWT.UserVersion,
 	})
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
@@ -548,4 +351,42 @@ func (h *CreatorHandler) UpdateCreatorData(w http.ResponseWriter, r *http.Reques
 	}
 
 	utils.Response(w, http.StatusOK, nil)
+}
+
+func (h *CreatorHandler) CreatorPageToModel(creatorPage *generatedCreator.CreatorPage) (models.CreatorPage, error) {
+	var page models.CreatorPage
+
+	err := page.CreatorInfo.CreatorToModel(creatorPage.CreatorInfo)
+	if err != nil {
+		h.logger.Error(err)
+		return models.CreatorPage{}, models.InternalError
+	}
+
+	for _, sub := range creatorPage.Subscriptions {
+		var subscription models.Subscription
+		err = subscription.ProtoSubscriptionToModel(sub)
+		if err != nil {
+			h.logger.Error(err)
+			return models.CreatorPage{}, models.InternalError
+		}
+		page.Subscriptions = append(page.Subscriptions, subscription)
+	}
+
+	page.IsMyPage = creatorPage.IsMyPage
+	page.Follows = creatorPage.Follows
+	err = page.Aim.AimToModel(creatorPage.AimInfo)
+	if err != nil {
+		h.logger.Error(err)
+		return models.CreatorPage{}, models.InternalError
+	}
+
+	page.Posts = make([]models.Post, len(creatorPage.Posts))
+	for i, post := range creatorPage.Posts {
+		err = page.Posts[i].PostToModel(post)
+		if err != nil {
+			h.logger.Error(err)
+			return models.CreatorPage{}, models.InternalError
+		}
+	}
+	return page, nil
 }

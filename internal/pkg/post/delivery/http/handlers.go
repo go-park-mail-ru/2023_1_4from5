@@ -16,7 +16,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 )
 
 type PostHandler struct {
@@ -589,64 +588,12 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	creatorID, err := uuid.Parse(postProto.Post.CreatorID)
-	if err != nil {
-		utils.Response(w, http.StatusInternalServerError, nil)
-		return
-	}
-	creatorPhoto, err := uuid.Parse(postProto.Post.CreatorPhoto)
-	if err != nil {
-		utils.Response(w, http.StatusInternalServerError, nil)
-		return
-	}
-	reg, err := time.Parse("2006-01-02 15:04:05 -0700 -0700", postProto.Post.Creation)
-
+	var post models.Post
+	err = post.PostToModel(postProto.Post)
 	if err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
-	}
-
-	post := models.Post{
-		Id:           postID,
-		Creator:      creatorID,
-		CreatorPhoto: creatorPhoto,
-		CreatorName:  postProto.Post.CreatorName,
-		Creation:     reg,
-		LikesCount:   postProto.Post.LikesCount,
-		Title:        postProto.Post.Title,
-		Text:         postProto.Post.Text,
-		IsAvailable:  postProto.Post.IsAvailable,
-		IsLiked:      postProto.Post.IsLiked,
-	}
-
-	for _, attach := range postProto.Post.PostAttachments {
-		attachID, err := uuid.Parse(attach.ID)
-		if err != nil {
-			utils.Response(w, http.StatusInternalServerError, nil)
-			return
-		}
-		post.Attachments = append(post.Attachments, models.Attachment{
-			Id:   attachID,
-			Type: attach.Type,
-		})
-	}
-
-	for _, sub := range postProto.Post.Subscriptions {
-		subID, err := uuid.Parse(sub.Id)
-		if err != nil {
-			utils.Response(w, http.StatusInternalServerError, nil)
-			return
-		}
-		post.Subscriptions = append(post.Subscriptions, models.Subscription{
-			Id:           subID,
-			Creator:      creatorID,
-			CreatorName:  post.CreatorName,
-			CreatorPhoto: creatorPhoto,
-			MonthCost:    sub.MonthCost,
-			Title:        sub.Title,
-			Description:  sub.Description,
-		})
 	}
 
 	post.Sanitize()

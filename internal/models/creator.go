@@ -1,6 +1,7 @@
 package models
 
 import (
+	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	"github.com/google/uuid"
 	"html"
 )
@@ -58,4 +59,45 @@ func (page *CreatorPage) Sanitize() {
 	for i := range page.Subscriptions {
 		page.Subscriptions[i].Sanitize()
 	}
+}
+
+func (aim *Aim) AimToModel(aimProto *generatedCreator.Aim) error {
+	creatorID, err := uuid.Parse(aimProto.Creator)
+	if err != nil {
+		return err
+	}
+
+	aim.Creator = creatorID
+	aim.Description = aimProto.Description
+	aim.MoneyNeeded = aimProto.MoneyNeeded
+	aim.MoneyGot = aimProto.MoneyGot
+	return nil
+}
+func (creator *Creator) CreatorToModel(creatorInfo *generatedCreator.Creator) error {
+	creatorPhoto, err := uuid.Parse(creatorInfo.CreatorPhoto)
+	if err != nil {
+		return err
+	}
+	coverPhoto, err := uuid.Parse(creatorInfo.CoverPhoto)
+	if err != nil {
+		return err
+	}
+	creatorID, err := uuid.Parse(creatorInfo.Id)
+	if err != nil {
+		return err
+	}
+	userID, err := uuid.Parse(creatorInfo.UserID)
+	if err != nil {
+		return err
+	}
+
+	creator.Id = creatorID
+	creator.UserId = userID
+	creator.Name = creatorInfo.CreatorName
+	creator.CoverPhoto = coverPhoto
+	creator.ProfilePhoto = creatorPhoto
+	creator.FollowersCount = creatorInfo.FollowersCount
+	creator.Description = creatorInfo.Description
+	creator.PostsCount = creatorInfo.PostsCount
+	return nil
 }

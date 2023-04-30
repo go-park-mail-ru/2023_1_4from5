@@ -43,9 +43,13 @@ func (uc *UserUsecase) Unfollow(ctx context.Context, userId, creatorId uuid.UUID
 }
 
 func (uc *UserUsecase) Subscribe(ctx context.Context, subscription models.SubscriptionDetails) error {
-	err := uc.repo.Follow(ctx, subscription.CreatorId, subscription.UserID)
-	if err == models.InternalError {
+	if isFollowing, err := uc.repo.CheckIfFollow(ctx, subscription.UserID, subscription.CreatorId); err == models.InternalError {
 		return err
+	} else if isFollowing == false {
+		err = uc.repo.Follow(ctx, subscription.UserID, subscription.CreatorId)
+		if err == models.InternalError {
+			return err
+		}
 	}
 	return uc.repo.Subscribe(ctx, subscription)
 }
