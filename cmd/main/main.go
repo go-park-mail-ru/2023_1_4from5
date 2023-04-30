@@ -82,7 +82,7 @@ func run() error {
 	}
 
 	creatorConn, err := grpc.Dial(
-		"auth:8030",
+		"creator:8030",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
