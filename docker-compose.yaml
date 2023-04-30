@@ -46,6 +46,9 @@ services:
       - type: bind
         source: /home/ubuntu/db_data
         target: /var/lib/postgresql/data
+      - type: bind
+        source: /home/ubuntu/tsearch_data
+        target: /usr/share/postgresql/14/tsearch_data
 
   main:
     depends_on:

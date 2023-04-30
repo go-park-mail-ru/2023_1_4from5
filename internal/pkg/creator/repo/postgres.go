@@ -24,6 +24,8 @@ const (
 	CheckIfCreator    = `SELECT creator_id FROM "creator" WHERE user_id = $1`
 	UpdateCreatorData = `UPDATE creator SET name = $1, description = $2 WHERE creator_id = $3`
 	Feed              = `SELECT DISTINCT p.post_id, p.creator_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), c.name, c.profile_photo, c.creator_id, p.likes_count FROM follow f JOIN post p on p.creator_id = f.creator_id JOIN creator c on f.creator_id = c.creator_id LEFT JOIN post_subscription ps on p.post_id = ps.post_id JOIN user_subscription us on f.user_id = us.user_id and (ps.subscription_id = us.subscription_id or ps.subscription_id is null) LEFT JOIN "attachment" a on p.post_id = a.post_id WHERE f.user_id = $1 GROUP BY c.name, p.creator_id, creation_date, title, post_text, p.post_id, c.profile_photo, c.creator_id ORDER BY creation_date DESC LIMIT 50;`
+	UpdateProfilePhoto = `UPDATE "creator" SET profile_photo = $1 WHERE creator_id = $2;`
+	UpdateCoverPhoto   = `UPDATE "creator" SET cover_photo = $1 WHERE creator_id = $2;`
 )
 
 type CreatorRepo struct {
@@ -345,4 +347,22 @@ func (r *CreatorRepo) GetFeed(ctx context.Context, userID uuid.UUID) ([]models.P
 	}
 
 	return feed, nil
+}
+
+func (r *CreatorRepo) UpdateProfilePhoto(ctx context.Context, creatorId, path uuid.UUID) error {
+	row := r.db.QueryRowContext(ctx, UpdateProfilePhoto, path, creatorId)
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		r.logger.Error(err)
+		return models.InternalError
+	}
+	return nil
+}
+
+func (r *CreatorRepo) UpdateCoverPhoto(ctx context.Context, creatorId, path uuid.UUID) error {
+	row := r.db.QueryRowContext(ctx, UpdateCoverPhoto, path, creatorId)
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		r.logger.Error(err)
+		return models.InternalError
+	}
+	return nil
 }

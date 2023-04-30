@@ -47,3 +47,21 @@ func (uc *CreatorUsecase) GetAllCreators(ctx context.Context) ([]models.Creator,
 func (uc *CreatorUsecase) GetFeed(ctx context.Context, userID uuid.UUID) ([]models.Post, error) {
 	return uc.repo.GetFeed(ctx, userID)
 }
+
+func (uc *CreatorUsecase) UpdateProfilePhoto(ctx context.Context, creatorId uuid.UUID) (uuid.UUID, error) {
+	path := uuid.New()
+	err := uc.repo.UpdateProfilePhoto(ctx, creatorId, path)
+	if err != nil {
+		return uuid.Nil, models.InternalError
+	}
+	return path, nil
+}
+
+func (uc *CreatorUsecase) UpdateCoverPhoto(ctx context.Context, creatorId uuid.UUID) (uuid.UUID, error) {
+	path := uuid.New()
+	err := uc.repo.UpdateCoverPhoto(ctx, creatorId, path)
+	if err != nil {
+		return uuid.Nil, models.InternalError
+	}
+	return path, nil
+}
