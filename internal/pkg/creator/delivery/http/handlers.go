@@ -150,12 +150,26 @@ func (h *CreatorHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	creatorId, err := h.usecase.CheckIfCreator(r.Context(), userDataJWT.Id)
-	if creatorId == uuid.Nil {
+	creatorId, err := h.creatorClient.CheckIfCreator(r.Context(), &generatedCommon.UUIDMessage{Value: userDataJWT.Id.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if creatorId.Error == models.NotFound.Error() {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
-	} else if err != nil {
+	}
+
+	if creatorId.Error != "" {
+		h.logger.Error(creatorId.Error)
 		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if creatorId.Value == uuid.Nil.String() {
+		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
 
@@ -271,12 +285,25 @@ func (h *CreatorHandler) UpdateCoverPhoto(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	creatorId, err := h.usecase.CheckIfCreator(r.Context(), userDataJWT.Id)
-	if creatorId == uuid.Nil {
+	creatorId, err := h.creatorClient.CheckIfCreator(r.Context(), &generatedCommon.UUIDMessage{Value: userDataJWT.Id.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if creatorId.Error == models.NotFound.Error() {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
-	} else if err != nil {
+	}
+
+	if creatorId.Error != "" {
 		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if creatorId.Value == uuid.Nil.String() {
+		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
 

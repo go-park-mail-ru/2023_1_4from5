@@ -222,7 +222,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 
 	if errMessage.Error != "" {
 		_, _ = h.creatorClient.DeleteAttachmentsFiles(r.Context(), &generatedCreator.Attachments{Attachments: attachProto})
-		h.logger.Error(err)
+		h.logger.Error(errMessage.Error)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
