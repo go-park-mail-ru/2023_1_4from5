@@ -379,7 +379,6 @@ func (h *CreatorHandler) UpdateCoverPhoto(w http.ResponseWriter, r *http.Request
 	}
 
 	utils.Response(w, http.StatusOK, name.Value)
-
 }
 
 func (h *CreatorHandler) FindCreator(w http.ResponseWriter, r *http.Request) {
@@ -664,4 +663,188 @@ func (h *CreatorHandler) CreatorPageToModel(creatorPage *generatedCreator.Creato
 		}
 	}
 	return page, nil
+}
+
+func (h *CreatorHandler) DeleteCoverPhoto(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: userDataJWT.UserVersion,
+	})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
+		utils.Cookie(w, "", "SSID")
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+	if r.Method == http.MethodGet {
+		tokenCSRF, err := token.GetCSRFToken(models.User{Login: userDataJWT.Login, Id: userDataJWT.Id, UserVersion: userDataJWT.UserVersion})
+		if err != nil {
+			utils.Response(w, http.StatusUnauthorized, nil)
+			return
+		}
+		utils.ResponseWithCSRF(w, tokenCSRF)
+		return
+	}
+	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
+	if err != nil || *userDataCSRF != *userDataJWT {
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+
+	creatorId, err := h.creatorClient.CheckIfCreator(r.Context(), &generatedCommon.UUIDMessage{Value: userDataJWT.Id.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if creatorId.Error == models.NotFound.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if creatorId.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	var oldName uuid.UUID
+	imageID, ok := mux.Vars(r)["image-uuid"]
+	if !ok {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	oldName, err = uuid.Parse(imageID)
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if oldName != uuid.Nil {
+		err = os.Remove(models.FolderPath + fmt.Sprintf("%s.jpg", oldName.String()))
+		if err != nil {
+			h.logger.Error(err)
+			utils.Response(w, http.StatusBadRequest, nil)
+			return
+		}
+	}
+
+	out, err := h.creatorClient.DeleteCoverPhoto(r.Context(), &generatedCommon.UUIDMessage{
+		Value: creatorId.Value})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if out.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, nil)
+}
+
+func (h *CreatorHandler) DeleteProfilePhoto(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: userDataJWT.UserVersion,
+	})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
+		utils.Cookie(w, "", "SSID")
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+	if r.Method == http.MethodGet {
+		tokenCSRF, err := token.GetCSRFToken(models.User{Login: userDataJWT.Login, Id: userDataJWT.Id, UserVersion: userDataJWT.UserVersion})
+		if err != nil {
+			utils.Response(w, http.StatusUnauthorized, nil)
+			return
+		}
+		utils.ResponseWithCSRF(w, tokenCSRF)
+		return
+	}
+	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
+	if err != nil || *userDataCSRF != *userDataJWT {
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+
+	creatorId, err := h.creatorClient.CheckIfCreator(r.Context(), &generatedCommon.UUIDMessage{Value: userDataJWT.Id.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if creatorId.Error == models.NotFound.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if creatorId.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	var oldName uuid.UUID
+	imageID, ok := mux.Vars(r)["image-uuid"]
+	if !ok {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	oldName, err = uuid.Parse(imageID)
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if oldName != uuid.Nil {
+		err = os.Remove(models.FolderPath + fmt.Sprintf("%s.jpg", oldName.String()))
+		if err != nil {
+			h.logger.Error(err)
+			utils.Response(w, http.StatusBadRequest, nil)
+			return
+		}
+	}
+
+	out, err := h.creatorClient.DeleteProfilePhoto(r.Context(), &generatedCommon.UUIDMessage{
+		Value: creatorId.Value})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if out.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, nil)
 }

@@ -541,6 +541,19 @@ func (h GrpcCreatorHandler) UpdateProfilePhoto(ctx context.Context, in *generate
 		Error: ""}, nil
 }
 
+func (h GrpcCreatorHandler) DeleteProfilePhoto(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedCommon.Empty, error) {
+	creatorId, err := uuid.Parse(in.Value)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	err = h.uc.DeleteProfilePhoto(ctx, creatorId)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{
+		Error: ""}, nil
+}
+
 func (h GrpcCreatorHandler) UpdateCoverPhoto(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedCommon.UUIDResponse, error) {
 	creatorId, err := uuid.Parse(in.Value)
 	if err != nil {
@@ -552,6 +565,20 @@ func (h GrpcCreatorHandler) UpdateCoverPhoto(ctx context.Context, in *generatedC
 	}
 	return &generatedCommon.UUIDResponse{
 		Value: imageId.String(),
+		Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) DeleteCoverPhoto(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedCommon.Empty, error) {
+	creatorId, err := uuid.Parse(in.Value)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+
+	err = h.uc.DeleteCoverPhoto(ctx, creatorId)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{
 		Error: ""}, nil
 }
 

@@ -86,3 +86,7 @@ func (uc *UserUsecase) BecomeCreator(ctx context.Context, creatorInfo models.Bec
 func (uc *UserUsecase) UserSubscriptions(ctx context.Context, userId uuid.UUID) ([]models.Subscription, error) {
 	return uc.repo.UserSubscriptions(ctx, userId)
 }
+
+func (uc *UserUsecase) DeletePhoto(ctx context.Context, userId uuid.UUID) error {
+	return uc.repo.DeletePhoto(ctx, userId)
+}

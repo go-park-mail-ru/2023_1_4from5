@@ -44,7 +44,9 @@ type CreatorServiceClient interface {
 	AddAttach(ctx context.Context, in *PostAttachMessage, opts ...grpc.CallOption) (*proto.Empty, error)
 	GetFileExtension(ctx context.Context, in *KeywordMessage, opts ...grpc.CallOption) (*Extension, error)
 	UpdateProfilePhoto(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.UUIDResponse, error)
+	DeleteProfilePhoto(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.Empty, error)
 	UpdateCoverPhoto(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.UUIDResponse, error)
+	DeleteCoverPhoto(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.Empty, error)
 	CreateSubscription(ctx context.Context, in *proto.Subscription, opts ...grpc.CallOption) (*proto.Empty, error)
 	DeleteSubscription(ctx context.Context, in *SubscriptionCreatorMessage, opts ...grpc.CallOption) (*proto.Empty, error)
 	EditSubscription(ctx context.Context, in *proto.Subscription, opts ...grpc.CallOption) (*proto.Empty, error)
@@ -247,9 +249,27 @@ func (c *creatorServiceClient) UpdateProfilePhoto(ctx context.Context, in *proto
 	return out, nil
 }
 
+func (c *creatorServiceClient) DeleteProfilePhoto(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.Empty, error) {
+	out := new(proto.Empty)
+	err := c.cc.Invoke(ctx, "/CreatorService/DeleteProfilePhoto", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *creatorServiceClient) UpdateCoverPhoto(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.UUIDResponse, error) {
 	out := new(proto.UUIDResponse)
 	err := c.cc.Invoke(ctx, "/CreatorService/UpdateCoverPhoto", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) DeleteCoverPhoto(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.Empty, error) {
+	out := new(proto.Empty)
+	err := c.cc.Invoke(ctx, "/CreatorService/DeleteCoverPhoto", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -308,7 +328,9 @@ type CreatorServiceServer interface {
 	AddAttach(context.Context, *PostAttachMessage) (*proto.Empty, error)
 	GetFileExtension(context.Context, *KeywordMessage) (*Extension, error)
 	UpdateProfilePhoto(context.Context, *proto.UUIDMessage) (*proto.UUIDResponse, error)
+	DeleteProfilePhoto(context.Context, *proto.UUIDMessage) (*proto.Empty, error)
 	UpdateCoverPhoto(context.Context, *proto.UUIDMessage) (*proto.UUIDResponse, error)
+	DeleteCoverPhoto(context.Context, *proto.UUIDMessage) (*proto.Empty, error)
 	CreateSubscription(context.Context, *proto.Subscription) (*proto.Empty, error)
 	DeleteSubscription(context.Context, *SubscriptionCreatorMessage) (*proto.Empty, error)
 	EditSubscription(context.Context, *proto.Subscription) (*proto.Empty, error)
@@ -382,8 +404,14 @@ func (UnimplementedCreatorServiceServer) GetFileExtension(context.Context, *Keyw
 func (UnimplementedCreatorServiceServer) UpdateProfilePhoto(context.Context, *proto.UUIDMessage) (*proto.UUIDResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateProfilePhoto not implemented")
 }
+func (UnimplementedCreatorServiceServer) DeleteProfilePhoto(context.Context, *proto.UUIDMessage) (*proto.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteProfilePhoto not implemented")
+}
 func (UnimplementedCreatorServiceServer) UpdateCoverPhoto(context.Context, *proto.UUIDMessage) (*proto.UUIDResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateCoverPhoto not implemented")
+}
+func (UnimplementedCreatorServiceServer) DeleteCoverPhoto(context.Context, *proto.UUIDMessage) (*proto.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteCoverPhoto not implemented")
 }
 func (UnimplementedCreatorServiceServer) CreateSubscription(context.Context, *proto.Subscription) (*proto.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateSubscription not implemented")
@@ -785,6 +813,24 @@ func _CreatorService_UpdateProfilePhoto_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CreatorService_DeleteProfilePhoto_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(proto.UUIDMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).DeleteProfilePhoto(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/DeleteProfilePhoto",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).DeleteProfilePhoto(ctx, req.(*proto.UUIDMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CreatorService_UpdateCoverPhoto_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(proto.UUIDMessage)
 	if err := dec(in); err != nil {
@@ -799,6 +845,24 @@ func _CreatorService_UpdateCoverPhoto_Handler(srv interface{}, ctx context.Conte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CreatorServiceServer).UpdateCoverPhoto(ctx, req.(*proto.UUIDMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_DeleteCoverPhoto_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(proto.UUIDMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).DeleteCoverPhoto(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/DeleteCoverPhoto",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).DeleteCoverPhoto(ctx, req.(*proto.UUIDMessage))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -949,8 +1013,16 @@ var CreatorService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CreatorService_UpdateProfilePhoto_Handler,
 		},
 		{
+			MethodName: "DeleteProfilePhoto",
+			Handler:    _CreatorService_DeleteProfilePhoto_Handler,
+		},
+		{
 			MethodName: "UpdateCoverPhoto",
 			Handler:    _CreatorService_UpdateCoverPhoto_Handler,
+		},
+		{
+			MethodName: "DeleteCoverPhoto",
+			Handler:    _CreatorService_DeleteCoverPhoto_Handler,
 		},
 		{
 			MethodName: "CreateSubscription",

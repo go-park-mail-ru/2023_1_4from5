@@ -76,6 +76,7 @@ service UserService {
   rpc Subscribe(SubscriptionDetails) returns (common.Empty) {}
   rpc GetProfile(common.UUIDMessage) returns (UserProfile) {}
   rpc UpdatePhoto(common.UUIDMessage) returns (ImageID) {}
+  rpc DeletePhoto(common.UUIDMessage) returns (common.Empty) {}
   rpc UpdatePassword(UpdatePasswordMessage) returns (common.Empty) {}
   rpc UpdateProfileInfo(UpdateProfileInfoMessage) returns (common.Empty) {}
   rpc Donate(DonateMessage) returns (DonateResponse) {}

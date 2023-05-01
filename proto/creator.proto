@@ -158,7 +158,9 @@ service CreatorService {
   rpc AddAttach(PostAttachMessage) returns (common.Empty) {}
   rpc GetFileExtension(KeywordMessage) returns (Extension) {}
   rpc UpdateProfilePhoto(common.UUIDMessage) returns (common.UUIDResponse) {}
+  rpc DeleteProfilePhoto(common.UUIDMessage) returns (common.Empty) {}
   rpc UpdateCoverPhoto(common.UUIDMessage) returns (common.UUIDResponse) {}
+  rpc DeleteCoverPhoto(common.UUIDMessage) returns (common.Empty) {}
 
   rpc CreateSubscription(common.Subscription) returns (common.Empty) {}
   rpc DeleteSubscription(SubscriptionCreatorMessage) returns (common.Empty) {}

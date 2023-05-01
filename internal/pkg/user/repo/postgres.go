@@ -27,6 +27,7 @@ const (
 	CheckIfSubExists     = `SELECT subscription_id FROM subscription WHERE subscription_id = $1;`
 	AddPaymentInfo       = `INSERT INTO "user_payments" (user_id, subscription_id, payment_timestamp, money) VALUES ($1, $2, now(), $3);`
 	UserSubscriptions    = `SELECT us.subscription_id, c.creator_id, name, profile_photo, month_cost, title, subscription.description FROM "subscription" join user_subscription us on subscription.subscription_id = us.subscription_id join creator c on c.creator_id = subscription.creator_id WHERE us.user_id = $1;`
+	DeletePhoto          = `UPDATE "user" SET profile_photo = null WHERE user_id = $1`
 )
 
 type UserRepo struct {
@@ -234,4 +235,13 @@ func (ur *UserRepo) BecomeCreator(ctx context.Context, creatorInfo models.Became
 		return uuid.Nil, models.InternalError
 	}
 	return creatorId, nil
+}
+
+func (ur *UserRepo) DeletePhoto(ctx context.Context, userId uuid.UUID) error {
+	row := ur.db.QueryRowContext(ctx, DeletePhoto, userId)
+	if err := row.Scan(); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		ur.logger.Error(err)
+		return models.InternalError
+	}
+	return nil
 }

@@ -37,7 +37,7 @@ func run() error {
 	}
 
 	defer func(logger *zap.Logger) {
-		err := logger.Sync()
+		err = logger.Sync()
 		if err != nil {
 			log.Print(err)
 		}
@@ -127,6 +127,7 @@ func run() error {
 		user.HandleFunc("/updateData", userHandler.UpdateData).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/feed", creatorHandler.GetFeed).Methods(http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/updateProfilePhoto", userHandler.UpdateProfilePhoto).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
+		user.HandleFunc("/deleteProfilePhoto/{image-uuid}", userHandler.DeleteProfilePhoto).Methods(http.MethodDelete, http.MethodOptions, http.MethodGet)
 		user.HandleFunc("/becameCreator", userHandler.BecomeCreator).Methods(http.MethodPost, http.MethodOptions, http.MethodGet)
 		user.HandleFunc("/follow/{creator-uuid}", userHandler.Follow).Methods(http.MethodPost, http.MethodOptions)
 		user.HandleFunc("/unfollow/{creator-uuid}", userHandler.Unfollow).Methods(http.MethodPut, http.MethodOptions)
@@ -142,6 +143,8 @@ func run() error {
 		creator.HandleFunc("/aim/create", creatorHandler.CreateAim).Methods(http.MethodPost, http.MethodOptions)
 		creator.HandleFunc("/updateData", creatorHandler.UpdateCreatorData).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
 		creator.HandleFunc("/updateProfilePhoto", creatorHandler.UpdateProfilePhoto).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
+		creator.HandleFunc("/deleteProfilePhoto/{image-uuid}", creatorHandler.DeleteProfilePhoto).Methods(http.MethodDelete, http.MethodOptions, http.MethodGet)
+		creator.HandleFunc("/deleteCoverPhoto/{image-uuid}", creatorHandler.DeleteCoverPhoto).Methods(http.MethodDelete, http.MethodOptions, http.MethodGet)
 		creator.HandleFunc("/updateCoverPhoto", creatorHandler.UpdateCoverPhoto).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
 	}
 

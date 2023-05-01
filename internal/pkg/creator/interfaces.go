@@ -17,7 +17,9 @@ type CreatorUsecase interface {
 	CheckIfCreator(ctx context.Context, userID uuid.UUID) (uuid.UUID, error)
 	GetFeed(ctx context.Context, userID uuid.UUID) ([]models.Post, error)
 	UpdateProfilePhoto(ctx context.Context, creatorId uuid.UUID) (uuid.UUID, error)
+	DeleteProfilePhoto(ctx context.Context, creatorId uuid.UUID) error
 	UpdateCoverPhoto(ctx context.Context, creatorId uuid.UUID) (uuid.UUID, error)
+	DeleteCoverPhoto(ctx context.Context, creatorId uuid.UUID) error
 }
 
 type CreatorRepo interface {
@@ -30,5 +32,7 @@ type CreatorRepo interface {
 	CheckIfCreator(ctx context.Context, userID uuid.UUID) (uuid.UUID, error)
 	GetFeed(ctx context.Context, userID uuid.UUID) ([]models.Post, error)
 	UpdateProfilePhoto(ctx context.Context, creatorId, path uuid.UUID) error
+	DeleteProfilePhoto(ctx context.Context, creatorId uuid.UUID) error
 	UpdateCoverPhoto(ctx context.Context, creatorId, path uuid.UUID) error
+	DeleteCoverPhoto(ctx context.Context, creatorId uuid.UUID) error
 }

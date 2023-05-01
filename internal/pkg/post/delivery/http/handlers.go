@@ -154,30 +154,30 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-	}
-	postFilesTmp := r.MultipartForm.File["attachments"]
+		postFilesTmp := r.MultipartForm.File["attachments"]
 
-	postData.Attachments = make([]models.AttachmentData, len(postFilesTmp))
-	for i, file := range postFilesTmp {
-		tmpFile, err := file.Open()
-		if err != nil {
-			utils.Response(w, http.StatusBadRequest, nil)
-			return
-		}
-		buf, _ := io.ReadAll(tmpFile)
+		postData.Attachments = make([]models.AttachmentData, len(postFilesTmp))
+		for i, file := range postFilesTmp {
+			tmpFile, err := file.Open()
+			if err != nil {
+				utils.Response(w, http.StatusBadRequest, nil)
+				return
+			}
+			buf, _ := io.ReadAll(tmpFile)
 
-		if err = tmpFile.Close(); err != nil {
-			h.logger.Error(err)
-			utils.Response(w, http.StatusInternalServerError, nil)
-			return
-		}
+			if err = tmpFile.Close(); err != nil {
+				h.logger.Error(err)
+				utils.Response(w, http.StatusInternalServerError, nil)
+				return
+			}
 
-		if postData.Attachments[i].Data, err = file.Open(); err != nil {
-			utils.Response(w, http.StatusBadRequest, nil)
-			return
+			if postData.Attachments[i].Data, err = file.Open(); err != nil {
+				utils.Response(w, http.StatusBadRequest, nil)
+				return
+			}
+			postData.Attachments[i].Type = http.DetectContentType(buf)
+			postData.Attachments[i].Id = uuid.New()
 		}
-		postData.Attachments[i].Type = http.DetectContentType(buf)
-		postData.Attachments[i].Id = uuid.New()
 	}
 
 	tmpSubs, ok := postValues["subscriptions"]

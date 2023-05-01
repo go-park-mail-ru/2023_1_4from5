@@ -15,7 +15,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 )
 
@@ -209,14 +208,16 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = r.ParseMultipartForm(models.MaxFileSize) // maxMemory
+	err = r.ParseMultipartForm(models.MaxFileSize)
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 
 	file, fileTmp, err := r.FormFile("upload")
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -243,7 +244,7 @@ func (h *UserHandler) UpdateProfilePhoto(w http.ResponseWriter, r *http.Request)
 	}
 
 	if oldName != uuid.Nil {
-		err = os.Remove(filepath.Join(models.FolderPath, fmt.Sprintf("%s.jpg", oldName.String())))
+		err = os.Remove(models.FolderPath + fmt.Sprintf("%s.jpg", oldName.String()))
 		if err != nil {
 			h.logger.Error(err)
 			utils.Response(w, http.StatusBadRequest, nil)
@@ -737,6 +738,81 @@ func (h *UserHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 
 	if out.Error == models.WrongData.Error() {
 		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, nil)
+}
+
+func (h *UserHandler) DeleteProfilePhoto(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: userDataJWT.UserVersion,
+	})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
+		utils.Cookie(w, "", "SSID")
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+	if r.Method == http.MethodGet {
+		tokenCSRF, err := token.GetCSRFToken(models.User{Login: userDataJWT.Login, Id: userDataJWT.Id, UserVersion: userDataJWT.UserVersion})
+		if err != nil {
+			utils.Response(w, http.StatusUnauthorized, nil)
+			return
+		}
+		utils.ResponseWithCSRF(w, tokenCSRF)
+		return
+	}
+	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
+	if err != nil || *userDataCSRF != *userDataJWT {
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+
+	var oldName uuid.UUID
+	imageID, ok := mux.Vars(r)["image-uuid"]
+	if !ok {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	oldName, err = uuid.Parse(imageID)
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if oldName != uuid.Nil {
+		err = os.Remove(models.FolderPath + fmt.Sprintf("%s.jpg", oldName.String()))
+		if err != nil {
+			h.logger.Error(err)
+			utils.Response(w, http.StatusBadRequest, nil)
+			return
+		}
+	}
+
+	name, err := h.userClient.DeletePhoto(r.Context(), &generatedCommon.UUIDMessage{
+		Value: userDataJWT.Id.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if name.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 

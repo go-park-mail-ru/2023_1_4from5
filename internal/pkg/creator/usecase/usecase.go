@@ -65,3 +65,11 @@ func (uc *CreatorUsecase) UpdateCoverPhoto(ctx context.Context, creatorId uuid.U
 	}
 	return path, nil
 }
+
+func (uc *CreatorUsecase) DeleteCoverPhoto(ctx context.Context, creatorId uuid.UUID) error {
+	return uc.repo.DeleteCoverPhoto(ctx, creatorId)
+}
+
+func (uc *CreatorUsecase) DeleteProfilePhoto(ctx context.Context, creatorId uuid.UUID) error {
+	return uc.repo.DeleteProfilePhoto(ctx, creatorId)
+}
