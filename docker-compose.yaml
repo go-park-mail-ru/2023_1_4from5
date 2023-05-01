@@ -85,6 +85,9 @@ services:
         source: /home/ubuntu/2023_1_4from5/prometheus.yml
 #        source: ./prometheus.yml
         target: /etc/prometheus/prometheus.yml
+      - type: bind
+        source: /home/ubuntu/prometheus-data
+        target: /prometheus
     ports:
       - "9090:9090"
 
