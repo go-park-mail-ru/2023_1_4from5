@@ -84,7 +84,7 @@ func (m *MetricsMiddleware) Register(name string) {
 			Help: fmt.Sprintf("SLO for service %s", name),
 		},
 		[]string{
-			ServiceName, URL, Method, StatusCode,
+			ServiceName, URL, Method, StatusCode, FullTime,
 		})
 
 	m.metric = gauge
