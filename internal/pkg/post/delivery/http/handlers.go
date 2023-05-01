@@ -141,6 +141,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, ok := r.MultipartForm.File["attachments"]; ok {
+		fmt.Println("Got attachs")
 		if len(r.MultipartForm.File["attachments"]) > models.MaxFiles {
 			utils.Response(w, http.StatusBadRequest, nil)
 			return
@@ -155,6 +156,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		}
 
 		postFilesTmp := r.MultipartForm.File["attachments"]
+		fmt.Println(postFilesTmp)
 
 		postData.Attachments = make([]models.AttachmentData, len(postFilesTmp))
 		for i, file := range postFilesTmp {
