@@ -168,7 +168,6 @@ func (r *PostRepo) GetPost(ctx context.Context, postID, userID uuid.UUID) (model
 	}
 	post.Text = postTextTmp.String
 
-	attachs = attachs[:len(attachs)/2]
 	post.Attachments = make([]models.Attachment, len(attachs))
 	for i, v := range attachs {
 		post.Attachments[i].Type = types[i].String

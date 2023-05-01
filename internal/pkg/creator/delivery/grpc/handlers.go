@@ -444,17 +444,24 @@ func (h GrpcCreatorHandler) GetPost(ctx context.Context, in *generatedCreator.Po
 		return &generatedCreator.PostMessage{Error: err.Error()}, nil
 	}
 
+	var attachs []*generatedCreator.Attachment
+
+	for _, v := range post.Attachments {
+		attachs = append(attachs, &generatedCreator.Attachment{ID: v.Id.String(), Type: v.Type})
+	}
+
 	return &generatedCreator.PostMessage{Error: "", Post: &generatedCreator.Post{
-		Id:           post.Id.String(),
-		CreatorID:    post.Creator.String(),
-		Creation:     post.Creation.String(),
-		CreatorName:  post.CreatorName,
-		LikesCount:   post.LikesCount,
-		CreatorPhoto: post.CreatorPhoto.String(),
-		Title:        post.Title,
-		Text:         post.Text,
-		IsAvailable:  post.IsAvailable,
-		IsLiked:      post.IsLiked,
+		Id:              post.Id.String(),
+		CreatorID:       post.Creator.String(),
+		Creation:        post.Creation.String(),
+		CreatorName:     post.CreatorName,
+		LikesCount:      post.LikesCount,
+		CreatorPhoto:    post.CreatorPhoto.String(),
+		Title:           post.Title,
+		Text:            post.Text,
+		IsAvailable:     post.IsAvailable,
+		PostAttachments: attachs,
+		IsLiked:         post.IsLiked,
 	}}, nil
 }
 
