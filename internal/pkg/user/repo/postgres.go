@@ -28,6 +28,7 @@ const (
 	AddPaymentInfo       = `INSERT INTO "user_payments" (user_id, subscription_id, payment_timestamp, money) VALUES ($1, $2, now(), $3);`
 	UserSubscriptions    = `SELECT us.subscription_id, c.creator_id, name, profile_photo, month_cost, title, subscription.description FROM "subscription" join user_subscription us on subscription.subscription_id = us.subscription_id join creator c on c.creator_id = subscription.creator_id WHERE us.user_id = $1;`
 	DeletePhoto          = `UPDATE "user" SET profile_photo = null WHERE user_id = $1`
+	FollowsList          = `SELECT creator_id, name, profile_photo, description FROM "follow" join creator c on c.creator_id = follow.creator_id WHERE user_id = $1;`
 )
 
 type UserRepo struct {
@@ -244,4 +245,27 @@ func (ur *UserRepo) DeletePhoto(ctx context.Context, userId uuid.UUID) error {
 		return models.InternalError
 	}
 	return nil
+}
+
+func (ur *UserRepo) UserFollows(ctx context.Context, userId uuid.UUID) ([]models.Follow, error) {
+	follows := make([]models.Follow, 0)
+	rows, err := ur.db.QueryContext(ctx, FollowsList, userId)
+	if err != nil && !errors.Is(sql.ErrNoRows, err) {
+		ur.logger.Error(err)
+		return nil, models.InternalError
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var follow models.Follow
+		var descriptionTmp sql.NullString
+		err = rows.Scan(&follow.Creator, &follow.CreatorName, &follow.CreatorPhoto, &descriptionTmp)
+		if err != nil {
+			ur.logger.Error(err)
+			return nil, models.InternalError
+		}
+		follow.Description = descriptionTmp.String
+
+		follows = append(follows, follow)
+	}
+	return follows, nil
 }

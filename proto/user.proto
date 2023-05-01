@@ -60,8 +60,20 @@ message BecameCreatorInfoMessage{
 }
 
 message SubscriptionsMessage{
-  repeated common.Subscription Subscriptions = 8;
-  string Error = 9;
+  repeated common.Subscription Subscriptions = 1;
+  string Error = 2;
+}
+
+message Follow{
+  string Creator = 1;
+  string CreatorName = 2;
+  string CreatorPhoto = 3;
+  string Description = 4;
+}
+
+message FollowsMessage{
+  repeated Follow Follows = 1;
+  string Error = 2;
 }
 
 message CheckCreatorMessage{
@@ -82,5 +94,6 @@ service UserService {
   rpc Donate(DonateMessage) returns (DonateResponse) {}
   rpc BecomeCreator(BecameCreatorInfoMessage) returns (common.UUIDResponse) {}
   rpc UserSubscriptions(common.UUIDMessage) returns (SubscriptionsMessage) {}
+  rpc UserFollows(common.UUIDMessage) returns (FollowsMessage) {}
   rpc CheckIfCreator(common.UUIDMessage) returns (CheckCreatorMessage) {}
 }

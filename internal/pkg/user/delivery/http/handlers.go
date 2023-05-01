@@ -818,3 +818,51 @@ func (h *UserHandler) DeleteProfilePhoto(w http.ResponseWriter, r *http.Request)
 
 	utils.Response(w, http.StatusOK, nil)
 }
+
+func (h *UserHandler) UserFollows(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	out, err := h.userClient.UserFollows(r.Context(), &generatedCommon.UUIDMessage{
+		Value: userDataJWT.Id.String()})
+
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if out.Error == models.InternalError.Error() {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	follows := make([]models.Follow, len(out.Follows))
+
+	for i, v := range out.Follows {
+		creatorId, err := uuid.Parse(v.Creator)
+		if err != nil {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+		creatorPhoto, err := uuid.Parse(v.CreatorPhoto)
+		if err != nil {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+		follows[i] = models.Follow{
+			Creator:      creatorId,
+			CreatorPhoto: creatorPhoto,
+			CreatorName:  v.CreatorName,
+			Description:  v.Description,
+		}
+
+		follows[i].Sanitize()
+	}
+
+	utils.Response(w, http.StatusOK, follows)
+}

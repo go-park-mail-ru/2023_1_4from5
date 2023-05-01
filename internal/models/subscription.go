@@ -18,6 +18,13 @@ type Subscription struct {
 	Description  string    `json:"description,omitempty"`
 }
 
+type Follow struct {
+	Creator      uuid.UUID `json:"creator,omitempty"`
+	CreatorName  string    `json:"creator_name,omitempty"`
+	CreatorPhoto uuid.UUID `json:"creator_photo,omitempty"`
+	Description  string    `json:"description,omitempty"`
+}
+
 type SubscriptionDetails struct {
 	CreatorId  uuid.UUID `json:"creator_id"`
 	Id         uuid.UUID `json:"id,omitempty"`
@@ -29,6 +36,11 @@ type SubscriptionDetails struct {
 func (subscription *Subscription) Sanitize() {
 	subscription.Title = html.EscapeString(subscription.Title)
 	subscription.Description = html.EscapeString(subscription.Description)
+}
+
+func (follow *Follow) Sanitize() {
+	follow.CreatorName = html.EscapeString(follow.CreatorName)
+	follow.Description = html.EscapeString(follow.Description)
 }
 
 func (subscription *Subscription) IsValid() bool {

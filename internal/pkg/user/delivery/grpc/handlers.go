@@ -219,3 +219,25 @@ func (h GrpcUserHandler) CheckIfCreator(ctx context.Context, in *generatedCommon
 		IsCreator: flag,
 		Error:     ""}, nil
 }
+
+func (h GrpcUserHandler) UserFollows(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedUser.FollowsMessage, error) {
+	userId, err := uuid.Parse(in.Value)
+	if err != nil {
+		return &generatedUser.FollowsMessage{Error: err.Error()}, nil
+	}
+	follows, err := h.uc.UserFollows(ctx, userId)
+	if err != nil {
+		return &generatedUser.FollowsMessage{Error: err.Error()}, nil
+	}
+	var followsProto generatedUser.FollowsMessage
+	for _, v := range follows {
+		followsProto.Follows = append(followsProto.Follows, &generatedUser.Follow{
+			Creator:      v.Creator.String(),
+			CreatorName:  v.CreatorName,
+			CreatorPhoto: v.CreatorPhoto.String(),
+			Description:  v.Description,
+		})
+	}
+	followsProto.Error = ""
+	return &followsProto, nil
+}

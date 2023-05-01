@@ -90,3 +90,7 @@ func (uc *UserUsecase) UserSubscriptions(ctx context.Context, userId uuid.UUID) 
 func (uc *UserUsecase) DeletePhoto(ctx context.Context, userId uuid.UUID) error {
 	return uc.repo.DeletePhoto(ctx, userId)
 }
+
+func (uc *UserUsecase) UserFollows(ctx context.Context, userId uuid.UUID) ([]models.Follow, error) {
+	return uc.repo.UserFollows(ctx, userId)
+}

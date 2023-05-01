@@ -52,10 +52,10 @@ func (mr *MockAuthUsecaseMockRecorder) CheckUser(ctx, user interface{}) *gomock.
 }
 
 // CheckUserVersion mocks base method.
-func (m *MockAuthUsecase) CheckUserVersion(ctx context.Context, details models.AccessDetails) (int, error) {
+func (m *MockAuthUsecase) CheckUserVersion(ctx context.Context, details models.AccessDetails) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckUserVersion", ctx, details)
-	ret0, _ := ret[0].(int)
+	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -81,10 +81,10 @@ func (mr *MockAuthUsecaseMockRecorder) EncryptPwd(ctx, pwd interface{}) *gomock.
 }
 
 // IncUserVersion mocks base method.
-func (m *MockAuthUsecase) IncUserVersion(ctx context.Context, details models.AccessDetails) (int, error) {
+func (m *MockAuthUsecase) IncUserVersion(ctx context.Context, details models.AccessDetails) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IncUserVersion", ctx, details)
-	ret0, _ := ret[0].(int)
+	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -164,10 +164,10 @@ func (mr *MockAuthRepoMockRecorder) CheckUser(ctx, user interface{}) *gomock.Cal
 }
 
 // CheckUserVersion mocks base method.
-func (m *MockAuthRepo) CheckUserVersion(ctx context.Context, details models.AccessDetails) (int, error) {
+func (m *MockAuthRepo) CheckUserVersion(ctx context.Context, details models.AccessDetails) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckUserVersion", ctx, details)
-	ret0, _ := ret[0].(int)
+	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -194,10 +194,10 @@ func (mr *MockAuthRepoMockRecorder) CreateUser(ctx, user interface{}) *gomock.Ca
 }
 
 // IncUserVersion mocks base method.
-func (m *MockAuthRepo) IncUserVersion(ctx context.Context, userId uuid.UUID) (int, error) {
+func (m *MockAuthRepo) IncUserVersion(ctx context.Context, userId uuid.UUID) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IncUserVersion", ctx, userId)
-	ret0, _ := ret[0].(int)
+	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

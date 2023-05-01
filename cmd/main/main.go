@@ -91,7 +91,6 @@ func run() error {
 		log.Fatalf("cant connect to session grpc")
 	}
 
-
 	authClient := generatedAuth.NewAuthServiceClient(authConn)
 	userClient := generatedUser.NewUserServiceClient(userConn)
 	creatorClient := generatedCreator.NewCreatorServiceClient(creatorConn)
@@ -135,6 +134,7 @@ func run() error {
 		user.HandleFunc("/unfollow/{creator-uuid}", userHandler.Unfollow).Methods(http.MethodPut, http.MethodOptions)
 		user.HandleFunc("/subscribe/{sub-uuid}", userHandler.Subscribe).Methods(http.MethodPost, http.MethodOptions, http.MethodGet)
 		user.HandleFunc("/subscriptions", userHandler.UserSubscriptions).Methods(http.MethodOptions, http.MethodGet)
+		user.HandleFunc("/follows", userHandler.UserFollows).Methods(http.MethodOptions, http.MethodGet)
 	}
 
 	creator := r.PathPrefix("/creator").Subrouter()

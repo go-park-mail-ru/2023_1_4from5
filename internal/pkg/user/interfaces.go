@@ -21,6 +21,7 @@ type UserUsecase interface {
 	Subscribe(ctx context.Context, subscription models.SubscriptionDetails) error
 	Unfollow(ctx context.Context, userId, creatorId uuid.UUID) error
 	UserSubscriptions(ctx context.Context, userId uuid.UUID) ([]models.Subscription, error)
+	UserFollows(ctx context.Context, userId uuid.UUID) ([]models.Follow, error)
 }
 
 type UserRepo interface {
@@ -37,4 +38,5 @@ type UserRepo interface {
 	Unfollow(ctx context.Context, userId, creatorId uuid.UUID) error
 	UserSubscriptions(ctx context.Context, userId uuid.UUID) ([]models.Subscription, error)
 	DeletePhoto(ctx context.Context, userId uuid.UUID) error
+	UserFollows(ctx context.Context, userId uuid.UUID) ([]models.Follow, error)
 }

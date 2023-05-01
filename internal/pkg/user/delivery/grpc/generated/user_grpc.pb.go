@@ -34,6 +34,7 @@ type UserServiceClient interface {
 	Donate(ctx context.Context, in *DonateMessage, opts ...grpc.CallOption) (*DonateResponse, error)
 	BecomeCreator(ctx context.Context, in *BecameCreatorInfoMessage, opts ...grpc.CallOption) (*proto.UUIDResponse, error)
 	UserSubscriptions(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*SubscriptionsMessage, error)
+	UserFollows(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*FollowsMessage, error)
 	CheckIfCreator(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*CheckCreatorMessage, error)
 }
 
@@ -144,6 +145,15 @@ func (c *userServiceClient) UserSubscriptions(ctx context.Context, in *proto.UUI
 	return out, nil
 }
 
+func (c *userServiceClient) UserFollows(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*FollowsMessage, error) {
+	out := new(FollowsMessage)
+	err := c.cc.Invoke(ctx, "/UserService/UserFollows", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *userServiceClient) CheckIfCreator(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*CheckCreatorMessage, error) {
 	out := new(CheckCreatorMessage)
 	err := c.cc.Invoke(ctx, "/UserService/CheckIfCreator", in, out, opts...)
@@ -168,6 +178,7 @@ type UserServiceServer interface {
 	Donate(context.Context, *DonateMessage) (*DonateResponse, error)
 	BecomeCreator(context.Context, *BecameCreatorInfoMessage) (*proto.UUIDResponse, error)
 	UserSubscriptions(context.Context, *proto.UUIDMessage) (*SubscriptionsMessage, error)
+	UserFollows(context.Context, *proto.UUIDMessage) (*FollowsMessage, error)
 	CheckIfCreator(context.Context, *proto.UUIDMessage) (*CheckCreatorMessage, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
@@ -208,6 +219,9 @@ func (UnimplementedUserServiceServer) BecomeCreator(context.Context, *BecameCrea
 }
 func (UnimplementedUserServiceServer) UserSubscriptions(context.Context, *proto.UUIDMessage) (*SubscriptionsMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserSubscriptions not implemented")
+}
+func (UnimplementedUserServiceServer) UserFollows(context.Context, *proto.UUIDMessage) (*FollowsMessage, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserFollows not implemented")
 }
 func (UnimplementedUserServiceServer) CheckIfCreator(context.Context, *proto.UUIDMessage) (*CheckCreatorMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckIfCreator not implemented")
@@ -423,6 +437,24 @@ func _UserService_UserSubscriptions_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_UserFollows_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(proto.UUIDMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).UserFollows(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/UserService/UserFollows",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).UserFollows(ctx, req.(*proto.UUIDMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _UserService_CheckIfCreator_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(proto.UUIDMessage)
 	if err := dec(in); err != nil {
@@ -491,6 +523,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UserSubscriptions",
 			Handler:    _UserService_UserSubscriptions_Handler,
+		},
+		{
+			MethodName: "UserFollows",
+			Handler:    _UserService_UserFollows_Handler,
 		},
 		{
 			MethodName: "CheckIfCreator",
