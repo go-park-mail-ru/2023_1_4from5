@@ -65,6 +65,7 @@ func (m *MetricsMiddleware) ServerMetricsInterceptor(ctx context.Context,
 		ServiceName: m.name,
 		StatusCode:  "OK",
 		Method:      info.FullMethod,
+		FullTime:    tm.String(),
 	}).Inc()
 
 	m.durations.With(prometheus.Labels{URL: info.FullMethod}).Observe(tm.Seconds())
@@ -130,6 +131,7 @@ func (m *MetricsMiddleware) LogMetrics(next http.Handler) http.Handler {
 			URL:         r.URL.Path,
 			Method:      r.Method,
 			StatusCode:  fmt.Sprintf("%d", wrapper.statusCode),
+			FullTime:    tm.String(),
 		}).Inc()
 
 		m.durations.With(prometheus.Labels{URL: r.URL.Path}).Observe(tm.Seconds())
