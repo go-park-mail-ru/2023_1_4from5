@@ -144,8 +144,7 @@ func (r *CreatorRepo) CreatorPosts(ctx context.Context, creatorId uuid.UUID) ([]
 			r.logger.Error(err)
 			return nil, models.InternalError
 		}
-		attachs = attachs[0 : len(attachs)/2]
-		post.Attachments = make([]models.Attachment, 0, len(attachs)/2)
+		post.Attachments = make([]models.Attachment, 0, len(attachs))
 		for i, v := range attachs {
 			if v != uuid.Nil {
 				post.Attachments = append(post.Attachments, models.Attachment{Id: v, Type: types[i].String})
