@@ -2,16 +2,20 @@ package main
 
 import (
 	"database/sql"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
 	grpcUser "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/grpc"
 	generatedUser "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/grpc/generated"
 	userRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/repo"
 	userUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/usecase"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"time"
 )
@@ -56,14 +60,25 @@ func run() error {
 	userUse := userUsecase.NewUserUsecase(userRepo, zapSugar)
 	service := grpcUser.NewGrpcUserHandler(userUse)
 
-	srv, ok := net.Listen("tcp", ":8020") //TODO:разобраться с портами
+	srv, ok := net.Listen("tcp", ":8020")
 	if ok != nil {
 		log.Fatalln("can't listen port", err)
 	}
 
-	server := grpc.NewServer()
+	metricsMw := middleware.NewMetricsMiddleware()
+	metricsMw.Register(middleware.ServiceUserName)
+
+	server := grpc.NewServer(grpc.UnaryInterceptor(metricsMw.ServerMetricsInterceptor))
 
 	generatedUser.RegisterUserServiceServer(server, service)
+
+	r := mux.NewRouter().PathPrefix("/api").Subrouter()
+	r.PathPrefix("/metrics").Handler(promhttp.Handler())
+
+	http.Handle("/", r)
+	httpSrv := http.Server{Handler: r, Addr: ":8021"}
+
+	go httpSrv.ListenAndServe()
 
 	log.Print("user running on: ", srv.Addr())
 	return server.Serve(srv)

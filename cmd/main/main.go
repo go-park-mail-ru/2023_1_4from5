@@ -69,7 +69,7 @@ func run() error {
 	}
 
 	authConn, err := grpc.Dial(
-		":8010",
+		"auth:8010",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -78,7 +78,7 @@ func run() error {
 	}
 
 	userConn, err := grpc.Dial(
-		":8020",
+		"user:8020",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -87,7 +87,7 @@ func run() error {
 	}
 
 	creatorConn, err := grpc.Dial(
-		":8030",
+		"creator:8030",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -175,7 +175,7 @@ func run() error {
 		subscription.HandleFunc("/edit/{sub-uuid}", subscriptionHandler.EditSubscription).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
 		subscription.HandleFunc("/delete/{sub-uuid}", subscriptionHandler.DeleteSubscription).Methods(http.MethodDelete, http.MethodGet, http.MethodOptions)
 	}
-
+	
 	http.Handle("/", r)
 	srv := http.Server{Handler: r, Addr: ":8000"}
 	return srv.ListenAndServe()

@@ -7,6 +7,7 @@ services:
       dockerfile: build/auth.Dockerfile
     ports:
       - "8010:8010"
+      - "8011:8011"
     volumes:
       - type: bind
         source: /var/log
@@ -18,6 +19,7 @@ services:
       dockerfile: build/user.Dockerfile
     ports:
       - "8020:8020"
+      - "8021:8021"
     volumes:
       - type: bind
         source: /var/log
@@ -28,11 +30,16 @@ services:
       dockerfile: build/creator.Dockerfile
     ports:
       - "8030:8030"
+      - "8031:8031"
     volumes:
       - type: bind
         source: /var/log
         target: /var/log
-
+#    deploy:
+#      replicas: 3
+#      mode: replicated
+#      restart_policy:
+#        condition: on-failure //TODO: round robbin
 
   postgres:
     image: postgres:14
@@ -42,13 +49,13 @@ services:
       POSTGRES_PASSWORD: "submepassword"
     ports:
       - "5432:5432"
-    volumes:
-      - type: bind
-        source: /home/ubuntu/db_data
-        target: /var/lib/postgresql/data
-      - type: bind
-        source: /home/ubuntu/tsearch_data
-        target: /usr/share/postgresql/14/tsearch_data
+#    volumes:
+#      - type: bind
+#        source: /home/ubuntu/db_data
+#        target: /var/lib/postgresql/data
+#      - type: bind
+#        source: /usr/share/postgresql/14/tsearch_data
+#        target: /usr/share/postgresql/14/tsearch_data
 
   main:
     depends_on:
@@ -62,20 +69,20 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - type: bind
-        source: /home/ubuntu/frontend/2023_1_4from5/public/images
-        target: /images
+#      - type: bind
+#        source: /home/ubuntu/frontend/2023_1_4from5/public/images
+#        target: /images
       - type: bind
         source: /var/log
         target: /var/log
 
   prometheus:
-#    depends_on:
-#      - main
+    depends_on:
+      - main
     image: prom/prometheus:latest
     volumes:
       - type: bind
-#        source: /home/ubuntu/2023_1_4from5/prometheus.yml вообще по идее можно относительные пути указывать, или не стоит ,
+#        source: /home/ubuntu/2023_1_4from5/prometheus.yml
         source: ./prometheus.yml
         target: /etc/prometheus/prometheus.yml
     ports:

@@ -3,6 +3,8 @@ package middleware
 import (
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 	"math/rand"
 	"net/http"
 	"time"
@@ -49,8 +51,31 @@ func NewMetricsMiddleware() *MetricsMiddleware {
 	return &MetricsMiddleware{}
 }
 
-func (m *MetricsMiddleware) Register(name string) {
+func (m *MetricsMiddleware) ServerMetricsInterceptor(ctx context.Context,
+	req interface{},
+	info *grpc.UnaryServerInfo,
+	handler grpc.UnaryHandler) (interface{}, error) {
 
+	start := time.Now()
+	h, err := handler(ctx, req)
+	tm := time.Since(start)
+
+	m.metric.With(prometheus.Labels{
+		URL:         "",
+		ServiceName: m.name,
+		StatusCode:  "OK",
+		Method:      info.FullMethod,
+	}).Inc()
+
+	m.durations.With(prometheus.Labels{URL: info.FullMethod}).Observe(tm.Seconds())
+
+	m.counter.With(prometheus.Labels{URL: info.FullMethod}).Inc()
+
+	return h, err
+
+}
+
+func (m *MetricsMiddleware) Register(name string) {
 	m.name = name
 	gauge := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
@@ -66,7 +91,7 @@ func (m *MetricsMiddleware) Register(name string) {
 	counter := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "hits",
-			Help: "Number of all errors.",
+			Help: "Number of all requests.",
 		}, []string{URL})
 	m.counter = counter
 
