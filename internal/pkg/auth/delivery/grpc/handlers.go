@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-//go:generate mockgen -source=auth_grpc.pb.go -destination=auth_grpc.go -package=grpc
+//go:generate mockgen -source=./generated/auth_grpc.pb.go -destination=../../mocks/auth_grpc.go -package=mock
 
 type GrpcAuthHandler struct {
 	uc auth.AuthUsecase
