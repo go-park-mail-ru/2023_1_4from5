@@ -11,19 +11,19 @@ import (
 )
 
 const (
-	CreatorInfo       = `SELECT user_id, name, cover_photo, followers_count, description, posts_count, aim, money_got, money_needed, profile_photo FROM "creator" WHERE creator_id=$1;`
-	GetCreatorSubs    = `SELECT subscription_id, month_cost, title, description FROM "subscription" WHERE creator_id=$1;`
-	GetAllCreators    = `SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM "creator" LIMIT 100;`
-	CreatorPosts      = `SELECT "post".post_id, creation_date, title, post_text, likes_count, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE creator_id = $1 GROUP BY "post".post_id, creation_date, title, post_text ORDER BY creation_date DESC;`
-	UserSubscriptions = `SELECT array_agg(subscription_id) FROM "user_subscription" WHERE user_id=$1;`
-	IsLiked           = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2`
-	GetSubInfo        = `SELECT creator_id, month_cost, title, description FROM "subscription" WHERE subscription_id = $1;`
-	AddAim            = `UPDATE creator SET aim = $1,  money_got = $2, money_needed = $3 WHERE creator_id = $4;`
-	CheckIfFollow     = `SELECT user_id FROM "follow" WHERE user_id = $1 AND creator_id = $2;`
-	FindCreators      = `SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM creator WHERE (make_tsvector(name, 'A'::"char") || make_tsvector(description, 'B'::"char")) @@ (plainto_tsquery('russian', $1) || plainto_tsquery('english', $1)) or LOWER(name) like LOWER($1) or LOWER(description) like LOWER($1) ORDER BY make_tsrank(name, $1, 'russian'::regconfig), make_tsrank(description, $1, 'russian'::regconfig) DESC LIMIT 30;`
-	CheckIfCreator    = `SELECT creator_id FROM "creator" WHERE user_id = $1`
-	UpdateCreatorData = `UPDATE creator SET name = $1, description = $2 WHERE creator_id = $3`
-	Feed              = `SELECT DISTINCT p.post_id, p.creator_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), c.name, c.profile_photo, c.creator_id, p.likes_count FROM follow f JOIN post p on p.creator_id = f.creator_id JOIN creator c on f.creator_id = c.creator_id LEFT JOIN post_subscription ps on p.post_id = ps.post_id JOIN user_subscription us on f.user_id = us.user_id and (ps.subscription_id = us.subscription_id or ps.subscription_id is null) LEFT JOIN "attachment" a on p.post_id = a.post_id WHERE f.user_id = $1 GROUP BY c.name, p.creator_id, creation_date, title, post_text, p.post_id, c.profile_photo, c.creator_id ORDER BY creation_date DESC LIMIT 50;`
+	CreatorInfo        = `SELECT user_id, name, cover_photo, followers_count, description, posts_count, aim, money_got, money_needed, profile_photo FROM "creator" WHERE creator_id=$1;`
+	GetCreatorSubs     = `SELECT subscription_id, month_cost, title, description, is_available FROM "subscription" WHERE creator_id=$1;`
+	GetAllCreators     = `SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM "creator" LIMIT 100;`
+	CreatorPosts       = `SELECT "post".post_id, creation_date, title, post_text, likes_count, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE creator_id = $1 GROUP BY "post".post_id, creation_date, title, post_text ORDER BY creation_date DESC;`
+	UserSubscriptions  = `SELECT array_agg(subscription_id) FROM "user_subscription" WHERE user_id=$1;`
+	IsLiked            = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2`
+	GetSubInfo         = `SELECT creator_id, month_cost, title, description FROM "subscription" WHERE subscription_id = $1;`
+	AddAim             = `UPDATE creator SET aim = $1,  money_got = $2, money_needed = $3 WHERE creator_id = $4;`
+	CheckIfFollow      = `SELECT user_id FROM "follow" WHERE user_id = $1 AND creator_id = $2;`
+	FindCreators       = `SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM creator WHERE (make_tsvector(name, 'A'::"char") || make_tsvector(description, 'B'::"char")) @@ (plainto_tsquery('russian', $1) || plainto_tsquery('english', $1)) or LOWER(name) like LOWER($1) or LOWER(description) like LOWER($1) ORDER BY make_tsrank(name, $1, 'russian'::regconfig), make_tsrank(description, $1, 'russian'::regconfig) DESC LIMIT 30;`
+	CheckIfCreator     = `SELECT creator_id FROM "creator" WHERE user_id = $1`
+	UpdateCreatorData  = `UPDATE creator SET name = $1, description = $2 WHERE creator_id = $3`
+	Feed               = `SELECT DISTINCT p.post_id, p.creator_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), c.name, c.profile_photo, c.creator_id, p.likes_count FROM follow f JOIN post p on p.creator_id = f.creator_id JOIN creator c on f.creator_id = c.creator_id LEFT JOIN post_subscription ps on p.post_id = ps.post_id JOIN user_subscription us on f.user_id = us.user_id and (ps.subscription_id = us.subscription_id or ps.subscription_id is null) LEFT JOIN "attachment" a on p.post_id = a.post_id WHERE f.user_id = $1 GROUP BY c.name, p.creator_id, creation_date, title, post_text, p.post_id, c.profile_photo, c.creator_id ORDER BY creation_date DESC LIMIT 50;`
 	UpdateProfilePhoto = `UPDATE "creator" SET profile_photo = $1 WHERE creator_id = $2;`
 	UpdateCoverPhoto   = `UPDATE "creator" SET cover_photo = $1 WHERE creator_id = $2;`
 )
@@ -99,10 +99,14 @@ func (r *CreatorRepo) GetCreatorSubs(ctx context.Context, creatorID uuid.UUID) (
 	defer rows.Close()
 	for rows.Next() {
 		tmpSub := models.Subscription{}
-		err = rows.Scan(&tmpSub.Id, &tmpSub.MonthCost, &tmpTitle, &tmpDescr)
+		var isAvailable bool
+		err = rows.Scan(&tmpSub.Id, &tmpSub.MonthCost, &tmpTitle, &tmpDescr, &isAvailable)
 		if err != nil {
 			r.logger.Error(err)
 			return nil, models.InternalError
+		}
+		if !isAvailable {
+			continue
 		}
 		tmpSub.Title = tmpTitle.String
 		tmpSub.Description = tmpDescr.String

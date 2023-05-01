@@ -528,11 +528,11 @@ func (h GrpcCreatorHandler) AddLike(ctx context.Context, in *generatedCreator.Po
 }
 
 func (h GrpcCreatorHandler) UpdateProfilePhoto(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedCommon.UUIDResponse, error) {
-	userId, err := uuid.Parse(in.Value)
+	creatorId, err := uuid.Parse(in.Value)
 	if err != nil {
 		return &generatedCommon.UUIDResponse{Error: err.Error()}, nil
 	}
-	imageId, err := h.uc.UpdateProfilePhoto(ctx, userId)
+	imageId, err := h.uc.UpdateProfilePhoto(ctx, creatorId)
 	if err != nil {
 		return &generatedCommon.UUIDResponse{Error: err.Error()}, nil
 	}
@@ -542,11 +542,11 @@ func (h GrpcCreatorHandler) UpdateProfilePhoto(ctx context.Context, in *generate
 }
 
 func (h GrpcCreatorHandler) UpdateCoverPhoto(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedCommon.UUIDResponse, error) {
-	userId, err := uuid.Parse(in.Value)
+	creatorId, err := uuid.Parse(in.Value)
 	if err != nil {
 		return &generatedCommon.UUIDResponse{Error: err.Error()}, nil
 	}
-	imageId, err := h.uc.UpdateCoverPhoto(ctx, userId)
+	imageId, err := h.uc.UpdateCoverPhoto(ctx, creatorId)
 	if err != nil {
 		return &generatedCommon.UUIDResponse{Error: err.Error()}, nil
 	}

@@ -59,7 +59,8 @@ create table subscription
             references creator (creator_id),
     month_cost      int         not null,
     title           varchar(40) not null,
-    description     varchar(200)
+    description     varchar(200),
+    is_available    bool default true
 );
 
 create table user_subscription
@@ -188,19 +189,19 @@ create table follow
         constraint follow_creator_creator_id_fk
             references "creator" (creator_id)
 );
---
--- CREATE TEXT SEARCH DICTIONARY russian_ispell (
---     TEMPLATE = ispell,
---     DictFile = russian,
---     AffFile = russian,
---     StopWords = russian
---     );
---
--- CREATE TEXT SEARCH CONFIGURATION ru (COPY = russian);
---
--- ALTER TEXT SEARCH CONFIGURATION ru
---     ALTER MAPPING FOR hword, hword_part, word
---         WITH russian_ispell, russian_stem;
+
+CREATE TEXT SEARCH DICTIONARY russian_ispell (
+    TEMPLATE = ispell,
+    DictFile = russian,
+    AffFile = russian,
+    StopWords = russian
+    );
+
+CREATE TEXT SEARCH CONFIGURATION ru (COPY = russian);
+
+ALTER TEXT SEARCH CONFIGURATION ru
+    ALTER MAPPING FOR hword, hword_part, word
+        WITH russian_ispell, russian_stem;
 
 CREATE INDEX idx_gin_creator_name_eng ON creator USING gin (to_tsvector('english', name));
 CREATE INDEX idx_gin_creator_description_eng ON creator USING gin (to_tsvector('english', description));
@@ -215,7 +216,7 @@ CREATE OR REPLACE FUNCTION make_tsvector(name TEXT, priority "char")
 $$
 BEGIN
     RETURN (setweight(to_tsvector('english', name), priority) ||
-            setweight(to_tsvector('russian', name), priority));
+            setweight(to_tsvector('ru', name), priority));
 END
 $$ LANGUAGE 'plpgsql' IMMUTABLE;
 

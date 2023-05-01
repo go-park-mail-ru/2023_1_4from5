@@ -343,7 +343,7 @@ func (h *CreatorHandler) UpdateCoverPhoto(w http.ResponseWriter, r *http.Request
 	}
 
 	if oldName != uuid.Nil {
-		err = os.Remove(filepath.Join(models.FolderPath, fmt.Sprintf("%s.jpg", oldName.String())))
+		err = os.Remove(models.FolderPath + fmt.Sprintf("%s.jpg", oldName.String()))
 		if err != nil {
 			h.logger.Error(err)
 			utils.Response(w, http.StatusBadRequest, nil)
