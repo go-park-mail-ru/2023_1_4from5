@@ -6,12 +6,16 @@ import (
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	authRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/repo"
 	authUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"time"
 )
@@ -67,9 +71,20 @@ func run() error {
 		log.Fatalln("can't listen port", err)
 	}
 
-	server := grpc.NewServer()
+	metricsMw := middleware.NewMetricsMiddleware()
+	metricsMw.Register(middleware.ServiceAuthName)
+
+	server := grpc.NewServer(grpc.UnaryInterceptor(metricsMw.ServerMetricsInterceptor))
 
 	generatedAuth.RegisterAuthServiceServer(server, service)
+
+	r := mux.NewRouter().PathPrefix("/api").Subrouter()
+	r.PathPrefix("/metrics").Handler(promhttp.Handler())
+
+	http.Handle("/", r)
+	httpSrv := http.Server{Handler: r, Addr: ":8011"}
+
+	go httpSrv.ListenAndServe()
 
 	log.Print("auth running on: ", srv.Addr())
 	return server.Serve(srv)

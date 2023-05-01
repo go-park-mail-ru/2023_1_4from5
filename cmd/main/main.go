@@ -14,6 +14,7 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -90,6 +91,7 @@ func run() error {
 		log.Fatalf("cant connect to session grpc")
 	}
 
+
 	authClient := generatedAuth.NewAuthServiceClient(authConn)
 	userClient := generatedUser.NewUserServiceClient(userConn)
 	creatorClient := generatedCreator.NewCreatorServiceClient(creatorConn)
@@ -107,10 +109,10 @@ func run() error {
 	logMw := middleware.NewLoggerMiddleware(zapSugar)
 	r.Use(logMw.LogRequest)
 
-	//metricsMw := middleware.NewMetricsMiddleware()
-	//metricsMw.Register(middleware.ServiceMainName)
-	//r.PathPrefix("/api/metrics").Handler(promhttp.Handler())
-	//r.Use(metricsMw.LogMetrics)
+	metricsMw := middleware.NewMetricsMiddleware()
+	metricsMw.Register(middleware.ServiceMainName)
+	r.PathPrefix("/metrics").Handler(promhttp.Handler())
+	r.Use(metricsMw.LogMetrics)
 
 	auth := r.PathPrefix("/auth").Subrouter()
 	{
