@@ -42,7 +42,7 @@ func (h GrpcAuthHandler) IncUserVersion(ctx context.Context, in *generatedAuth.A
 	user := models.AccessDetails{
 		Login:       in.Login,
 		Id:          idTmp,
-		UserVersion: in.UserVersion, //TODO: перегнать все int поля в int64
+		UserVersion: in.UserVersion,
 	}
 
 	_, err = h.uc.IncUserVersion(ctx, user)
@@ -53,16 +53,9 @@ func (h GrpcAuthHandler) IncUserVersion(ctx context.Context, in *generatedAuth.A
 }
 
 func (h GrpcAuthHandler) SignUp(ctx context.Context, in *generatedAuth.User) (*generatedAuth.Token, error) {
-	idTmp, err := uuid.Parse(in.Id)
-	idTmpPh, err := uuid.Parse(in.ProfilePhoto)
-	if err != nil {
-		return &generatedAuth.Token{Error: models.WrongData.Error()}, nil
-	}
 	user := models.User{
-		Id:           idTmp,
-		Login:        in.Login, //TODO: наверное здесь можно заполнять не все поля
+		Login:        in.Login,
 		Name:         in.Name,
-		ProfilePhoto: idTmpPh,
 		PasswordHash: in.PasswordHash,
 		Registration: time.Time{},
 		UserVersion:  0,
@@ -100,25 +93,16 @@ func (h GrpcAuthHandler) CheckUserVersion(ctx context.Context, in *generatedAuth
 }
 
 func (h GrpcAuthHandler) CheckUser(ctx context.Context, in *generatedAuth.User) (*generatedAuth.User, error) {
-	idTmp, err := uuid.Parse(in.Id)
-	idTmpPh, err := uuid.Parse(in.ProfilePhoto)
-	if err != nil {
-		return &generatedAuth.User{Error: models.WrongData.Error()}, nil
-	}
 	user := models.User{
-		Id:           idTmp,
-		Login:        in.Login, //TODO: наверное здесь можно заполнять не все поля
+		Login:        in.Login,
 		Name:         in.Name,
-		ProfilePhoto: idTmpPh,
 		PasswordHash: in.PasswordHash,
-		Registration: time.Time{},
-		UserVersion:  0,
 	}
 	checkedUser, err := h.uc.CheckUser(ctx, user)
 	if err == nil {
 		return &generatedAuth.User{
 			Id:           checkedUser.Id.String(),
-			Login:        in.Login, //TODO: наверное здесь можно заполнять не все поля
+			Login:        in.Login,
 			Name:         in.Name,
 			ProfilePhoto: checkedUser.ProfilePhoto.String(),
 			PasswordHash: in.PasswordHash,

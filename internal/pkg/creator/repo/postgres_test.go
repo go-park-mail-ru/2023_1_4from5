@@ -120,8 +120,8 @@ func TestCreatorRepo_CreatorPosts(t *testing.T) {
 			mock: func() {
 				rows := sqlmock.NewRows([]string{"post_id", "creation_date", "title", "post_text", "likes_count", "attachment_id", "attachment_type", "subscription_id"})
 
-				rows = rows.AddRow(posts[0].Id, posts[0].Creation, posts[0].Title, posts[0].Text, posts[0].LikesCount, fmt.Sprintf("{'%s','%s','%s','%s'}", attachsIDs[0], attachsIDs[1], attachsIDs[0], attachsIDs[1]), fmt.Sprintf("{%s,%s,%s,%s}", attachTypes[0], attachTypes[1], attachTypes[0], attachTypes[1]), fmt.Sprintf("{'%s','%s'}", subsIDs[0], subsIDs[1]))
-				rows = rows.AddRow(posts[1].Id, posts[1].Creation, posts[1].Title, posts[1].Text, posts[1].LikesCount, fmt.Sprintf("{'%s','%s','%s','%s'}", attachsIDs[0], attachsIDs[1], attachsIDs[0], attachsIDs[1]), fmt.Sprintf("{%s,%s,%s,%s}", attachTypes[0], attachTypes[1], attachTypes[0], attachTypes[1]), fmt.Sprintf("{'%s','%s'}", subsIDs[0], subsIDs[1]))
+				rows = rows.AddRow(posts[0].Id, posts[0].Creation, posts[0].Title, posts[0].Text, posts[0].LikesCount, fmt.Sprintf("{'%s','%s'}", attachsIDs[0], attachsIDs[1]), fmt.Sprintf("{%s,%s}", attachTypes[0], attachTypes[1]), fmt.Sprintf("{'%s','%s'}", subsIDs[0], subsIDs[1]))
+				rows = rows.AddRow(posts[1].Id, posts[1].Creation, posts[1].Title, posts[1].Text, posts[1].LikesCount, fmt.Sprintf("{'%s','%s'}", attachsIDs[0], attachsIDs[1]), fmt.Sprintf("{%s,%s}", attachTypes[0], attachTypes[1]), fmt.Sprintf("{'%s','%s'}", subsIDs[0], subsIDs[1]))
 
 				mock.ExpectQuery(`SELECT "post"\.post_id, creation_date, title, post_text, likes_count, array_agg\(attachment_id\), array_agg\(attachment_type\), array_agg\(DISTINCT subscription_id\) FROM "post" LEFT JOIN "attachment" a on "post"\.post_id \= a\.post_id LEFT JOIN "post_subscription" ps on "post"\.post_id \= ps\.post_id WHERE`).
 					WithArgs(creatorId).WillReturnRows(rows)
@@ -445,11 +445,11 @@ func TestCreatorRepo_GetCreatorSubs(t *testing.T) {
 		{
 			name: "Ok",
 			mock: func() {
-				rows := sqlmock.NewRows([]string{"subscription_id", "month_cost", "title", "description"})
+				rows := sqlmock.NewRows([]string{"subscription_id", "month_cost", "title", "description", "is_available"})
 				for _, sub := range subs {
-					rows = rows.AddRow(sub.Id, sub.MonthCost, sub.Title, sub.Description)
+					rows = rows.AddRow(sub.Id, sub.MonthCost, sub.Title, sub.Description, true)
 				}
-				mock.ExpectQuery(`SELECT subscription_id, month_cost, title, description FROM "subscription" WHERE`).
+				mock.ExpectQuery(`SELECT subscription_id, month_cost, title, description, is_available FROM "subscription" WHERE`).
 					WithArgs(creatorId).WillReturnRows(rows)
 			},
 			creatorId:   creatorId,
@@ -463,7 +463,7 @@ func TestCreatorRepo_GetCreatorSubs(t *testing.T) {
 				for _, sub := range subs {
 					rows = rows.AddRow(sub.Id, sub.MonthCost, sub.Title, sub.Description)
 				}
-				mock.ExpectQuery(`SELECT subscription_id, month_cost, title, description FROM "subscription" WHERE`).
+				mock.ExpectQuery(`SELECT subscription_id, month_cost, title, description, is_available FROM "subscription" WHERE`).
 					WithArgs(creatorId).WillReturnError(errors.New("test"))
 			},
 			creatorId:   creatorId,
@@ -472,11 +472,11 @@ func TestCreatorRepo_GetCreatorSubs(t *testing.T) {
 		{
 			name: "Internal Error in data types",
 			mock: func() {
-				rows := sqlmock.NewRows([]string{"subscription_id", "month_cost", "title", "description"})
+				rows := sqlmock.NewRows([]string{"subscription_id", "month_cost", "title", "description", "is_available"})
 				for _, sub := range subs {
-					rows = rows.AddRow(sub.Id, sub.Title, sub.Title, sub.Description)
+					rows = rows.AddRow(sub.Id, sub.Title, sub.Title, sub.Description, true)
 				}
-				mock.ExpectQuery(`SELECT subscription_id, month_cost, title, description FROM "subscription" WHERE`).
+				mock.ExpectQuery(`SELECT subscription_id, month_cost, title, description, is_available FROM "subscription" WHERE`).
 					WithArgs(creatorId).WillReturnRows(rows)
 			},
 			creatorId:   creatorId,

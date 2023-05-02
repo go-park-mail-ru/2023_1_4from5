@@ -28,7 +28,7 @@ const (
 	AddPaymentInfo       = `INSERT INTO "user_payments" (user_id, subscription_id, payment_timestamp, money) VALUES ($1, $2, now(), $3);`
 	UserSubscriptions    = `SELECT us.subscription_id, c.creator_id, name, profile_photo, month_cost, title, subscription.description FROM "subscription" join user_subscription us on subscription.subscription_id = us.subscription_id join creator c on c.creator_id = subscription.creator_id WHERE us.user_id = $1;`
 	DeletePhoto          = `UPDATE "user" SET profile_photo = null WHERE user_id = $1`
-	FollowsList          = `SELECT creator_id, name, profile_photo, description FROM "follow" join creator c on c.creator_id = follow.creator_id WHERE user_id = $1;`
+	FollowsList          = `SELECT c.creator_id, name, profile_photo, description FROM "follow" join creator c on c.creator_id = follow.creator_id WHERE user_id = $1;`
 )
 
 type UserRepo struct {
