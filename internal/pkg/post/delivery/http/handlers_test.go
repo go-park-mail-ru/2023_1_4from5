@@ -16,6 +16,7 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"mime/multipart"
@@ -1000,7 +1001,7 @@ func TestPostHandler_CreatePost(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name: "No title field in multipart",
+			name: "OK",
 			mock: func() *http.Request {
 				body := new(bytes.Buffer)
 
@@ -1044,6 +1045,51 @@ func TestPostHandler_CreatePost(t *testing.T) {
 			},
 			expectedStatus: http.StatusOK,
 		},
+		{
+			name: "err from create post service",
+			mock: func() *http.Request {
+				body := new(bytes.Buffer)
+
+				writer := multipart.NewWriter(body)
+
+				defer writer.Close()
+
+				partPath, _ := writer.CreateFormField("creator")
+				_, err := partPath.Write([]byte(uuid.New().String()))
+				if err != nil {
+					t.Error(err)
+				}
+				partText, _ := writer.CreateFormField("text")
+				_, err = partText.Write([]byte(uuid.New().String()))
+				if err != nil {
+					t.Error(err)
+				}
+				partTitle, _ := writer.CreateFormField("title")
+				_, err = partTitle.Write([]byte(uuid.New().String()))
+				if err != nil {
+					t.Error(err)
+				}
+
+				r := httptest.NewRequest("POST", "/post/create",
+					body)
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().IsCreator(gomock.Any(), gomock.Any()).Return(&generated.FlagMessage{
+					Flag:  true,
+					Error: "",
+				}, nil)
+				creatorClient.EXPECT().CreatePost(gomock.Any(), gomock.Any()).Return(&generatedCommon.Empty{Error: ""}, errors.New("test"))
+				r.Header.Add("Content-Type", writer.FormDataContentType())
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -1061,7 +1107,6 @@ func TestPostHandler_CreatePost(t *testing.T) {
 	}
 }
 
-/*
 var newPostErr = models.PostEditData{Title: "testavbjkwkjebojweabkvsn;awlvmnbjerkvjawlvnkaoeibr aelsvjoerbjvkas,zjfonwileabuv", Text: "testtest"}
 var newPost = models.PostEditData{Title: "test", Text: "testtest"}
 
@@ -1084,9 +1129,8 @@ func TestPostHandler_EditPost(t *testing.T) {
 	}(logger)
 	zapSugar := logger.Sugar()
 
-	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
-	mockPostUsecase := mockPost.NewMockPostUsecase(ctl)
-	mockAttachUsecase := mockAttach.NewMockAttachmentUsecase(ctl)
+	authClient := mockAuth.NewMockAuthServiceClient(ctl)
+	creatorClient := mockCreator.NewMockCreatorServiceClient(ctl)
 
 	tests := []struct {
 		name           string
@@ -1106,14 +1150,31 @@ func TestPostHandler_EditPost(t *testing.T) {
 			expectedStatus: http.StatusUnauthorized,
 		},
 		{
+			name: "Internal err from auth service",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "//post/edit/{post-uuid}",
+					nil)
+
+				setJWTToken(r, bdy)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, errors.New("test"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
 			name: "Forbidden",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("PUT", "//post/edit/{post-uuid}",
 					nil)
 
 				setJWTToken(r, bdy)
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, errors.New("test"))
-
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "test",
+				}, nil)
 				return r
 			},
 			expectedStatus: http.StatusForbidden,
@@ -1125,8 +1186,10 @@ func TestPostHandler_EditPost(t *testing.T) {
 					nil)
 
 				setJWTToken(r, bdy)
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
 				return r
 			},
 			expectedStatus: http.StatusOK,
@@ -1140,8 +1203,10 @@ func TestPostHandler_EditPost(t *testing.T) {
 				setJWTToken(r, bdy)
 				setCSRFToken(r, "111")
 
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
 				return r
 			},
 			expectedStatus: http.StatusForbidden,
@@ -1156,7 +1221,10 @@ func TestPostHandler_EditPost(t *testing.T) {
 				setCSRFToken(r, tokenCSRF)
 
 				os.Setenv("CSRF_SECRET", "TEST")
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
 				return r
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -1174,13 +1242,16 @@ func TestPostHandler_EditPost(t *testing.T) {
 					"post-uuid": "123",
 				})
 
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
 				return r
 			},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name: "Is post owner wrong data",
+			name: "Is post owner Forbidden",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
 					bytes.NewReader(bodyPrepare(newPost)))
@@ -1192,138 +1263,143 @@ func TestPostHandler_EditPost(t *testing.T) {
 					"post-uuid": uuid.NewString(),
 				})
 
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-				mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, models.WrongData)
-				return r
-			},
-			expectedStatus: http.StatusBadRequest,
-		},
-		{
-			name: "Is post owner internal error",
-			mock: func() *http.Request {
-				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
-					bytes.NewReader(bodyPrepare(newPost)))
-
-				setJWTToken(r, bdy)
-				setCSRFToken(r, tokenCSRF)
-
-				r = mux.SetURLVars(r, map[string]string{
-					"post-uuid": uuid.NewString(),
-				})
-
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-				mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, models.InternalError)
-				return r
-			},
-			expectedStatus: http.StatusInternalServerError,
-		},
-		{
-			name: "Is post owner forbidden",
-			mock: func() *http.Request {
-				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
-					bytes.NewReader(bodyPrepare(newPost)))
-
-				setJWTToken(r, bdy)
-				setCSRFToken(r, tokenCSRF)
-
-				r = mux.SetURLVars(r, map[string]string{
-					"post-uuid": uuid.NewString(),
-				})
-
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-				mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().IsPostOwner(gomock.Any(), gomock.Any()).Return(&generated.FlagMessage{
+					Flag:  false,
+					Error: "",
+				}, nil)
 				return r
 			},
 			expectedStatus: http.StatusForbidden,
-		},
-		{
-			name: "Wrong data in body",
-			mock: func() *http.Request {
-				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
-					bytes.NewReader([]byte("111")))
+		}, /*
+			{
+				name: "Is post owner internal error",
+				mock: func() *http.Request {
+					r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
+						bytes.NewReader(bodyPrepare(newPost)))
 
-				setJWTToken(r, bdy)
-				setCSRFToken(r, tokenCSRF)
+					setJWTToken(r, bdy)
+					setCSRFToken(r, tokenCSRF)
 
-				r = mux.SetURLVars(r, map[string]string{
-					"post-uuid": uuid.NewString(),
-				})
+					r = mux.SetURLVars(r, map[string]string{
+						"post-uuid": uuid.NewString(),
+					})
 
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-				mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
-				return r
+					mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+					mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, models.InternalError)
+					return r
+				},
+				expectedStatus: http.StatusInternalServerError,
 			},
-			expectedStatus: http.StatusBadRequest,
-		},
-		{
-			name: "Wrong length for text or title",
-			mock: func() *http.Request {
-				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
-					bytes.NewReader(bodyPrepare(newPostErr)))
+			{
+				name: "Is post owner forbidden",
+				mock: func() *http.Request {
+					r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
+						bytes.NewReader(bodyPrepare(newPost)))
 
-				setJWTToken(r, bdy)
-				setCSRFToken(r, tokenCSRF)
+					setJWTToken(r, bdy)
+					setCSRFToken(r, tokenCSRF)
 
-				r = mux.SetURLVars(r, map[string]string{
-					"post-uuid": uuid.NewString(),
-				})
+					r = mux.SetURLVars(r, map[string]string{
+						"post-uuid": uuid.NewString(),
+					})
 
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-				mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
-				return r
+					mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+					mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil)
+					return r
+				},
+				expectedStatus: http.StatusForbidden,
 			},
-			expectedStatus: http.StatusBadRequest,
-		},
-		{
-			name: "Wrong length for text or title",
-			mock: func() *http.Request {
-				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
-					bytes.NewReader(bodyPrepare(newPost)))
+			{
+				name: "Wrong data in body",
+				mock: func() *http.Request {
+					r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
+						bytes.NewReader([]byte("111")))
 
-				setJWTToken(r, bdy)
-				setCSRFToken(r, tokenCSRF)
+					setJWTToken(r, bdy)
+					setCSRFToken(r, tokenCSRF)
 
-				r = mux.SetURLVars(r, map[string]string{
-					"post-uuid": uuid.NewString(),
-				})
+					r = mux.SetURLVars(r, map[string]string{
+						"post-uuid": uuid.NewString(),
+					})
 
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-				mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
-				mockPostUsecase.EXPECT().EditPost(gomock.Any(), gomock.Any()).Return(models.InternalError)
-
-				return r
+					mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+					mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+					return r
+				},
+				expectedStatus: http.StatusBadRequest,
 			},
-			expectedStatus: http.StatusInternalServerError,
-		},
-		{
-			name: "Wrong length for text or title",
-			mock: func() *http.Request {
-				r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
-					bytes.NewReader(bodyPrepare(newPost)))
+			{
+				name: "Wrong length for text or title",
+				mock: func() *http.Request {
+					r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
+						bytes.NewReader(bodyPrepare(newPostErr)))
 
-				setJWTToken(r, bdy)
-				setCSRFToken(r, tokenCSRF)
+					setJWTToken(r, bdy)
+					setCSRFToken(r, tokenCSRF)
 
-				r = mux.SetURLVars(r, map[string]string{
-					"post-uuid": uuid.NewString(),
-				})
+					r = mux.SetURLVars(r, map[string]string{
+						"post-uuid": uuid.NewString(),
+					})
 
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-				mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
-				mockPostUsecase.EXPECT().EditPost(gomock.Any(), gomock.Any()).Return(nil)
-
-				return r
+					mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+					mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+					return r
+				},
+				expectedStatus: http.StatusBadRequest,
 			},
-			expectedStatus: http.StatusOK,
-		},
+			{
+				name: "Wrong length for text or title",
+				mock: func() *http.Request {
+					r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
+						bytes.NewReader(bodyPrepare(newPost)))
+
+					setJWTToken(r, bdy)
+					setCSRFToken(r, tokenCSRF)
+
+					r = mux.SetURLVars(r, map[string]string{
+						"post-uuid": uuid.NewString(),
+					})
+
+					mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+					mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+					mockPostUsecase.EXPECT().EditPost(gomock.Any(), gomock.Any()).Return(models.InternalError)
+
+					return r
+				},
+				expectedStatus: http.StatusInternalServerError,
+			},
+			{
+				name: "Wrong length for text or title",
+				mock: func() *http.Request {
+					r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
+						bytes.NewReader(bodyPrepare(newPost)))
+
+					setJWTToken(r, bdy)
+					setCSRFToken(r, tokenCSRF)
+
+					r = mux.SetURLVars(r, map[string]string{
+						"post-uuid": uuid.NewString(),
+					})
+
+					mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+					mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+					mockPostUsecase.EXPECT().EditPost(gomock.Any(), gomock.Any()).Return(nil)
+
+					return r
+				},
+				expectedStatus: http.StatusOK,
+			},*/
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			h := &PostHandler{
-				usecase:           mockPostUsecase,
-				authUsecase:       mockAuthUsecase,
-				attachmentUsecase: mockAttachUsecase,
-				logger:            zapSugar,
+				authClient:    authClient,
+				creatorClient: creatorClient,
+				logger:        zapSugar,
 			}
 			w := httptest.NewRecorder()
 			r := test.mock()
@@ -1334,6 +1410,7 @@ func TestPostHandler_EditPost(t *testing.T) {
 	}
 }
 
+/*
 func TestPostHandler_GetPost(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
