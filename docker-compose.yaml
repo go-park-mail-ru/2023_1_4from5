@@ -22,6 +22,9 @@ services:
       - "8021:8021"
     volumes:
       - type: bind
+        source: /home/ubuntu/frontend/2023_1_4from5/public/images
+        target: /images
+      - type: bind
         source: /var/log
         target: /var/log
   creator:
@@ -35,11 +38,11 @@ services:
       - type: bind
         source: /var/log
         target: /var/log
-#    deploy:
-#      replicas: 3
-#      mode: replicated
-#      restart_policy:
-#        condition: on-failure //TODO: round robbin
+  #    deploy:
+  #      replicas: 3
+  #      mode: replicated
+  #      restart_policy:
+  #        condition: on-failure //TODO: round robbin
 
   postgres:
     image: postgres:14
@@ -83,7 +86,7 @@ services:
     volumes:
       - type: bind
         source: /home/ubuntu/2023_1_4from5/prometheus.yml
-#        source: ./prometheus.yml
+        #        source: ./prometheus.yml
         target: /etc/prometheus/prometheus.yml
       - type: bind
         source: /home/ubuntu/prometheus-data
@@ -105,7 +108,7 @@ services:
     volumes:
       - type: bind
         source: /home/ubuntu/grafana-data
-#        source: ./grafana-data
+        #        source: ./grafana-data
         target: /var/lib/grafana
     ports:
       - "3000:3000"

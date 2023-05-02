@@ -696,3 +696,353 @@ func TestCreatorRepo_GetPage(t *testing.T) {
 		})
 	}
 }
+
+func TestCreatorRepo_DeleteCoverPhoto(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("cant create mock: %s", err)
+	}
+	defer db.Close()
+
+	logger := zap.NewNop()
+	defer func(logger *zap.Logger) {
+		err = logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+	r := NewCreatorRepo(db, zapSugar)
+
+	tests := []struct {
+		name        string
+		mock        func()
+		expectedErr error
+	}{
+		{
+			name: "Ok",
+			mock: func() {
+				rows := sqlmock.NewRows([]string{})
+				mock.ExpectQuery(`UPDATE "creator" SET cover_photo = null WHERE`).WithArgs(creatorId).WillReturnRows(rows)
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "Err",
+			mock: func() {
+				mock.ExpectQuery(`UPDATE "creator" SET cover_photo = null WHERE`).WithArgs(creatorId).WillReturnError(errors.New("test"))
+			},
+			expectedErr: models.InternalError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.mock()
+
+			err := r.DeleteCoverPhoto(context.Background(), creatorId)
+			if test.expectedErr != nil {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestCreatorRepo_DeleteProfilePhoto(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("cant create mock: %s", err)
+	}
+	defer db.Close()
+
+	logger := zap.NewNop()
+	defer func(logger *zap.Logger) {
+		err = logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+	r := NewCreatorRepo(db, zapSugar)
+
+	tests := []struct {
+		name        string
+		mock        func()
+		expectedErr error
+	}{
+		{
+			name: "Ok",
+			mock: func() {
+				rows := sqlmock.NewRows([]string{})
+				mock.ExpectQuery(`UPDATE "creator" SET profile_photo = null WHERE`).WithArgs(creatorId).WillReturnRows(rows)
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "Err",
+			mock: func() {
+				mock.ExpectQuery(`UPDATE "creator" SET profile_photo = null WHERE`).WithArgs(creatorId).WillReturnError(errors.New("test"))
+			},
+			expectedErr: models.InternalError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.mock()
+
+			err := r.DeleteProfilePhoto(context.Background(), creatorId)
+			if test.expectedErr != nil {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestCreatorRepo_UpdateCoverPhoto(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("cant create mock: %s", err)
+	}
+	defer db.Close()
+
+	logger := zap.NewNop()
+	defer func(logger *zap.Logger) {
+		err = logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+	r := NewCreatorRepo(db, zapSugar)
+	pathId := uuid.New()
+
+	tests := []struct {
+		name        string
+		mock        func()
+		expectedErr error
+	}{
+		{
+			name: "Ok",
+			mock: func() {
+				rows := sqlmock.NewRows([]string{})
+				mock.ExpectQuery(`UPDATE "creator" SET cover_photo = `).WithArgs(pathId, creatorId).WillReturnRows(rows)
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "Err",
+			mock: func() {
+				mock.ExpectQuery(`UPDATE "creator" SET cover_photo = `).WithArgs(pathId, creatorId).WillReturnError(errors.New("test"))
+			},
+			expectedErr: models.InternalError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.mock()
+
+			err := r.UpdateCoverPhoto(context.Background(), creatorId, pathId)
+			if test.expectedErr != nil {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestCreatorRepo_UpdateProfilePhoto(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("cant create mock: %s", err)
+	}
+	defer db.Close()
+
+	logger := zap.NewNop()
+	defer func(logger *zap.Logger) {
+		err = logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+	r := NewCreatorRepo(db, zapSugar)
+	pathId := uuid.New()
+
+	tests := []struct {
+		name        string
+		mock        func()
+		expectedErr error
+	}{
+		{
+			name: "Ok",
+			mock: func() {
+				rows := sqlmock.NewRows([]string{})
+				mock.ExpectQuery(`UPDATE "creator" SET profile_photo = `).WithArgs(pathId, creatorId).WillReturnRows(rows)
+			},
+			expectedErr: nil,
+		},
+		{
+			name: "Err",
+			mock: func() {
+				mock.ExpectQuery(`UPDATE "creator" SET profile_photo = `).WithArgs(pathId, creatorId).WillReturnError(errors.New("test"))
+			},
+			expectedErr: models.InternalError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.mock()
+
+			err := r.UpdateProfilePhoto(context.Background(), creatorId, pathId)
+			if test.expectedErr != nil {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestCreatorRepo_CheckIfCreator(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("cant create mock: %s", err)
+	}
+	defer db.Close()
+
+	logger := zap.NewNop()
+	defer func(logger *zap.Logger) {
+		err = logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+	r := NewCreatorRepo(db, zapSugar)
+
+	tests := []struct {
+		name        string
+		mock        func()
+		expectedErr error
+		expectedRes uuid.UUID
+	}{
+		{
+			name: "Ok",
+			mock: func() {
+				rows := sqlmock.NewRows([]string{"creator_id"}).AddRow(creatorId)
+				mock.ExpectQuery(`SELECT creator_id FROM "creator" WHERE user_id =`).WithArgs(userId).WillReturnRows(rows)
+			},
+			expectedErr: nil,
+			expectedRes: creatorId,
+		},
+
+		{
+			name: "Err",
+			mock: func() {
+				mock.ExpectQuery(`SELECT creator_id FROM "creator" WHERE user_id =`).WithArgs(userId).WillReturnError(errors.New("test"))
+			},
+			expectedErr: models.InternalError,
+		},
+		{
+			name: "Err not found",
+			mock: func() {
+				mock.ExpectQuery(`SELECT creator_id FROM "creator" WHERE user_id =`).WithArgs(userId).WillReturnError(sql.ErrNoRows)
+			},
+			expectedErr: models.NotFound,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.mock()
+
+			got, err := r.CheckIfCreator(context.Background(), userId)
+			if test.expectedErr != nil {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, test.expectedRes, got)
+			}
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestCreatorRepo_CheckIfFollow(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("cant create mock: %s", err)
+	}
+	defer db.Close()
+
+	logger := zap.NewNop()
+	defer func(logger *zap.Logger) {
+		err = logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+	r := NewCreatorRepo(db, zapSugar)
+
+	tests := []struct {
+		name        string
+		mock        func()
+		expectedErr error
+		expectedRes bool
+	}{
+		{
+			name: "Ok",
+			mock: func() {
+				rows := sqlmock.NewRows([]string{"user_id"}).AddRow(userId)
+				mock.ExpectQuery(`SELECT user_id FROM "follow" WHERE user_id`).WithArgs(userId, creatorId).WillReturnRows(rows)
+			},
+			expectedErr: nil,
+			expectedRes: true,
+		},
+
+		{
+			name: "Err",
+			mock: func() {
+				mock.ExpectQuery(`SELECT user_id FROM "follow" WHERE user_id`).WithArgs(userId, creatorId).WillReturnError(errors.New("test"))
+			},
+			expectedErr: models.InternalError,
+			expectedRes: false,
+		},
+		{
+			name: "Err not found",
+			mock: func() {
+				mock.ExpectQuery(`SELECT user_id FROM "follow" WHERE user_id`).WithArgs(userId, creatorId).WillReturnError(sql.ErrNoRows)
+			},
+			expectedErr: nil,
+			expectedRes: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.mock()
+
+			got, err := r.CheckIfFollow(context.Background(), userId, creatorId)
+			if test.expectedErr != nil {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, test.expectedRes, got)
+			}
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}

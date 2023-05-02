@@ -7,15 +7,18 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
+	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	mockAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/mocks"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	mockCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/mocks"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -554,7 +557,6 @@ func TestPostHandler_RemoveLike(t *testing.T) {
 	}
 }
 
-/*
 func TestPostHandler_CreatePost(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
@@ -574,9 +576,8 @@ func TestPostHandler_CreatePost(t *testing.T) {
 	}(logger)
 	zapSugar := logger.Sugar()
 
-	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
-	mockPostUsecase := mockPost.NewMockPostUsecase(ctl)
-	mockAttachUsecase := mockAttach.NewMockAttachmentUsecase(ctl)
+	authClient := mockAuth.NewMockAuthServiceClient(ctl)
+	creatorClient := mockCreator.NewMockCreatorServiceClient(ctl)
 
 	tests := []struct {
 		name           string
@@ -602,11 +603,28 @@ func TestPostHandler_CreatePost(t *testing.T) {
 					nil)
 
 				setJWTToken(r, bdy)
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, errors.New("test"))
-
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "test",
+				}, nil)
 				return r
 			},
 			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name: "Internal err from auth service",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("POST", "/post/create",
+					nil)
+
+				setJWTToken(r, bdy)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, errors.New("test"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
 		},
 		{
 			name: "Get CSRF",
@@ -615,23 +633,43 @@ func TestPostHandler_CreatePost(t *testing.T) {
 					nil)
 
 				setJWTToken(r, bdy)
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
 				return r
 			},
 			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "Get CSRF with err",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/post/create",
+					nil)
+				os.Unsetenv("CSRF_SECRET")
+				setJWTToken(r, bdy)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusUnauthorized,
 		},
 		{
 			name: "Forbidden",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("POST", "/post/create",
 					nil)
+				os.Setenv("CSRF_SECRET", "TEST")
 
 				setJWTToken(r, bdy)
 				setCSRFToken(r, "111")
 
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
 				return r
 			},
 			expectedStatus: http.StatusForbidden,
@@ -645,8 +683,10 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				setJWTToken(r, bdy)
 				setCSRFToken(r, tokenCSRF)
 
-				os.Setenv("CSRF_SECRET", "TEST")
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
 				return r
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -672,7 +712,10 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				setJWTToken(r, bdy)
 				setCSRFToken(r, tokenCSRF)
 
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
 				r.Header.Add("Content-Type", writer.FormDataContentType())
 				return r
 			},
@@ -699,11 +742,48 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				setJWTToken(r, bdy)
 				setCSRFToken(r, tokenCSRF)
 
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
 				r.Header.Add("Content-Type", writer.FormDataContentType())
 				return r
 			},
 			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Is creator internal err from service",
+			mock: func() *http.Request {
+				body := new(bytes.Buffer)
+
+				writer := multipart.NewWriter(body)
+
+				defer writer.Close()
+
+				partPath, _ := writer.CreateFormField("creator")
+				_, err := partPath.Write([]byte(uuid.New().String()))
+				if err != nil {
+					t.Error(err)
+				}
+
+				r := httptest.NewRequest("POST", "/post/create",
+					body)
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().IsCreator(gomock.Any(), gomock.Any()).Return(&generated.FlagMessage{
+					Flag:  false,
+					Error: "",
+				}, errors.New("test"))
+				r.Header.Add("Content-Type", writer.FormDataContentType())
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
 		},
 		{
 			name: "Is creator wrong data",
@@ -726,16 +806,21 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				setJWTToken(r, bdy)
 				setCSRFToken(r, tokenCSRF)
 
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, models.WrongData)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().IsCreator(gomock.Any(), gomock.Any()).Return(&generated.FlagMessage{
+					Flag:  false,
+					Error: models.WrongData.Error(),
+				}, nil)
 				r.Header.Add("Content-Type", writer.FormDataContentType())
 				return r
 			},
 			expectedStatus: http.StatusBadRequest,
 		},
-
 		{
-			name: "Is creator internal",
+			name: "Is creator err",
 			mock: func() *http.Request {
 				body := new(bytes.Buffer)
 
@@ -755,15 +840,21 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				setJWTToken(r, bdy)
 				setCSRFToken(r, tokenCSRF)
 
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, models.InternalError)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().IsCreator(gomock.Any(), gomock.Any()).Return(&generated.FlagMessage{
+					Flag:  false,
+					Error: "11",
+				}, nil)
 				r.Header.Add("Content-Type", writer.FormDataContentType())
 				return r
 			},
 			expectedStatus: http.StatusInternalServerError,
 		},
 		{
-			name: "Is creator false",
+			name: "Is creator forbidden",
 			mock: func() *http.Request {
 				body := new(bytes.Buffer)
 
@@ -783,8 +874,14 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				setJWTToken(r, bdy)
 				setCSRFToken(r, tokenCSRF)
 
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().IsCreator(gomock.Any(), gomock.Any()).Return(&generated.FlagMessage{
+					Flag:  false,
+					Error: "",
+				}, nil)
 				r.Header.Add("Content-Type", writer.FormDataContentType())
 				return r
 			},
@@ -811,8 +908,14 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				setJWTToken(r, bdy)
 				setCSRFToken(r, tokenCSRF)
 
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().IsCreator(gomock.Any(), gomock.Any()).Return(&generated.FlagMessage{
+					Flag:  true,
+					Error: "",
+				}, nil)
 				r.Header.Add("Content-Type", writer.FormDataContentType())
 				return r
 			},
@@ -844,8 +947,14 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				setJWTToken(r, bdy)
 				setCSRFToken(r, tokenCSRF)
 
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().IsCreator(gomock.Any(), gomock.Any()).Return(&generated.FlagMessage{
+					Flag:  true,
+					Error: "",
+				}, nil)
 				r.Header.Add("Content-Type", writer.FormDataContentType())
 				return r
 			},
@@ -877,21 +986,71 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				setJWTToken(r, bdy)
 				setCSRFToken(r, tokenCSRF)
 
-				mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-				mockPostUsecase.EXPECT().IsCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().IsCreator(gomock.Any(), gomock.Any()).Return(&generated.FlagMessage{
+					Flag:  true,
+					Error: "",
+				}, nil)
 				r.Header.Add("Content-Type", writer.FormDataContentType())
 				return r
 			},
 			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "No title field in multipart",
+			mock: func() *http.Request {
+				body := new(bytes.Buffer)
+
+				writer := multipart.NewWriter(body)
+
+				defer writer.Close()
+
+				partPath, _ := writer.CreateFormField("creator")
+				_, err := partPath.Write([]byte(uuid.New().String()))
+				if err != nil {
+					t.Error(err)
+				}
+				partText, _ := writer.CreateFormField("text")
+				_, err = partText.Write([]byte(uuid.New().String()))
+				if err != nil {
+					t.Error(err)
+				}
+				partTitle, _ := writer.CreateFormField("title")
+				_, err = partTitle.Write([]byte(uuid.New().String()))
+				if err != nil {
+					t.Error(err)
+				}
+
+				r := httptest.NewRequest("POST", "/post/create",
+					body)
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().IsCreator(gomock.Any(), gomock.Any()).Return(&generated.FlagMessage{
+					Flag:  true,
+					Error: "",
+				}, nil)
+				creatorClient.EXPECT().CreatePost(gomock.Any(), gomock.Any()).Return(&generatedCommon.Empty{Error: ""}, nil)
+				r.Header.Add("Content-Type", writer.FormDataContentType())
+				return r
+			},
+			expectedStatus: http.StatusOK,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			h := &PostHandler{
-				usecase:           mockPostUsecase,
-				authUsecase:       mockAuthUsecase,
-				attachmentUsecase: mockAttachUsecase,
-				logger:            zapSugar,
+				authClient:    authClient,
+				creatorClient: creatorClient,
+				logger:        zapSugar,
 			}
 			w := httptest.NewRecorder()
 			r := test.mock()
@@ -901,6 +1060,7 @@ func TestPostHandler_CreatePost(t *testing.T) {
 		})
 	}
 }
+
 /*
 var newPostErr = models.PostEditData{Title: "testavbjkwkjebojweabkvsn;awlvmnbjerkvjawlvnkaoeibr aelsvjoerbjvkas,zjfonwileabuv", Text: "testtest"}
 var newPost = models.PostEditData{Title: "test", Text: "testtest"}

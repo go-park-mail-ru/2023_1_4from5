@@ -367,12 +367,12 @@ var testAimWithLongDescription = models.Aim{Creator: uuid.New(), Description: "t
 	"testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttest" +
 	"testtesttesttesttesttesttest", MoneyNeeded: 500, MoneyGot: 0}
 
-func bodyPrepare(aim models.Aim) []byte {
-	aimJSON, err := json.Marshal(&aim)
+func bodyPrepare(val interface{}) []byte {
+	valJSON, err := json.Marshal(&val)
 	if err != nil {
 		return nil
 	}
-	return aimJSON
+	return valJSON
 }
 
 func TestCreatorHandler_CreateAim(t *testing.T) {
@@ -786,6 +786,102 @@ func TestCreatorHandler_GetAllCreators(t *testing.T) {
 	}
 }
 
+func TestCreatorHandler_FindCreator(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	authClient := mockAuth.NewMockAuthServiceClient(ctl)
+	creatorClient := mockCreator.NewMockCreatorServiceClient(ctl)
+
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	tests := []struct {
+		name           string
+		mock           func() *http.Request
+		expectedStatus int
+	}{
+		{
+			name: "OK",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/find/", nil)
+				r = mux.SetURLVars(r, map[string]string{
+					"keyword": "test author",
+				})
+				creatorClient.EXPECT().FindCreators(gomock.Any(), gomock.Any()).Return(creators, nil)
+				return r
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "no keyword",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/find/", nil)
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "internal err from find creators",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/find/", nil)
+				r = mux.SetURLVars(r, map[string]string{
+					"keyword": "test author",
+				})
+				creatorClient.EXPECT().FindCreators(gomock.Any(), gomock.Any()).Return(creatorsWithErr, nil)
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "internal err from creator service",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/find/", nil)
+				r = mux.SetURLVars(r, map[string]string{
+					"keyword": "test author",
+				})
+				creatorClient.EXPECT().FindCreators(gomock.Any(), gomock.Any()).Return(creatorsWithErr, errors.New("test"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "wrong creator",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/find/", nil)
+				r = mux.SetURLVars(r, map[string]string{
+					"keyword": "test author",
+				})
+				creatorClient.EXPECT().FindCreators(gomock.Any(), gomock.Any()).Return(creatorsWithErr2, nil)
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &CreatorHandler{
+				creatorClient: creatorClient,
+				authClient:    authClient,
+				logger:        zapSugar,
+			}
+			w := httptest.NewRecorder()
+			r := test.mock()
+			h.FindCreator(w, r)
+			require.Equal(t, test.expectedStatus, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
+				" for test:%s", test.name, test.expectedStatus, w.Code, test.name))
+		})
+	}
+}
+
 func TestCreatorHandler_GetFeed(t *testing.T) {
 	postWithErr.Id = "11"
 	ctl := gomock.NewController(t)
@@ -1105,6 +1201,26 @@ func TestCreatorHandler_UpdateProfilePhoto(t *testing.T) {
 			expectedStatus: http.StatusInternalServerError,
 		},
 		{
+			name: "Internal err no multipart",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/updateProfilePhoto", nil)
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, nil)
+
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
 			name: "Internal Err from auth service",
 			mock: func() *http.Request {
 				r := httptest.NewRequest("PUT", "/updateProfilePhoto", nil)
@@ -1196,7 +1312,7 @@ func TestCreatorHandler_UpdateProfilePhoto(t *testing.T) {
 					t.Error(err)
 				}
 
-				r := httptest.NewRequest("POST", "/user/updateProfilePhoto",
+				r := httptest.NewRequest("PUT", "/updateProfilePhoto",
 					body)
 
 				setJWTToken(r, bdy)
@@ -1215,6 +1331,78 @@ func TestCreatorHandler_UpdateProfilePhoto(t *testing.T) {
 				return r
 			},
 			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Wrong uuid",
+			mock: func() *http.Request {
+				body := new(bytes.Buffer)
+
+				writer := multipart.NewWriter(body)
+
+				defer writer.Close()
+
+				partPath, _ := writer.CreateFormField("path")
+				_, err := partPath.Write([]byte("111"))
+				if err != nil {
+					t.Error(err)
+				}
+
+				// We create the form data field 'upload'
+				// which returns another writer to write the actual file
+				part, err := writer.CreateFormFile("upload", "img.png")
+				if err != nil {
+					t.Error(err)
+				}
+
+				width := 200
+				height := 100
+				upLeft := image.Point{0, 0}
+				lowRight := image.Point{width, height}
+
+				img := image.NewRGBA(image.Rectangle{upLeft, lowRight})
+
+				// Colors are defined by Red, Green, Blue, Alpha uint8 values.
+				cyan := color.RGBA{100, 200, 200, 0xff}
+
+				// Set color for each pixel.
+				for x := 0; x < width; x++ {
+					for y := 0; y < height; y++ {
+						switch {
+						case x < width/2 && y < height/2: // upper left quadrant
+							img.Set(x, y, cyan)
+						case x >= width/2 && y >= height/2: // lower right quadrant
+							img.Set(x, y, color.White)
+						default:
+							// Use zero value.
+						}
+					}
+				}
+
+				// Encode() takes an io.Writer. We pass the multipart field 'upload' that we defined
+				// earlier which, in turn, writes to our io.Pipe
+				err = png.Encode(part, img)
+				if err != nil {
+					t.Error(err)
+				}
+
+				r := httptest.NewRequest("PUT", "/updateProfilePhoto",
+					body)
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, nil)
+				r.Header.Add("Content-Type", writer.FormDataContentType())
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
 		},
 	}
 
@@ -1266,7 +1454,7 @@ func TestCreatorHandler_UpdateCoverPhoto(t *testing.T) {
 		{
 			name: "Unauthorized",
 			mock: func() *http.Request {
-				r := httptest.NewRequest("PUT", "/updateProfilePhoto", nil)
+				r := httptest.NewRequest("PUT", "/updateCoverPhoto", nil)
 
 				setJWTToken(r, "111")
 				return r
@@ -1276,7 +1464,7 @@ func TestCreatorHandler_UpdateCoverPhoto(t *testing.T) {
 		{
 			name: "BadRequest",
 			mock: func() *http.Request {
-				r := httptest.NewRequest("PUT", "/updateProfilePhoto", nil)
+				r := httptest.NewRequest("PUT", "/updateCoverPhoto", nil)
 
 				setJWTToken(r, bdy)
 				setCSRFToken(r, tokenCSRF)
@@ -1296,7 +1484,7 @@ func TestCreatorHandler_UpdateCoverPhoto(t *testing.T) {
 		{
 			name: "Internal err from creator service",
 			mock: func() *http.Request {
-				r := httptest.NewRequest("PUT", "/updateProfilePhoto", nil)
+				r := httptest.NewRequest("PUT", "/updateCoverPhoto", nil)
 
 				setJWTToken(r, bdy)
 				setCSRFToken(r, tokenCSRF)
@@ -1316,7 +1504,7 @@ func TestCreatorHandler_UpdateCoverPhoto(t *testing.T) {
 		{
 			name: "Not Found err from Check If Creator",
 			mock: func() *http.Request {
-				r := httptest.NewRequest("PUT", "/updateProfilePhoto", nil)
+				r := httptest.NewRequest("PUT", "/updateCoverPhoto", nil)
 
 				setJWTToken(r, bdy)
 				setCSRFToken(r, tokenCSRF)
@@ -1336,7 +1524,7 @@ func TestCreatorHandler_UpdateCoverPhoto(t *testing.T) {
 		{
 			name: "Internal err from Check If Creator",
 			mock: func() *http.Request {
-				r := httptest.NewRequest("PUT", "/updateProfilePhoto", nil)
+				r := httptest.NewRequest("PUT", "/updateCoverPhoto", nil)
 
 				setJWTToken(r, bdy)
 				setCSRFToken(r, tokenCSRF)
@@ -1356,7 +1544,7 @@ func TestCreatorHandler_UpdateCoverPhoto(t *testing.T) {
 		{
 			name: "Internal Err from auth service",
 			mock: func() *http.Request {
-				r := httptest.NewRequest("PUT", "/updateProfilePhoto", nil)
+				r := httptest.NewRequest("PUT", "/updateCoverPhoto", nil)
 
 				setJWTToken(r, bdy)
 
@@ -1371,7 +1559,7 @@ func TestCreatorHandler_UpdateCoverPhoto(t *testing.T) {
 		{
 			name: "Get CSRF with error",
 			mock: func() *http.Request {
-				r := httptest.NewRequest("GET", "/updateProfilePhoto", nil)
+				r := httptest.NewRequest("GET", "/updateCoverPhoto", nil)
 
 				setJWTToken(r, bdy)
 				os.Unsetenv("CSRF_SECRET")
@@ -1387,7 +1575,7 @@ func TestCreatorHandler_UpdateCoverPhoto(t *testing.T) {
 		{
 			name: "Get CSRF",
 			mock: func() *http.Request {
-				r := httptest.NewRequest("GET", "/updateProfilePhoto", nil)
+				r := httptest.NewRequest("GET", "/updateCoverPhoto", nil)
 
 				setJWTToken(r, bdy)
 				os.Setenv("CSRF_SECRET", "TEST")
@@ -1403,7 +1591,7 @@ func TestCreatorHandler_UpdateCoverPhoto(t *testing.T) {
 		{
 			name: "No CSRF",
 			mock: func() *http.Request {
-				r := httptest.NewRequest("PUT", "/updateProfilePhoto", nil)
+				r := httptest.NewRequest("PUT", "/updateCoverPhoto", nil)
 
 				setJWTToken(r, bdy)
 
@@ -1418,7 +1606,7 @@ func TestCreatorHandler_UpdateCoverPhoto(t *testing.T) {
 		{
 			name: "Internal Err from Check User Version",
 			mock: func() *http.Request {
-				r := httptest.NewRequest("GET", "/feed", nil)
+				r := httptest.NewRequest("PUT", "/updateCoverPhoto", nil)
 
 				setJWTToken(r, bdy)
 
@@ -1466,7 +1654,27 @@ func TestCreatorHandler_UpdateCoverPhoto(t *testing.T) {
 			expectedStatus: http.StatusInternalServerError,
 		},
 		{
-			name: "OK",
+			name: "Internal err no multipart",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/updateCoverPhoto", nil)
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, nil)
+
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Wrong uuid",
 			mock: func() *http.Request {
 				body := new(bytes.Buffer)
 
@@ -1549,6 +1757,746 @@ func TestCreatorHandler_UpdateCoverPhoto(t *testing.T) {
 			w := httptest.NewRecorder()
 			r := test.mock()
 			h.UpdateCoverPhoto(w, r)
+			require.Equal(t, test.expectedStatus, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
+				" for test:%s", test.name, test.expectedStatus, w.Code, test.name))
+		})
+	}
+}
+
+func TestCreatorHandler_UpdateCreatorData(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	authClient := mockAuth.NewMockAuthServiceClient(ctl)
+	creatorClient := mockCreator.NewMockCreatorServiceClient(ctl)
+
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	id := uuid.New()
+	os.Setenv("CSRF_SECRET", "TEST")
+	tokenCSRF, _ := token.GetCSRFToken(models.User{Login: testUser.Login, Id: id})
+	os.Setenv("TOKEN_SECRET", "TEST")
+	tkn := &usecase.Tokenator{}
+	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: id})
+
+	tests := []struct {
+		name           string
+		mock           func() *http.Request
+		expectedStatus int
+	}{
+		{
+			name: "Unauthorized",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/updateCreatorData", nil)
+
+				setJWTToken(r, "111")
+				return r
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "BadRequest",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/updateCreatorData", nil)
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.Nil.String(),
+					Error: "",
+				}, nil)
+
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Internal err from creator service",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/updateCreatorData", nil)
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.Nil.String(),
+					Error: "",
+				}, errors.New("test"))
+
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Not Found err from Check If Creator",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/updateCreatorData", nil)
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.Nil.String(),
+					Error: models.NotFound.Error(),
+				}, nil)
+
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Internal err from Check If Creator",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/updateCreatorData", nil)
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.Nil.String(),
+					Error: models.InternalError.Error(),
+				}, nil)
+
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Internal Err from auth service",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/updateCreatorData", nil)
+
+				setJWTToken(r, bdy)
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, errors.New("test"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Get CSRF with error",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/updateCreatorData", nil)
+
+				setJWTToken(r, bdy)
+				os.Unsetenv("CSRF_SECRET")
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "Get CSRF",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/updateCreatorData", nil)
+
+				setJWTToken(r, bdy)
+				os.Setenv("CSRF_SECRET", "TEST")
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "No CSRF",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/updateCreatorData", nil)
+
+				setJWTToken(r, bdy)
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name: "Internal Err from Check User Version",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/updateCreatorData", nil)
+
+				setJWTToken(r, bdy)
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "1",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name: "OK",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/updateCreatorData", bytes.NewReader(bodyPrepare(models.BecameCreatorInfo{
+					Name:        "testName",
+					Description: "some test description",
+				})))
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.Nil.String(),
+					Error: "",
+				}, nil)
+				creatorClient.EXPECT().UpdateCreatorData(gomock.Any(), gomock.Any()).Return(&generatedCommon.Empty{Error: ""}, nil)
+
+				return r
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "err from creator service",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/updateCreatorData", bytes.NewReader(bodyPrepare(models.BecameCreatorInfo{
+					Name:        "testName",
+					Description: "some test description",
+				})))
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.Nil.String(),
+					Error: "",
+				}, nil)
+				creatorClient.EXPECT().UpdateCreatorData(gomock.Any(), gomock.Any()).Return(&generatedCommon.Empty{Error: ""}, errors.New("test"))
+
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "err from creator update creator",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/updateCreatorData", bytes.NewReader(bodyPrepare(models.BecameCreatorInfo{
+					Name:        "testName",
+					Description: "some test description",
+				})))
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.Nil.String(),
+					Error: "",
+				}, nil)
+				creatorClient.EXPECT().UpdateCreatorData(gomock.Any(), gomock.Any()).Return(&generatedCommon.Empty{Error: "test"}, nil)
+
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &CreatorHandler{
+				creatorClient: creatorClient,
+				authClient:    authClient,
+				logger:        zapSugar,
+			}
+			w := httptest.NewRecorder()
+			r := test.mock()
+			h.UpdateCreatorData(w, r)
+			require.Equal(t, test.expectedStatus, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
+				" for test:%s", test.name, test.expectedStatus, w.Code, test.name))
+		})
+	}
+}
+
+func TestCreatorHandler_DeleteCoverPhoto(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	authClient := mockAuth.NewMockAuthServiceClient(ctl)
+	creatorClient := mockCreator.NewMockCreatorServiceClient(ctl)
+
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	id := uuid.New()
+	os.Setenv("CSRF_SECRET", "TEST")
+	tokenCSRF, _ := token.GetCSRFToken(models.User{Login: testUser.Login, Id: id})
+	os.Setenv("TOKEN_SECRET", "TEST")
+	tkn := &usecase.Tokenator{}
+	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: id})
+
+	tests := []struct {
+		name           string
+		mock           func() *http.Request
+		expectedStatus int
+	}{
+		{
+			name: "Unauthorized",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("DELETE", "/DeleteCoverPhoto", nil)
+
+				setJWTToken(r, "111")
+				return r
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "BadRequest",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("DELETE", "/DeleteCoverPhoto", nil)
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.Nil.String(),
+					Error: "",
+				}, nil)
+
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Internal err from creator service",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("DELETE", "/DeleteCoverPhoto", nil)
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.Nil.String(),
+					Error: "",
+				}, errors.New("test"))
+
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Not Found err from Check If Creator",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("DELETE", "/DeleteCoverPhoto", nil)
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.Nil.String(),
+					Error: models.NotFound.Error(),
+				}, nil)
+
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Internal err from Check If Creator",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("DELETE", "/DeleteCoverPhoto", nil)
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.Nil.String(),
+					Error: models.InternalError.Error(),
+				}, nil)
+
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Internal Err from auth service",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("DELETE", "/DeleteCoverPhoto", nil)
+				setJWTToken(r, bdy)
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, errors.New("test"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Get CSRF with error",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/DeleteCoverPhoto", nil)
+				setJWTToken(r, bdy)
+				os.Unsetenv("CSRF_SECRET")
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "Get CSRF",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/DeleteCoverPhoto", nil)
+				setJWTToken(r, bdy)
+				os.Setenv("CSRF_SECRET", "TEST")
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "No CSRF",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("DELETE", "/DeleteCoverPhoto", nil)
+				setJWTToken(r, bdy)
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name: "Internal Err from Check User Version",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("DELETE", "/DeleteCoverPhoto", nil)
+				setJWTToken(r, bdy)
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "1",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name: "wrong uuid",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("DELETE", "/DeleteCoverPhoto", nil)
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.Nil.String(),
+					Error: "",
+				}, nil)
+				r = mux.SetURLVars(r, map[string]string{
+					"image-uuid": "1",
+				})
+
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &CreatorHandler{
+				creatorClient: creatorClient,
+				authClient:    authClient,
+				logger:        zapSugar,
+			}
+			w := httptest.NewRecorder()
+			r := test.mock()
+			h.DeleteCoverPhoto(w, r)
+			require.Equal(t, test.expectedStatus, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
+				" for test:%s", test.name, test.expectedStatus, w.Code, test.name))
+		})
+	}
+}
+
+func TestCreatorHandler_DeleteProfilePhoto(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	authClient := mockAuth.NewMockAuthServiceClient(ctl)
+	creatorClient := mockCreator.NewMockCreatorServiceClient(ctl)
+
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	id := uuid.New()
+	os.Setenv("CSRF_SECRET", "TEST")
+	tokenCSRF, _ := token.GetCSRFToken(models.User{Login: testUser.Login, Id: id})
+	os.Setenv("TOKEN_SECRET", "TEST")
+	tkn := &usecase.Tokenator{}
+	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: id})
+
+	tests := []struct {
+		name           string
+		mock           func() *http.Request
+		expectedStatus int
+	}{
+		{
+			name: "Unauthorized",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("DELETE", "/DeleteProfilePhoto", nil)
+
+				setJWTToken(r, "111")
+				return r
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "BadRequest",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("DELETE", "/DeleteProfilePhoto", nil)
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.Nil.String(),
+					Error: "",
+				}, nil)
+
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Internal err from creator service",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("DELETE", "/DeleteProfilePhoto", nil)
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.Nil.String(),
+					Error: "",
+				}, errors.New("test"))
+
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Not Found err from Check If Creator",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("DELETE", "/DeleteProfilePhoto", nil)
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.Nil.String(),
+					Error: models.NotFound.Error(),
+				}, nil)
+
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Internal err from Check If Creator",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("DELETE", "/DeleteProfilePhoto", nil)
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.Nil.String(),
+					Error: models.InternalError.Error(),
+				}, nil)
+
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Internal Err from auth service",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("DELETE", "/DeleteProfilePhoto", nil)
+				setJWTToken(r, bdy)
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, errors.New("test"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Get CSRF with error",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/DeleteProfilePhoto", nil)
+				setJWTToken(r, bdy)
+				os.Unsetenv("CSRF_SECRET")
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "Get CSRF",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/DeleteProfilePhoto", nil)
+				setJWTToken(r, bdy)
+				os.Setenv("CSRF_SECRET", "TEST")
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "No CSRF",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("DELETE", "/DeleteProfilePhoto", nil)
+				setJWTToken(r, bdy)
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name: "Internal Err from Check User Version",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("DELETE", "/DeleteProfilePhoto", nil)
+				setJWTToken(r, bdy)
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "1",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name: "wrong uuid",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("DELETE", "/DeleteProfilePhoto", nil)
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.Nil.String(),
+					Error: "",
+				}, nil)
+				r = mux.SetURLVars(r, map[string]string{
+					"image-uuid": "1",
+				})
+
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &CreatorHandler{
+				creatorClient: creatorClient,
+				authClient:    authClient,
+				logger:        zapSugar,
+			}
+			w := httptest.NewRecorder()
+			r := test.mock()
+			h.DeleteProfilePhoto(w, r)
 			require.Equal(t, test.expectedStatus, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
 				" for test:%s", test.name, test.expectedStatus, w.Code, test.name))
 		})

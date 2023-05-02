@@ -379,6 +379,7 @@ func (r *CreatorRepo) UpdateCoverPhoto(ctx context.Context, creatorId, path uuid
 func (r *CreatorRepo) DeleteCoverPhoto(ctx context.Context, creatorId uuid.UUID) error {
 	row := r.db.QueryRowContext(ctx, DeleteCoverPhoto, creatorId)
 	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		fmt.Println(err)
 		r.logger.Error(err)
 		return models.InternalError
 	}

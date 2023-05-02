@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"os"
-	"path/filepath"
 )
 
 type AttachmentUsecase struct {
@@ -71,7 +70,7 @@ func (u *AttachmentUsecase) DeleteAttachmentFile(ctx context.Context, attachment
 	if !ok {
 		return models.WrongData
 	}
-	filename := filepath.Join(models.FolderPath, attachment.Id.String()) + "." + val
+	filename := models.FolderPath + attachment.Id.String() + "." + val
 	if err := os.Remove(filename); err != nil {
 		u.logger.Error(err)
 		return models.InternalError
