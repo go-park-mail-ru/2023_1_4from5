@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	UUIDRegExp = regexp.MustCompile(`[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{12}`)
+	UUIDRegExp = regexp.MustCompile(`[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}`)
 )
 
 const (
@@ -133,7 +133,7 @@ func (m *MetricsMiddleware) LogMetrics(next http.Handler) http.Handler {
 		tm := time.Since(start)
 
 		bytesUrl := []byte(r.URL.Path)
-		urlWithCuttedUUID := UUIDRegExp.ReplaceAll(bytesUrl, []byte("uuid"))
+		urlWithCuttedUUID := UUIDRegExp.ReplaceAll(bytesUrl, []byte("<uuid>"))
 
 		m.metric.With(prometheus.Labels{
 			ServiceName: m.name,
