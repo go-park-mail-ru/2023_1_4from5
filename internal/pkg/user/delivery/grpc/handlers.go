@@ -108,13 +108,13 @@ func (h GrpcUserHandler) UpdatePhoto(ctx context.Context, in *generatedCommon.UU
 		Error: ""}, nil
 }
 
-func (h GrpcUserHandler) DeleteProfilePhoto(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedCommon.Empty, error) {
-	creatorId, err := uuid.Parse(in.Value)
+func (h GrpcUserHandler) DeletePhoto(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedCommon.Empty, error) {
+	imageId, err := uuid.Parse(in.Value)
 	if err != nil {
 		return &generatedCommon.Empty{Error: err.Error()}, nil
 	}
 
-	err = h.uc.DeletePhoto(ctx, creatorId)
+	err = h.uc.DeletePhoto(ctx, imageId)
 	if err != nil {
 		return &generatedCommon.Empty{Error: err.Error()}, nil
 	}
