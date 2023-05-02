@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+option go_package = "internal/pkg/auth/delivery/grpc/generated";
+
+import "common.proto";
+
+message LoginUser {
+  string Login = 1;
+  string PasswordHash = 2;
+};
+
+message User{
+  string Id = 1;
+  string Login = 2;
+  string Name = 3;
+  string ProfilePhoto = 4;
+  string PasswordHash = 5;
+  string Registration = 6; //TODO: to timestamp)
+  int64 UserVersion = 7;
+  string Error = 8;
+}
+
+message AccessDetails  {
+  string Login = 1;
+  string Id = 2;
+  int64 UserVersion = 3;
+}
+
+message Token {
+  string Cookie = 1;
+  string Error = 2;
+};
+
+message UserVersion {
+  int64 UserVersion = 1;
+  string Error = 2;
+};
+
+message EncryptPwdMg {
+  string Password = 1;
+};
+
+
+service AuthService {
+  rpc SignIn(LoginUser) returns (Token) {}
+  rpc SignUp(User) returns (Token) {}
+  rpc CheckUserVersion(AccessDetails) returns (UserVersion) {}
+  rpc CheckUser(User) returns  (User) {}
+  rpc IncUserVersion(AccessDetails) returns (common.Empty) {}
+  rpc EncryptPwd(EncryptPwdMg) returns (EncryptPwdMg) {}
+}

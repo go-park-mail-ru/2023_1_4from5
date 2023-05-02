@@ -52,12 +52,13 @@ func (mr *MockUserUsecaseMockRecorder) BecomeCreator(ctx, creatorInfo, userId in
 }
 
 // CheckIfCreator mocks base method.
-func (m *MockUserUsecase) CheckIfCreator(ctx context.Context, userId uuid.UUID) (bool, error) {
+func (m *MockUserUsecase) CheckIfCreator(ctx context.Context, userId uuid.UUID) (uuid.UUID, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckIfCreator", ctx, userId)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // CheckIfCreator indicates an expected call of CheckIfCreator.
@@ -66,11 +67,25 @@ func (mr *MockUserUsecaseMockRecorder) CheckIfCreator(ctx, userId interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckIfCreator", reflect.TypeOf((*MockUserUsecase)(nil).CheckIfCreator), ctx, userId)
 }
 
+// DeletePhoto mocks base method.
+func (m *MockUserUsecase) DeletePhoto(ctx context.Context, userId uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeletePhoto", ctx, userId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeletePhoto indicates an expected call of DeletePhoto.
+func (mr *MockUserUsecaseMockRecorder) DeletePhoto(ctx, userId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePhoto", reflect.TypeOf((*MockUserUsecase)(nil).DeletePhoto), ctx, userId)
+}
+
 // Donate mocks base method.
-func (m *MockUserUsecase) Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int, error) {
+func (m *MockUserUsecase) Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Donate", ctx, donateInfo, userID)
-	ret0, _ := ret[0].(int)
+	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -81,34 +96,61 @@ func (mr *MockUserUsecaseMockRecorder) Donate(ctx, donateInfo, userID interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Donate", reflect.TypeOf((*MockUserUsecase)(nil).Donate), ctx, donateInfo, userID)
 }
 
-// GetHomePage mocks base method.
-func (m *MockUserUsecase) GetHomePage(ctx context.Context, details models.AccessDetails) (models.UserHomePage, error) {
+// Follow mocks base method.
+func (m *MockUserUsecase) Follow(ctx context.Context, userId, creatorId uuid.UUID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHomePage", ctx, details)
-	ret0, _ := ret[0].(models.UserHomePage)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "Follow", ctx, userId, creatorId)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// GetHomePage indicates an expected call of GetHomePage.
-func (mr *MockUserUsecaseMockRecorder) GetHomePage(ctx, details interface{}) *gomock.Call {
+// Follow indicates an expected call of Follow.
+func (mr *MockUserUsecaseMockRecorder) Follow(ctx, userId, creatorId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHomePage", reflect.TypeOf((*MockUserUsecase)(nil).GetHomePage), ctx, details)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Follow", reflect.TypeOf((*MockUserUsecase)(nil).Follow), ctx, userId, creatorId)
 }
 
 // GetProfile mocks base method.
-func (m *MockUserUsecase) GetProfile(ctx context.Context, details models.AccessDetails) (models.UserProfile, error) {
+func (m *MockUserUsecase) GetProfile(ctx context.Context, userId uuid.UUID) (models.UserProfile, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetProfile", ctx, details)
+	ret := m.ctrl.Call(m, "GetProfile", ctx, userId)
 	ret0, _ := ret[0].(models.UserProfile)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetProfile indicates an expected call of GetProfile.
-func (mr *MockUserUsecaseMockRecorder) GetProfile(ctx, details interface{}) *gomock.Call {
+func (mr *MockUserUsecaseMockRecorder) GetProfile(ctx, userId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfile", reflect.TypeOf((*MockUserUsecase)(nil).GetProfile), ctx, details)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfile", reflect.TypeOf((*MockUserUsecase)(nil).GetProfile), ctx, userId)
+}
+
+// Subscribe mocks base method.
+func (m *MockUserUsecase) Subscribe(ctx context.Context, subscription models.SubscriptionDetails) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Subscribe", ctx, subscription)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Subscribe indicates an expected call of Subscribe.
+func (mr *MockUserUsecaseMockRecorder) Subscribe(ctx, subscription interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockUserUsecase)(nil).Subscribe), ctx, subscription)
+}
+
+// Unfollow mocks base method.
+func (m *MockUserUsecase) Unfollow(ctx context.Context, userId, creatorId uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Unfollow", ctx, userId, creatorId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Unfollow indicates an expected call of Unfollow.
+func (mr *MockUserUsecaseMockRecorder) Unfollow(ctx, userId, creatorId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unfollow", reflect.TypeOf((*MockUserUsecase)(nil).Unfollow), ctx, userId, creatorId)
 }
 
 // UpdatePassword mocks base method.
@@ -126,18 +168,18 @@ func (mr *MockUserUsecaseMockRecorder) UpdatePassword(ctx, id, password interfac
 }
 
 // UpdatePhoto mocks base method.
-func (m *MockUserUsecase) UpdatePhoto(ctx context.Context, details models.AccessDetails) (uuid.UUID, error) {
+func (m *MockUserUsecase) UpdatePhoto(ctx context.Context, userId uuid.UUID) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdatePhoto", ctx, details)
+	ret := m.ctrl.Call(m, "UpdatePhoto", ctx, userId)
 	ret0, _ := ret[0].(uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdatePhoto indicates an expected call of UpdatePhoto.
-func (mr *MockUserUsecaseMockRecorder) UpdatePhoto(ctx, details interface{}) *gomock.Call {
+func (mr *MockUserUsecaseMockRecorder) UpdatePhoto(ctx, userId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePhoto", reflect.TypeOf((*MockUserUsecase)(nil).UpdatePhoto), ctx, details)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePhoto", reflect.TypeOf((*MockUserUsecase)(nil).UpdatePhoto), ctx, userId)
 }
 
 // UpdateProfileInfo mocks base method.
@@ -152,6 +194,36 @@ func (m *MockUserUsecase) UpdateProfileInfo(ctx context.Context, profileInfo mod
 func (mr *MockUserUsecaseMockRecorder) UpdateProfileInfo(ctx, profileInfo, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProfileInfo", reflect.TypeOf((*MockUserUsecase)(nil).UpdateProfileInfo), ctx, profileInfo, id)
+}
+
+// UserFollows mocks base method.
+func (m *MockUserUsecase) UserFollows(ctx context.Context, userId uuid.UUID) ([]models.Follow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UserFollows", ctx, userId)
+	ret0, _ := ret[0].([]models.Follow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UserFollows indicates an expected call of UserFollows.
+func (mr *MockUserUsecaseMockRecorder) UserFollows(ctx, userId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserFollows", reflect.TypeOf((*MockUserUsecase)(nil).UserFollows), ctx, userId)
+}
+
+// UserSubscriptions mocks base method.
+func (m *MockUserUsecase) UserSubscriptions(ctx context.Context, userId uuid.UUID) ([]models.Subscription, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UserSubscriptions", ctx, userId)
+	ret0, _ := ret[0].([]models.Subscription)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UserSubscriptions indicates an expected call of UserSubscriptions.
+func (mr *MockUserUsecaseMockRecorder) UserSubscriptions(ctx, userId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserSubscriptions", reflect.TypeOf((*MockUserUsecase)(nil).UserSubscriptions), ctx, userId)
 }
 
 // MockUserRepo is a mock of UserRepo interface.
@@ -193,12 +265,13 @@ func (mr *MockUserRepoMockRecorder) BecomeCreator(ctx, creatorInfo, userId inter
 }
 
 // CheckIfCreator mocks base method.
-func (m *MockUserRepo) CheckIfCreator(ctx context.Context, userId uuid.UUID) (bool, error) {
+func (m *MockUserRepo) CheckIfCreator(ctx context.Context, userId uuid.UUID) (uuid.UUID, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckIfCreator", ctx, userId)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // CheckIfCreator indicates an expected call of CheckIfCreator.
@@ -207,11 +280,40 @@ func (mr *MockUserRepoMockRecorder) CheckIfCreator(ctx, userId interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckIfCreator", reflect.TypeOf((*MockUserRepo)(nil).CheckIfCreator), ctx, userId)
 }
 
+// CheckIfFollow mocks base method.
+func (m *MockUserRepo) CheckIfFollow(ctx context.Context, userId, creatorId uuid.UUID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckIfFollow", ctx, userId, creatorId)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckIfFollow indicates an expected call of CheckIfFollow.
+func (mr *MockUserRepoMockRecorder) CheckIfFollow(ctx, userId, creatorId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckIfFollow", reflect.TypeOf((*MockUserRepo)(nil).CheckIfFollow), ctx, userId, creatorId)
+}
+
+// DeletePhoto mocks base method.
+func (m *MockUserRepo) DeletePhoto(ctx context.Context, userId uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeletePhoto", ctx, userId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeletePhoto indicates an expected call of DeletePhoto.
+func (mr *MockUserRepoMockRecorder) DeletePhoto(ctx, userId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePhoto", reflect.TypeOf((*MockUserRepo)(nil).DeletePhoto), ctx, userId)
+}
+
 // Donate mocks base method.
-func (m *MockUserRepo) Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int, error) {
+func (m *MockUserRepo) Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Donate", ctx, donateInfo, userID)
-	ret0, _ := ret[0].(int)
+	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -222,19 +324,18 @@ func (mr *MockUserRepoMockRecorder) Donate(ctx, donateInfo, userID interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Donate", reflect.TypeOf((*MockUserRepo)(nil).Donate), ctx, donateInfo, userID)
 }
 
-// GetHomePage mocks base method.
-func (m *MockUserRepo) GetHomePage(ctx context.Context, id uuid.UUID) (models.UserHomePage, error) {
+// Follow mocks base method.
+func (m *MockUserRepo) Follow(ctx context.Context, userId, creatorId uuid.UUID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHomePage", ctx, id)
-	ret0, _ := ret[0].(models.UserHomePage)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "Follow", ctx, userId, creatorId)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// GetHomePage indicates an expected call of GetHomePage.
-func (mr *MockUserRepoMockRecorder) GetHomePage(ctx, id interface{}) *gomock.Call {
+// Follow indicates an expected call of Follow.
+func (mr *MockUserRepoMockRecorder) Follow(ctx, userId, creatorId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHomePage", reflect.TypeOf((*MockUserRepo)(nil).GetHomePage), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Follow", reflect.TypeOf((*MockUserRepo)(nil).Follow), ctx, userId, creatorId)
 }
 
 // GetUserProfile mocks base method.
@@ -250,6 +351,34 @@ func (m *MockUserRepo) GetUserProfile(ctx context.Context, id uuid.UUID) (models
 func (mr *MockUserRepoMockRecorder) GetUserProfile(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserProfile", reflect.TypeOf((*MockUserRepo)(nil).GetUserProfile), ctx, id)
+}
+
+// Subscribe mocks base method.
+func (m *MockUserRepo) Subscribe(ctx context.Context, subscription models.SubscriptionDetails) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Subscribe", ctx, subscription)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Subscribe indicates an expected call of Subscribe.
+func (mr *MockUserRepoMockRecorder) Subscribe(ctx, subscription interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockUserRepo)(nil).Subscribe), ctx, subscription)
+}
+
+// Unfollow mocks base method.
+func (m *MockUserRepo) Unfollow(ctx context.Context, userId, creatorId uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Unfollow", ctx, userId, creatorId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Unfollow indicates an expected call of Unfollow.
+func (mr *MockUserRepoMockRecorder) Unfollow(ctx, userId, creatorId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unfollow", reflect.TypeOf((*MockUserRepo)(nil).Unfollow), ctx, userId, creatorId)
 }
 
 // UpdatePassword mocks base method.
@@ -292,4 +421,34 @@ func (m *MockUserRepo) UpdateProfilePhoto(ctx context.Context, userID, path uuid
 func (mr *MockUserRepoMockRecorder) UpdateProfilePhoto(ctx, userID, path interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProfilePhoto", reflect.TypeOf((*MockUserRepo)(nil).UpdateProfilePhoto), ctx, userID, path)
+}
+
+// UserFollows mocks base method.
+func (m *MockUserRepo) UserFollows(ctx context.Context, userId uuid.UUID) ([]models.Follow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UserFollows", ctx, userId)
+	ret0, _ := ret[0].([]models.Follow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UserFollows indicates an expected call of UserFollows.
+func (mr *MockUserRepoMockRecorder) UserFollows(ctx, userId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserFollows", reflect.TypeOf((*MockUserRepo)(nil).UserFollows), ctx, userId)
+}
+
+// UserSubscriptions mocks base method.
+func (m *MockUserRepo) UserSubscriptions(ctx context.Context, userId uuid.UUID) ([]models.Subscription, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UserSubscriptions", ctx, userId)
+	ret0, _ := ret[0].([]models.Subscription)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UserSubscriptions indicates an expected call of UserSubscriptions.
+func (mr *MockUserRepoMockRecorder) UserSubscriptions(ctx, userId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserSubscriptions", reflect.TypeOf((*MockUserRepo)(nil).UserSubscriptions), ctx, userId)
 }

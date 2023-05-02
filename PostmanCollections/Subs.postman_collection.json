@@ -1,0 +1,155 @@
+{
+	"info": {
+		"_postman_id": "deb8d2ec-b5ca-47f1-9b36-ed65b600daaf",
+		"name": "Subs",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var token = postman.getResponseHeader(\"X-CSRF-Token\");",
+							"if (token!=null){",
+							"postman.setEnvironmentVariable(\"csrf\", token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-Csrf-Token",
+						"value": "{{csrf}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"description\":\"testdesc\",\n    \"title\":\"testtitle\",\n    \"month_cost\": 10\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url}}/api/subscription/create",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"subscription",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var token = postman.getResponseHeader(\"X-CSRF-Token\");",
+							"if (token!=null){",
+							"postman.setEnvironmentVariable(\"csrf\", token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "X-Csrf-Token",
+						"value": "{{csrf}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"description\":\"testdesc\",\n    \"title\":\"testtitle\",\n    \"month_cost\": 10\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url_l}}/api/subscription/delete/aa382710-d873-44f0-940e-b12a6653f7ba",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"subscription",
+						"delete",
+						"aa382710-d873-44f0-940e-b12a6653f7ba"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Edit",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var token = postman.getResponseHeader(\"X-CSRF-Token\");",
+							"if (token!=null){",
+							"postman.setEnvironmentVariable(\"csrf\", token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "X-Csrf-Token",
+						"value": "{{csrf}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"creator\":\"10b0d1b8-0e67-4e7e-9f08-124b3e32cce4\",\n    \"description\":\"testdesc\",\n    \"title\":\"qq\",\n    \"month_cost\": 10\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url}}/api/subscription/edit/ed4ac0c8-9882-42c3-a992-03663d1a8dc5",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"subscription",
+						"edit",
+						"ed4ac0c8-9882-42c3-a992-03663d1a8dc5"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

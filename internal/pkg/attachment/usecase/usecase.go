@@ -2,12 +2,10 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
-	"io"
 	"os"
 	"path/filepath"
 )
@@ -27,7 +25,7 @@ var types = map[string]string{
 	"audio/mpeg": "mp3",
 }
 
-func GetFileExtension(key string) (string, bool) {
+func (u *AttachmentUsecase) GetFileExtension(ctx context.Context, key string) (string, bool) {
 	val, ok := types[key]
 	return val, ok
 }
@@ -44,45 +42,16 @@ func (u *AttachmentUsecase) DeleteAttachmentsByPostID(ctx context.Context, postI
 	if err != nil {
 		return err
 	}
-	return u.DeleteAttachments(attachs...)
+	return u.DeleteAttachmentsFiles(ctx, attachs...)
 }
 
-func (u *AttachmentUsecase) CreateAttachments(ctx context.Context, attachments ...models.AttachmentData) error {
-	for i, attach := range attachments {
-		attachmentType, ok := GetFileExtension(attach.Type)
-		if !ok {
-			if err := u.DeleteAttachments(attachments[:i]...); err != nil {
-				u.logger.Error(err)
-				return models.InternalError
-			}
-			return models.Unsupported
-		}
-		f, err := os.Create(fmt.Sprintf("%s.%s", filepath.Join(models.FolderPath, attach.Id.String()), attachmentType))
-		if err != nil {
-			if err := u.DeleteAttachments(attachments[:i]...); err != nil {
-				u.logger.Error(err)
-				return models.InternalError
-			}
-			return models.InternalError
-		}
-
-		if _, err := io.Copy(f, attach.Data); err != nil {
-			if err := u.DeleteAttachments(attachments[:i]...); err != nil {
-				u.logger.Error(err)
-				return models.InternalError
-			}
-			u.logger.Error(err)
-			return models.InternalError
-		}
-		_ = f.Close()
-
-	}
-	return nil
+func (u *AttachmentUsecase) AddAttach(ctx context.Context, postID uuid.UUID, attachment models.Attachment) error {
+	return u.repo.CreateAttachment(ctx, postID, attachment.Id, attachment.Type)
 }
 
-func (u *AttachmentUsecase) DeleteAttachments(attachments ...models.AttachmentData) error {
+func (u *AttachmentUsecase) DeleteAttachmentsFiles(ctx context.Context, attachments ...models.Attachment) error {
 	for _, file := range attachments {
-		if err := deleteAttachment(file); err != nil {
+		if err := u.DeleteAttachmentFile(ctx, file); err != nil {
 			u.logger.Error(err)
 			return models.InternalError
 		}
@@ -90,19 +59,21 @@ func (u *AttachmentUsecase) DeleteAttachments(attachments ...models.AttachmentDa
 	return nil
 }
 
-func (u *AttachmentUsecase) DeleteAttachment(ctx context.Context, attachmentID, postID uuid.UUID) error {
-	return u.repo.DeleteAttachment(ctx, attachmentID, postID)
+func (u *AttachmentUsecase) DeleteAttachment(ctx context.Context, postID uuid.UUID, attach models.Attachment) error {
+	if err := u.DeleteAttachmentsFiles(ctx, attach); err != nil {
+		return err
+	}
+	return u.repo.DeleteAttachment(ctx, attach.Id, postID)
 }
 
-func deleteAttachment(attachment models.AttachmentData) error {
-	val, ok := GetFileExtension(attachment.Type)
+func (u *AttachmentUsecase) DeleteAttachmentFile(ctx context.Context, attachment models.Attachment) error {
+	val, ok := u.GetFileExtension(ctx, attachment.Type)
 	if !ok {
 		return models.WrongData
 	}
-	filename := filepath.Join(models.FolderPath, attachment.Id.String(), ".", val)
-
+	filename := filepath.Join(models.FolderPath, attachment.Id.String()) + "." + val
 	if err := os.Remove(filename); err != nil {
-
+		u.logger.Error(err)
 		return models.InternalError
 	}
 	return nil

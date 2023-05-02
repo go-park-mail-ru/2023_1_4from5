@@ -216,9 +216,9 @@ func TestAuthUsecase_Logout(t *testing.T) {
 
 	for i := 0; i < len(tests); i++ {
 		if tests[i].expectedStatusCode == nil {
-			mockAuthRepo.EXPECT().IncUserVersion(gomock.Any(), gomock.Any()).Return(1, nil)
+			mockAuthRepo.EXPECT().IncUserVersion(gomock.Any(), gomock.Any()).Return(int64(1), nil)
 		} else {
-			mockAuthRepo.EXPECT().IncUserVersion(gomock.Any(), gomock.Any()).Return(0, models.InternalError)
+			mockAuthRepo.EXPECT().IncUserVersion(gomock.Any(), gomock.Any()).Return(int64(0), models.InternalError)
 		}
 	}
 
@@ -263,9 +263,9 @@ func TestAuthUsecase_CheckUserVersion(t *testing.T) {
 
 	for i := 0; i < len(tests); i++ {
 		if tests[i].expectedStatusCode == nil {
-			mockAuthRepo.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(1, nil)
+			mockAuthRepo.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(int64(1), nil)
 		} else {
-			mockAuthRepo.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, models.InternalError)
+			mockAuthRepo.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(int64(0), models.InternalError)
 		}
 	}
 

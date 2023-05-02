@@ -36,6 +36,21 @@ func (m *MockCreatorUsecase) EXPECT() *MockCreatorUsecaseMockRecorder {
 	return m.recorder
 }
 
+// CheckIfCreator mocks base method.
+func (m *MockCreatorUsecase) CheckIfCreator(ctx context.Context, userID uuid.UUID) (uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckIfCreator", ctx, userID)
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckIfCreator indicates an expected call of CheckIfCreator.
+func (mr *MockCreatorUsecaseMockRecorder) CheckIfCreator(ctx, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckIfCreator", reflect.TypeOf((*MockCreatorUsecase)(nil).CheckIfCreator), ctx, userID)
+}
+
 // CreateAim mocks base method.
 func (m *MockCreatorUsecase) CreateAim(ctx context.Context, aimInfo models.Aim) error {
 	m.ctrl.T.Helper()
@@ -48,6 +63,49 @@ func (m *MockCreatorUsecase) CreateAim(ctx context.Context, aimInfo models.Aim) 
 func (mr *MockCreatorUsecaseMockRecorder) CreateAim(ctx, aimInfo interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAim", reflect.TypeOf((*MockCreatorUsecase)(nil).CreateAim), ctx, aimInfo)
+}
+
+// DeleteCoverPhoto mocks base method.
+func (m *MockCreatorUsecase) DeleteCoverPhoto(ctx context.Context, creatorId uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteCoverPhoto", ctx, creatorId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteCoverPhoto indicates an expected call of DeleteCoverPhoto.
+func (mr *MockCreatorUsecaseMockRecorder) DeleteCoverPhoto(ctx, creatorId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCoverPhoto", reflect.TypeOf((*MockCreatorUsecase)(nil).DeleteCoverPhoto), ctx, creatorId)
+}
+
+// DeleteProfilePhoto mocks base method.
+func (m *MockCreatorUsecase) DeleteProfilePhoto(ctx context.Context, creatorId uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteProfilePhoto", ctx, creatorId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteProfilePhoto indicates an expected call of DeleteProfilePhoto.
+func (mr *MockCreatorUsecaseMockRecorder) DeleteProfilePhoto(ctx, creatorId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteProfilePhoto", reflect.TypeOf((*MockCreatorUsecase)(nil).DeleteProfilePhoto), ctx, creatorId)
+}
+
+// FindCreators mocks base method.
+func (m *MockCreatorUsecase) FindCreators(ctx context.Context, keyword string) ([]models.Creator, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindCreators", ctx, keyword)
+	ret0, _ := ret[0].([]models.Creator)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindCreators indicates an expected call of FindCreators.
+func (mr *MockCreatorUsecaseMockRecorder) FindCreators(ctx, keyword interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindCreators", reflect.TypeOf((*MockCreatorUsecase)(nil).FindCreators), ctx, keyword)
 }
 
 // GetAllCreators mocks base method.
@@ -65,19 +123,78 @@ func (mr *MockCreatorUsecaseMockRecorder) GetAllCreators(ctx interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCreators", reflect.TypeOf((*MockCreatorUsecase)(nil).GetAllCreators), ctx)
 }
 
-// GetPage mocks base method.
-func (m *MockCreatorUsecase) GetPage(ctx context.Context, details *models.AccessDetails, creatorUUID string) (models.CreatorPage, error) {
+// GetFeed mocks base method.
+func (m *MockCreatorUsecase) GetFeed(ctx context.Context, userID uuid.UUID) ([]models.Post, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPage", ctx, details, creatorUUID)
+	ret := m.ctrl.Call(m, "GetFeed", ctx, userID)
+	ret0, _ := ret[0].([]models.Post)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFeed indicates an expected call of GetFeed.
+func (mr *MockCreatorUsecaseMockRecorder) GetFeed(ctx, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFeed", reflect.TypeOf((*MockCreatorUsecase)(nil).GetFeed), ctx, userID)
+}
+
+// GetPage mocks base method.
+func (m *MockCreatorUsecase) GetPage(ctx context.Context, userID, creatorID uuid.UUID) (models.CreatorPage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPage", ctx, userID, creatorID)
 	ret0, _ := ret[0].(models.CreatorPage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPage indicates an expected call of GetPage.
-func (mr *MockCreatorUsecaseMockRecorder) GetPage(ctx, details, creatorUUID interface{}) *gomock.Call {
+func (mr *MockCreatorUsecaseMockRecorder) GetPage(ctx, userID, creatorID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPage", reflect.TypeOf((*MockCreatorUsecase)(nil).GetPage), ctx, details, creatorUUID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPage", reflect.TypeOf((*MockCreatorUsecase)(nil).GetPage), ctx, userID, creatorID)
+}
+
+// UpdateCoverPhoto mocks base method.
+func (m *MockCreatorUsecase) UpdateCoverPhoto(ctx context.Context, creatorId uuid.UUID) (uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateCoverPhoto", ctx, creatorId)
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateCoverPhoto indicates an expected call of UpdateCoverPhoto.
+func (mr *MockCreatorUsecaseMockRecorder) UpdateCoverPhoto(ctx, creatorId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCoverPhoto", reflect.TypeOf((*MockCreatorUsecase)(nil).UpdateCoverPhoto), ctx, creatorId)
+}
+
+// UpdateCreatorData mocks base method.
+func (m *MockCreatorUsecase) UpdateCreatorData(ctx context.Context, updateData models.UpdateCreatorInfo) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateCreatorData", ctx, updateData)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateCreatorData indicates an expected call of UpdateCreatorData.
+func (mr *MockCreatorUsecaseMockRecorder) UpdateCreatorData(ctx, updateData interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCreatorData", reflect.TypeOf((*MockCreatorUsecase)(nil).UpdateCreatorData), ctx, updateData)
+}
+
+// UpdateProfilePhoto mocks base method.
+func (m *MockCreatorUsecase) UpdateProfilePhoto(ctx context.Context, creatorId uuid.UUID) (uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateProfilePhoto", ctx, creatorId)
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateProfilePhoto indicates an expected call of UpdateProfilePhoto.
+func (mr *MockCreatorUsecaseMockRecorder) UpdateProfilePhoto(ctx, creatorId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProfilePhoto", reflect.TypeOf((*MockCreatorUsecase)(nil).UpdateProfilePhoto), ctx, creatorId)
 }
 
 // MockCreatorRepo is a mock of CreatorRepo interface.
@@ -103,6 +220,21 @@ func (m *MockCreatorRepo) EXPECT() *MockCreatorRepoMockRecorder {
 	return m.recorder
 }
 
+// CheckIfCreator mocks base method.
+func (m *MockCreatorRepo) CheckIfCreator(ctx context.Context, userID uuid.UUID) (uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckIfCreator", ctx, userID)
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckIfCreator indicates an expected call of CheckIfCreator.
+func (mr *MockCreatorRepoMockRecorder) CheckIfCreator(ctx, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckIfCreator", reflect.TypeOf((*MockCreatorRepo)(nil).CheckIfCreator), ctx, userID)
+}
+
 // CreateAim mocks base method.
 func (m *MockCreatorRepo) CreateAim(ctx context.Context, aimInfo models.Aim) error {
 	m.ctrl.T.Helper()
@@ -115,6 +247,49 @@ func (m *MockCreatorRepo) CreateAim(ctx context.Context, aimInfo models.Aim) err
 func (mr *MockCreatorRepoMockRecorder) CreateAim(ctx, aimInfo interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAim", reflect.TypeOf((*MockCreatorRepo)(nil).CreateAim), ctx, aimInfo)
+}
+
+// DeleteCoverPhoto mocks base method.
+func (m *MockCreatorRepo) DeleteCoverPhoto(ctx context.Context, creatorId uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteCoverPhoto", ctx, creatorId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteCoverPhoto indicates an expected call of DeleteCoverPhoto.
+func (mr *MockCreatorRepoMockRecorder) DeleteCoverPhoto(ctx, creatorId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCoverPhoto", reflect.TypeOf((*MockCreatorRepo)(nil).DeleteCoverPhoto), ctx, creatorId)
+}
+
+// DeleteProfilePhoto mocks base method.
+func (m *MockCreatorRepo) DeleteProfilePhoto(ctx context.Context, creatorId uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteProfilePhoto", ctx, creatorId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteProfilePhoto indicates an expected call of DeleteProfilePhoto.
+func (mr *MockCreatorRepoMockRecorder) DeleteProfilePhoto(ctx, creatorId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteProfilePhoto", reflect.TypeOf((*MockCreatorRepo)(nil).DeleteProfilePhoto), ctx, creatorId)
+}
+
+// FindCreators mocks base method.
+func (m *MockCreatorRepo) FindCreators(ctx context.Context, keyword string) ([]models.Creator, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindCreators", ctx, keyword)
+	ret0, _ := ret[0].([]models.Creator)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindCreators indicates an expected call of FindCreators.
+func (mr *MockCreatorRepoMockRecorder) FindCreators(ctx, keyword interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindCreators", reflect.TypeOf((*MockCreatorRepo)(nil).FindCreators), ctx, keyword)
 }
 
 // GetAllCreators mocks base method.
@@ -147,17 +322,74 @@ func (mr *MockCreatorRepoMockRecorder) GetCreatorSubs(ctx, creatorID interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCreatorSubs", reflect.TypeOf((*MockCreatorRepo)(nil).GetCreatorSubs), ctx, creatorID)
 }
 
-// GetPage mocks base method.
-func (m *MockCreatorRepo) GetPage(ctx context.Context, userId, creatorId uuid.UUID) (models.CreatorPage, error) {
+// GetFeed mocks base method.
+func (m *MockCreatorRepo) GetFeed(ctx context.Context, userID uuid.UUID) ([]models.Post, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPage", ctx, userId, creatorId)
+	ret := m.ctrl.Call(m, "GetFeed", ctx, userID)
+	ret0, _ := ret[0].([]models.Post)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFeed indicates an expected call of GetFeed.
+func (mr *MockCreatorRepoMockRecorder) GetFeed(ctx, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFeed", reflect.TypeOf((*MockCreatorRepo)(nil).GetFeed), ctx, userID)
+}
+
+// GetPage mocks base method.
+func (m *MockCreatorRepo) GetPage(ctx context.Context, userID, creatorID uuid.UUID) (models.CreatorPage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPage", ctx, userID, creatorID)
 	ret0, _ := ret[0].(models.CreatorPage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPage indicates an expected call of GetPage.
-func (mr *MockCreatorRepoMockRecorder) GetPage(ctx, userId, creatorId interface{}) *gomock.Call {
+func (mr *MockCreatorRepoMockRecorder) GetPage(ctx, userID, creatorID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPage", reflect.TypeOf((*MockCreatorRepo)(nil).GetPage), ctx, userId, creatorId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPage", reflect.TypeOf((*MockCreatorRepo)(nil).GetPage), ctx, userID, creatorID)
+}
+
+// UpdateCoverPhoto mocks base method.
+func (m *MockCreatorRepo) UpdateCoverPhoto(ctx context.Context, creatorId, path uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateCoverPhoto", ctx, creatorId, path)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateCoverPhoto indicates an expected call of UpdateCoverPhoto.
+func (mr *MockCreatorRepoMockRecorder) UpdateCoverPhoto(ctx, creatorId, path interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCoverPhoto", reflect.TypeOf((*MockCreatorRepo)(nil).UpdateCoverPhoto), ctx, creatorId, path)
+}
+
+// UpdateCreatorData mocks base method.
+func (m *MockCreatorRepo) UpdateCreatorData(ctx context.Context, updateData models.UpdateCreatorInfo) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateCreatorData", ctx, updateData)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateCreatorData indicates an expected call of UpdateCreatorData.
+func (mr *MockCreatorRepoMockRecorder) UpdateCreatorData(ctx, updateData interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCreatorData", reflect.TypeOf((*MockCreatorRepo)(nil).UpdateCreatorData), ctx, updateData)
+}
+
+// UpdateProfilePhoto mocks base method.
+func (m *MockCreatorRepo) UpdateProfilePhoto(ctx context.Context, creatorId, path uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateProfilePhoto", ctx, creatorId, path)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateProfilePhoto indicates an expected call of UpdateProfilePhoto.
+func (mr *MockCreatorRepoMockRecorder) UpdateProfilePhoto(ctx, creatorId, path interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProfilePhoto", reflect.TypeOf((*MockCreatorRepo)(nil).UpdateProfilePhoto), ctx, creatorId, path)
 }

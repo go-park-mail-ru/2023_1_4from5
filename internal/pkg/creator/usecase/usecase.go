@@ -20,26 +20,56 @@ func NewCreatorUsecase(repo creator.CreatorRepo, logger *zap.SugaredLogger) *Cre
 	}
 }
 
-func (uc *CreatorUsecase) GetPage(ctx context.Context, details *models.AccessDetails, creatorUUID string) (models.CreatorPage, error) {
-	userId := details.Id
-	creatorId, err := uuid.Parse(creatorUUID)
-	if err != nil {
-		uc.logger.Error(err)
-		return models.CreatorPage{}, models.WrongData
-	}
-	creatorPage, err := uc.repo.GetPage(ctx, userId, creatorId)
-
-	if err != nil {
-		return models.CreatorPage{}, err
-	}
-
-	return creatorPage, nil
+func (uc *CreatorUsecase) GetPage(ctx context.Context, userID, creatorID uuid.UUID) (models.CreatorPage, error) {
+	return uc.repo.GetPage(ctx, userID, creatorID)
 }
 
 func (uc *CreatorUsecase) CreateAim(ctx context.Context, aimInfo models.Aim) error {
 	return uc.repo.CreateAim(ctx, aimInfo)
 }
 
+func (uc *CreatorUsecase) UpdateCreatorData(ctx context.Context, updateData models.UpdateCreatorInfo) error {
+	return uc.repo.UpdateCreatorData(ctx, updateData)
+}
+
+func (uc *CreatorUsecase) CheckIfCreator(ctx context.Context, userID uuid.UUID) (uuid.UUID, error) {
+	return uc.repo.CheckIfCreator(ctx, userID)
+}
+
+func (uc *CreatorUsecase) FindCreators(ctx context.Context, keyword string) ([]models.Creator, error) {
+	return uc.repo.FindCreators(ctx, keyword)
+}
+
 func (uc *CreatorUsecase) GetAllCreators(ctx context.Context) ([]models.Creator, error) {
 	return uc.repo.GetAllCreators(ctx)
+}
+
+func (uc *CreatorUsecase) GetFeed(ctx context.Context, userID uuid.UUID) ([]models.Post, error) {
+	return uc.repo.GetFeed(ctx, userID)
+}
+
+func (uc *CreatorUsecase) UpdateProfilePhoto(ctx context.Context, creatorId uuid.UUID) (uuid.UUID, error) {
+	path := uuid.New()
+	err := uc.repo.UpdateProfilePhoto(ctx, creatorId, path)
+	if err != nil {
+		return uuid.Nil, models.InternalError
+	}
+	return path, nil
+}
+
+func (uc *CreatorUsecase) UpdateCoverPhoto(ctx context.Context, creatorId uuid.UUID) (uuid.UUID, error) {
+	path := uuid.New()
+	err := uc.repo.UpdateCoverPhoto(ctx, creatorId, path)
+	if err != nil {
+		return uuid.Nil, models.InternalError
+	}
+	return path, nil
+}
+
+func (uc *CreatorUsecase) DeleteCoverPhoto(ctx context.Context, creatorId uuid.UUID) error {
+	return uc.repo.DeleteCoverPhoto(ctx, creatorId)
+}
+
+func (uc *CreatorUsecase) DeleteProfilePhoto(ctx context.Context, creatorId uuid.UUID) error {
+	return uc.repo.DeleteProfilePhoto(ctx, creatorId)
 }

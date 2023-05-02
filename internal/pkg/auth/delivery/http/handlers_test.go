@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
+	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
+	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	mock "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/mocks"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
 	"github.com/golang/mock/gomock"
@@ -28,14 +30,9 @@ func bodyPrepare(user models.User) []byte {
 	return userjson
 }
 
-type fields struct {
-	Usecase auth.AuthUsecase
-}
-
 type args struct {
-	r                  *http.Request
-	expectedResponse   http.Response
-	expectedStatusCode error
+	r                *http.Request
+	expectedResponse http.Response
 }
 
 var testUsers = []models.User{
@@ -65,7 +62,7 @@ func TestNewAuthHandler(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
 
-	mockUsecase := mock.NewMockAuthUsecase(ctl)
+	mockClient := mock.NewMockAuthServiceClient(ctl)
 	logger := zap.NewNop()
 
 	defer func(logger *zap.Logger) {
@@ -75,8 +72,8 @@ func TestNewAuthHandler(t *testing.T) {
 		}
 	}(logger)
 	zapSugar := logger.Sugar()
-	testHandler := NewAuthHandler(mockUsecase, zapSugar)
-	if testHandler.usecase != mockUsecase {
+	testHandler := NewAuthHandler(mockClient, zapSugar)
+	if testHandler.client != mockClient {
 		t.Error("bad constructor")
 	}
 }
@@ -85,68 +82,95 @@ func TestAuthHandler_SignIn(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
 
-	mockUsecase := mock.NewMockAuthUsecase(ctl)
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	mockClient := mock.NewMockAuthServiceClient(ctl)
 
 	tests := []struct {
-		name   string
-		Login  string
-		fields fields
-		args   args
+		name string
+		args args
+		mock func()
 	}{
 		{
-			name:   "OK",
-			Login:  testUsers[0].Login,
-			fields: fields{Usecase: mockUsecase},
+			name: "OK",
 			args: args{
 				r: httptest.NewRequest("POST", "/signIn",
 					bytes.NewReader(bodyPrepare(testUsers[0]))),
-				expectedStatusCode: nil,
-				expectedResponse:   http.Response{StatusCode: http.StatusOK},
+				expectedResponse: http.Response{StatusCode: http.StatusOK},
+			},
+			mock: func() {
+				mockClient.EXPECT().
+					SignIn(gomock.Any(), gomock.Any()).
+					Return(&generatedAuth.Token{
+						Cookie: "test",
+						Error:  "",
+					}, nil)
 			},
 		},
 		{
-			name:   "Unauthorized",
-			Login:  testUsers[1].Login,
-			fields: fields{Usecase: mockUsecase},
+			name: "Unauthorized",
 			args: args{
 				r: httptest.NewRequest("POST", "/signIn",
 					bytes.NewReader(bodyPrepare(testUsers[1]))),
-				expectedStatusCode: models.NotFound,
-				expectedResponse:   http.Response{StatusCode: http.StatusUnauthorized},
+				expectedResponse: http.Response{StatusCode: http.StatusUnauthorized},
+			},
+			mock: func() {
+				mockClient.EXPECT().
+					SignIn(gomock.Any(), gomock.Any()).
+					Return(&generatedAuth.Token{
+						Cookie: "",
+						Error:  models.NotFound.Error(),
+					}, nil)
 			},
 		},
 		{
-			name:   "BadRequest",
-			Login:  testUsers[2].Login,
-			fields: fields{Usecase: mockUsecase},
+			name: "BadRequest",
 			args: args{
 				r: httptest.NewRequest("POST", "/signIn",
 					bytes.NewReader([]byte("Trying to signIn"))),
-				expectedStatusCode: models.NoAuthData,
-				expectedResponse:   http.Response{StatusCode: http.StatusBadRequest},
+				expectedResponse: http.Response{StatusCode: http.StatusBadRequest},
+			},
+			mock: func() {
+			},
+		},
+		{
+			name: "InternalErr",
+			args: args{
+				r: httptest.NewRequest("POST", "/signIn",
+					bytes.NewReader(bodyPrepare(testUsers[1]))),
+				expectedResponse: http.Response{StatusCode: http.StatusInternalServerError},
+			},
+			mock: func() {
+				mockClient.EXPECT().
+					SignIn(gomock.Any(), gomock.Any()).
+					Return(&generatedAuth.Token{
+						Cookie: "",
+						Error:  "",
+					}, errors.New("test"))
 			},
 		},
 	}
 
-	for i := 0; i < len(tests); i++ {
-		LoginUserCopy := models.LoginUser{Login: testUsers[i].Login, PasswordHash: testUsers[i].PasswordHash}
-		if tests[i].args.expectedStatusCode != models.NoAuthData {
-			mockUsecase.EXPECT().
-				SignIn(gomock.Any(), LoginUserCopy).
-				Return("", tests[i].args.expectedStatusCode)
-		}
-	}
-
 	for _, test := range tests {
-		t.Run(test.Login, func(t *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
 			h := &AuthHandler{
-				usecase: test.fields.Usecase,
+				client: mockClient,
+				logger: zapSugar,
 			}
 			w := httptest.NewRecorder()
+			test.mock()
 
 			h.SignIn(w, test.args.r)
-			require.Equal(t, test.args.expectedResponse.StatusCode, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
-				" for login:%s", test.name, test.args.expectedResponse.StatusCode, w.Code, test.Login))
+			require.Equal(t, test.args.expectedResponse.StatusCode, w.Code, fmt.Errorf("%s :  expected %d, got %d,",
+				test.name, test.args.expectedResponse.StatusCode, w.Code))
 		})
 	}
 }
@@ -155,203 +179,225 @@ func TestAuthHandler_SignUp(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
 
-	mockUsecase := mock.NewMockAuthUsecase(ctl)
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	mockClient := mock.NewMockAuthServiceClient(ctl)
 
 	tests := []struct {
-		name   string
-		Login  string
-		fields fields
-		args   args
+		name  string
+		Login string
+		args  args
+		mock  func()
 	}{
 		{
-			name:   "OK",
-			Login:  testUsers[0].Login,
-			fields: fields{Usecase: mockUsecase},
+			name:  "OK",
+			Login: testUsers[0].Login,
 			args: args{
 				r: httptest.NewRequest("POST", "/signUp",
 					bytes.NewReader(bodyPrepare(testUsers[0]))),
-				expectedStatusCode: nil,
-				expectedResponse:   http.Response{StatusCode: http.StatusOK},
+				expectedResponse: http.Response{StatusCode: http.StatusOK},
+			},
+			mock: func() {
+				mockClient.EXPECT().
+					SignUp(gomock.Any(), gomock.Any()).
+					Return(&generatedAuth.Token{
+						Cookie: "test",
+						Error:  "",
+					}, nil)
 			},
 		},
 		{
-			name:   "Conflict",
-			Login:  testUsers[1].Login,
-			fields: fields{Usecase: mockUsecase},
+			name:  "Conflict",
+			Login: testUsers[1].Login,
 			args: args{
 				r: httptest.NewRequest("POST", "/signUp",
 					bytes.NewReader(bodyPrepare(testUsers[1]))),
-				expectedStatusCode: models.WrongData,
-				expectedResponse:   http.Response{StatusCode: http.StatusConflict},
+				expectedResponse: http.Response{StatusCode: http.StatusConflict},
+			},
+			mock: func() {
+				mockClient.EXPECT().
+					SignUp(gomock.Any(), gomock.Any()).
+					Return(&generatedAuth.Token{
+						Cookie: "",
+						Error:  models.WrongData.Error(),
+					}, nil)
 			},
 		},
 		{
-			name:   "BadRequest because no json",
-			Login:  testUsers[2].Login,
-			fields: fields{Usecase: mockUsecase},
+			name:  "InternalErr from DB",
+			Login: testUsers[1].Login,
+			args: args{
+				r: httptest.NewRequest("POST", "/signUp",
+					bytes.NewReader(bodyPrepare(testUsers[1]))),
+				expectedResponse: http.Response{StatusCode: http.StatusInternalServerError},
+			},
+			mock: func() {
+				mockClient.EXPECT().
+					SignUp(gomock.Any(), gomock.Any()).
+					Return(&generatedAuth.Token{
+						Cookie: "",
+						Error:  models.InternalError.Error(),
+					}, nil)
+			},
+		},
+		{
+			name:  "BadRequest because no json",
+			Login: testUsers[2].Login,
 			args: args{
 				r: httptest.NewRequest("POST", "/signUp",
 					bytes.NewReader([]byte("ppppp"))),
-				expectedStatusCode: models.NoAuthData,
-				expectedResponse:   http.Response{StatusCode: http.StatusBadRequest},
+				expectedResponse: http.Response{StatusCode: http.StatusBadRequest},
+			},
+			mock: func() {
 			},
 		},
 		{
-			name:   "BadRequest because user is not valid",
-			Login:  testUsers[3].Login,
-			fields: fields{Usecase: mockUsecase},
-			args: args{
-				r: httptest.NewRequest("POST", "/signUp",
-					bytes.NewReader(bodyPrepare(testUsers[3]))),
-				expectedStatusCode: models.NoAuthData,
-				expectedResponse:   http.Response{StatusCode: http.StatusBadRequest},
-			},
-		},
-		{
-			name:   "InternalError",
-			Login:  testUsers[2].Login,
-			fields: fields{Usecase: mockUsecase},
+			name:  "InternalError",
+			Login: testUsers[2].Login,
 			args: args{
 				r: httptest.NewRequest("POST", "/signUp",
 					bytes.NewReader(bodyPrepare(testUsers[2]))),
-				expectedStatusCode: models.InternalError,
-				expectedResponse:   http.Response{StatusCode: http.StatusInternalServerError},
+				expectedResponse: http.Response{StatusCode: http.StatusInternalServerError},
+			},
+			mock: func() {
+				mockClient.EXPECT().
+					SignUp(gomock.Any(), gomock.Any()).
+					Return(&generatedAuth.Token{
+						Cookie: "",
+						Error:  "",
+					}, errors.New("test"))
 			},
 		},
 	}
 
-	for i := 0; i < len(tests); i++ {
-		if tests[i].args.expectedStatusCode == models.NoAuthData {
-			continue
-		}
-		if tests[i].args.expectedStatusCode == models.InternalError {
-			mockUsecase.EXPECT().SignUp(gomock.Any(), gomock.Any()).Return("", tests[i].args.expectedStatusCode)
-			continue
-		}
-		if tests[i].args.expectedStatusCode == nil {
-			mockUsecase.EXPECT().SignUp(gomock.Any(), gomock.Any()).Return("token", tests[i].args.expectedStatusCode)
-			continue
-		}
-		mockUsecase.EXPECT().
-			SignUp(gomock.Any(), models.User{Login: testUsers[i].Login, PasswordHash: testUsers[i].PasswordHash, Name: testUsers[i].Name}).
-			Return("", tests[i].args.expectedStatusCode)
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.Login, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			h := &AuthHandler{
-				usecase: tt.fields.Usecase,
+				client: mockClient,
+				logger: zapSugar,
 			}
 			w := httptest.NewRecorder()
+			test.mock()
 
-			h.SignUp(w, tt.args.r)
-			require.Equal(t, tt.args.expectedResponse.StatusCode, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
-				" for login:%s", tt.name, tt.args.expectedResponse.StatusCode, w.Code, tt.Login))
+			h.SignUp(w, test.args.r)
+			require.Equal(t, test.args.expectedResponse.StatusCode, w.Code, fmt.Errorf("%s :  expected %d, got %d,",
+				test.name, test.args.expectedResponse.StatusCode, w.Code))
 		})
 	}
-}
-
-type argsLogout struct {
-	r                  *http.Request
-	expectedResponse   http.Response
-	expectedStatusCode int
 }
 
 func TestAuthHandler_Logout(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
-	mockUsecase := mock.NewMockAuthUsecase(ctl)
+
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	mockClient := mock.NewMockAuthServiceClient(ctl)
 
 	os.Setenv("TOKEN_SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
 	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUsers[1].Login, Id: uuid.New()})
+	name := "SSID"
+	expires := time.Now().UTC().Add(time.Hour)
+	value := bdy
 
 	tests := []struct {
-		name  string
-		Login string
-		body  []byte
-		args  argsLogout
+		name string
+		args args
+		mock func()
 	}{
 		{
-			name:  "BadRequest wrong value for token",
-			Login: testUsers[0].Login,
-			args: argsLogout{
-				r:                  httptest.NewRequest("POST", "/logout", nil),
-				expectedStatusCode: http.StatusBadRequest,
-				expectedResponse:   http.Response{StatusCode: http.StatusBadRequest},
+			name: "BadRequest wrong value for token",
+			args: args{
+				r:                httptest.NewRequest("POST", "/logout", nil),
+				expectedResponse: http.Response{StatusCode: http.StatusBadRequest},
+			},
+			mock: func() {
+				value = "token"
 			},
 		},
 		{
-			name:  "OK",
-			Login: testUsers[1].Login,
-			args: argsLogout{
-				r:                  httptest.NewRequest("POST", "/logout", nil),
-				expectedStatusCode: http.StatusOK,
-				expectedResponse:   http.Response{StatusCode: http.StatusOK},
+			name: "OK",
+			args: args{
+				r:                httptest.NewRequest("POST", "/logout", nil),
+				expectedResponse: http.Response{StatusCode: http.StatusOK},
+			},
+			mock: func() {
+				name = "SSID"
+				expires = time.Now().UTC().Add(time.Hour)
+				value = bdy
+
+				mockClient.EXPECT().
+					IncUserVersion(gomock.Any(), gomock.Any()).
+					Return(&generatedCommon.Empty{
+						Error: "",
+					}, nil)
 			},
 		},
 		{
-			name:  "BadRequest wrong Cookie name",
-			Login: testUsers[2].Login,
-			args: argsLogout{
-				r:                  httptest.NewRequest("POST", "/logout", nil),
-				expectedStatusCode: http.StatusBadRequest,
-				expectedResponse:   http.Response{StatusCode: http.StatusBadRequest},
+			name: "BadRequest wrong Cookie name",
+			args: args{
+				r:                httptest.NewRequest("POST", "/logout", nil),
+				expectedResponse: http.Response{StatusCode: http.StatusBadRequest},
+			},
+			mock: func() {
+				name = "test"
 			},
 		},
 		{
-			name:  "InternalError",
-			Login: testUsers[0].Login,
-			args: argsLogout{
-				r:                  httptest.NewRequest("POST", "/logout", nil),
-				expectedStatusCode: http.StatusInternalServerError,
-				expectedResponse:   http.Response{StatusCode: http.StatusInternalServerError},
+			name: "InternalError from service",
+			args: args{
+				r:                httptest.NewRequest("POST", "/logout", nil),
+				expectedResponse: http.Response{StatusCode: http.StatusInternalServerError},
+			},
+			mock: func() {
+				name = "SSID"
+				expires = time.Now().UTC().Add(time.Hour)
+				value = bdy
+
+				mockClient.EXPECT().
+					IncUserVersion(gomock.Any(), gomock.Any()).
+					Return(&generatedCommon.Empty{
+						Error: "",
+					}, errors.New("error"))
 			},
 		},
 	}
 
-	for i := 0; i < len(tests); i++ {
-		name := "SSID"
-		expires := time.Now().UTC().Add(time.Hour)
-		value := bdy
-		if tests[i].args.expectedStatusCode == http.StatusOK {
-			mockUsecase.EXPECT().IncUserVersion(gomock.Any(), gomock.Any()).Return(1, nil)
-		}
-
-		if tests[i].args.expectedStatusCode == http.StatusInternalServerError {
-			mockUsecase.EXPECT().IncUserVersion(gomock.Any(), gomock.Any()).Return(0, models.InternalError)
-		}
-		if tests[i].args.expectedStatusCode == http.StatusBadRequest {
-			switch i {
-			case 0:
-				value = "token"
-			case 2:
-				name = "ssss"
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &AuthHandler{
+				client: mockClient,
+				logger: zapSugar,
 			}
-			tests[i].args.r.AddCookie(&http.Cookie{
+			w := httptest.NewRecorder()
+			test.mock()
+			test.args.r.AddCookie(&http.Cookie{
 				Name:     name,
 				Value:    value,
 				Expires:  expires,
 				HttpOnly: true,
 			})
-			continue
-		}
-		tests[i].args.r.AddCookie(&http.Cookie{
-			Name:     "SSID",
-			Value:    bdy,
-			Expires:  time.Time{},
-			HttpOnly: true,
-		})
-	}
-
-	for _, test := range tests {
-		t.Run(test.Login, func(t *testing.T) {
-			h := &AuthHandler{usecase: mockUsecase}
-
-			w := httptest.NewRecorder()
 			h.Logout(w, test.args.r)
-			require.Equal(t, test.args.expectedResponse.StatusCode, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
-				" for login:%s", test.name, test.args.expectedResponse.StatusCode, w.Code, test.Login))
+
+			require.Equal(t, test.args.expectedResponse.StatusCode, w.Code, fmt.Errorf("%s :  expected %d, got %d,",
+				test.name, test.args.expectedResponse.StatusCode, w.Code))
 		})
 	}
 }

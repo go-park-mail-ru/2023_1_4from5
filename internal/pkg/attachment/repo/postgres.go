@@ -62,21 +62,21 @@ func (repo *AttachmentRepo) DeleteAttachmentByID(ctx context.Context, attachID u
 	return nil
 }
 
-func (repo *AttachmentRepo) DeleteAttachmentsByPostID(ctx context.Context, postID uuid.UUID) ([]models.AttachmentData, error) {
-	resultAttachs := make([]models.AttachmentData, 0)
+func (repo *AttachmentRepo) DeleteAttachmentsByPostID(ctx context.Context, postID uuid.UUID) ([]models.Attachment, error) {
+	resultAttachs := make([]models.Attachment, 0)
 	rows, err := repo.db.Query(DeleteAttachByPostID, postID)
 	if err != nil {
-		//repo.logger.Error(err)
+		repo.logger.Error(err)
 		return nil, models.InternalError
 	}
 	defer rows.Close()
-	tmp := models.AttachmentData{}
+	tmp := models.Attachment{}
 	for rows.Next() {
 		if err := rows.Scan(&tmp.Id, &tmp.Type); err != nil {
+			repo.logger.Error(err)
 			return nil, models.InternalError
 		}
 		resultAttachs = append(resultAttachs, tmp)
-
 	}
 	return resultAttachs, nil
 }

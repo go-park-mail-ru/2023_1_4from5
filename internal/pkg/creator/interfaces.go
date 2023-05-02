@@ -9,14 +9,30 @@ import (
 //go:generate mockgen -source=interfaces.go -destination=./mocks/creator_mock.go -package=mock
 
 type CreatorUsecase interface {
-	GetPage(ctx context.Context, details *models.AccessDetails, creatorUUID string) (models.CreatorPage, error)
+	GetPage(ctx context.Context, userID, creatorID uuid.UUID) (models.CreatorPage, error)
 	CreateAim(ctx context.Context, aimInfo models.Aim) error
 	GetAllCreators(ctx context.Context) ([]models.Creator, error)
+	FindCreators(ctx context.Context, keyword string) ([]models.Creator, error)
+	UpdateCreatorData(ctx context.Context, updateData models.UpdateCreatorInfo) error
+	CheckIfCreator(ctx context.Context, userID uuid.UUID) (uuid.UUID, error)
+	GetFeed(ctx context.Context, userID uuid.UUID) ([]models.Post, error)
+	UpdateProfilePhoto(ctx context.Context, creatorId uuid.UUID) (uuid.UUID, error)
+	DeleteProfilePhoto(ctx context.Context, creatorId uuid.UUID) error
+	UpdateCoverPhoto(ctx context.Context, creatorId uuid.UUID) (uuid.UUID, error)
+	DeleteCoverPhoto(ctx context.Context, creatorId uuid.UUID) error
 }
 
 type CreatorRepo interface {
 	GetCreatorSubs(ctx context.Context, creatorID uuid.UUID) ([]models.Subscription, error)
-	GetPage(ctx context.Context, userId uuid.UUID, creatorId uuid.UUID) (models.CreatorPage, error)
+	GetPage(ctx context.Context, userID, creatorID uuid.UUID) (models.CreatorPage, error)
 	CreateAim(ctx context.Context, aimInfo models.Aim) error
 	GetAllCreators(ctx context.Context) ([]models.Creator, error)
+	FindCreators(ctx context.Context, keyword string) ([]models.Creator, error)
+	UpdateCreatorData(ctx context.Context, updateData models.UpdateCreatorInfo) error
+	CheckIfCreator(ctx context.Context, userID uuid.UUID) (uuid.UUID, error)
+	GetFeed(ctx context.Context, userID uuid.UUID) ([]models.Post, error)
+	UpdateProfilePhoto(ctx context.Context, creatorId, path uuid.UUID) error
+	DeleteProfilePhoto(ctx context.Context, creatorId uuid.UUID) error
+	UpdateCoverPhoto(ctx context.Context, creatorId, path uuid.UUID) error
+	DeleteCoverPhoto(ctx context.Context, creatorId uuid.UUID) error
 }

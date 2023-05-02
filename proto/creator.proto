@@ -1,0 +1,169 @@
+syntax = "proto3";
+
+option go_package = "internal/pkg/creator/delivery/grpc/generated";
+
+import "common.proto";
+
+message KeywordMessage {
+  string Keyword = 1;
+};
+
+message Creator{
+  string Id = 1;
+  string UserID = 2;
+  string CreatorName = 3;
+  string CreatorPhoto = 4;
+  string  CoverPhoto = 5;
+  int64 FollowersCount = 6;
+  string Description = 7;
+  int64 PostsCount = 8;
+};
+
+message CreatorsMessage{
+  repeated Creator Creators = 1;
+  string Error = 2;
+};
+
+message UserCreatorMessage {
+  string UserID = 1;
+  string CreatorID = 2;
+}
+
+message SubscriptionCreatorMessage {
+  string SubscriptionID = 1;
+  string CreatorID = 2;
+}
+
+message PostUserMessage {
+  string UserID = 1;
+  string PostID = 2;
+}
+
+message UpdateCreatorInfo {
+  string CreatorName = 1;
+  string Description = 2;
+  string CreatorID = 3;
+}
+
+message CreatorPage{
+  Creator CreatorInfo = 1;
+  Aim AimInfo = 2;
+  bool IsMyPage = 3;
+  bool Follows = 4;
+  repeated Post Posts = 5;
+  repeated common.Subscription Subscriptions = 6;
+  string Error = 7;
+};
+
+message Aim{
+  string Creator = 1;
+  string Description = 2;
+  int64 MoneyNeeded = 3;
+  int64 MoneyGot = 4;
+};
+
+
+message Post{
+  string Id = 1;
+  string CreatorID = 2;
+  string Creation = 3;
+  int64 LikesCount = 4;
+  string CreatorPhoto = 5;
+  string CreatorName = 6;
+  string Title = 7;
+  string Text = 8;
+  bool IsAvailable = 9;
+  bool IsLiked = 10;
+  repeated Attachment PostAttachments = 11;
+  repeated common.Subscription Subscriptions = 12;
+};
+
+message PostsMessage{
+  repeated Post Posts = 1;
+  string Error = 2;
+};
+
+message PostMessage{
+  Post Post = 1;
+  string Error = 2;
+};
+
+message Attachment{
+  string ID = 1;
+  string Type = 2;
+};
+
+message Attachments{
+  repeated Attachment Attachments = 1;
+}
+
+message FlagMessage{
+  bool Flag = 1;
+  string Error = 2;
+};
+
+message Extension {
+  string Extension = 1;
+  bool Flag = 2;
+}
+
+message PostCreationData{
+  string Id = 1;
+  string Creator = 2;
+  string Title = 3;
+  string Text = 4;
+  repeated Attachment Attachments = 5;
+  repeated string AvailableSubscriptions = 6;
+};
+
+message PostEditData{
+  string Id = 1;
+  string Title = 2;
+  string Text = 3;
+  repeated string AvailableSubscriptions = 4;
+}
+
+message PostAttachMessage{
+  string postID = 1;
+  Attachment Attachment = 2;
+}
+
+message Like {
+  int64 LikesCount = 1;
+  string PostID = 2;
+  string Error = 3;
+}
+
+service CreatorService {
+  rpc FindCreators(KeywordMessage) returns (CreatorsMessage) {}
+  rpc GetPage(UserCreatorMessage) returns (CreatorPage) {}
+  rpc UpdateCreatorData(UpdateCreatorInfo) returns (common.Empty) {}
+  rpc GetFeed(common.UUIDMessage) returns (PostsMessage) {}
+  rpc GetAllCreators(common.Empty)returns (CreatorsMessage) {}
+  rpc IsCreator(UserCreatorMessage) returns (FlagMessage){}
+  rpc CreateAim(Aim) returns (common.Empty){}
+  rpc CheckIfCreator(common.UUIDMessage) returns (common.UUIDResponse){}
+
+  rpc CreatePost(PostCreationData) returns (common.Empty) {}
+  rpc GetPost(PostUserMessage) returns (PostMessage) {}
+  rpc DeletePost(common.UUIDMessage) returns (common.Empty) {}
+  rpc IsPostOwner(PostUserMessage) returns (FlagMessage) {}
+  rpc AddLike(PostUserMessage) returns (Like) {}
+  rpc RemoveLike(PostUserMessage) returns (Like) {}
+  rpc EditPost(PostEditData) returns (common.Empty) {}
+
+  rpc DeleteAttachmentsFiles(Attachments) returns (common.Empty) {}
+  rpc DeleteAttachmentsByPostID(common.UUIDMessage) returns (common.Empty) {}
+  rpc DeleteAttachment(PostAttachMessage) returns (common.Empty) {}
+  rpc AddAttach(PostAttachMessage) returns (common.Empty) {}
+  rpc GetFileExtension(KeywordMessage) returns (Extension) {}
+  rpc UpdateProfilePhoto(common.UUIDMessage) returns (common.UUIDResponse) {}
+  rpc DeleteProfilePhoto(common.UUIDMessage) returns (common.Empty) {}
+  rpc UpdateCoverPhoto(common.UUIDMessage) returns (common.UUIDResponse) {}
+  rpc DeleteCoverPhoto(common.UUIDMessage) returns (common.Empty) {}
+
+  rpc CreateSubscription(common.Subscription) returns (common.Empty) {}
+  rpc DeleteSubscription(SubscriptionCreatorMessage) returns (common.Empty) {}
+  rpc EditSubscription(common.Subscription) returns (common.Empty) {}
+}
+

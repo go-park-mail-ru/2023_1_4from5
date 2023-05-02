@@ -16,7 +16,7 @@ type User struct {
 	ProfilePhoto uuid.UUID `json:"profile_photo"`
 	PasswordHash string    `json:"password_hash" example:"1cbedcfebd7efb060916156dafe1dc4b7007db6b7e2312aeb5eed4a43f54e8f767e7d823b54119771723f87aa0bb05df34806fc598cd889042e4da9a609571c3"`
 	Registration time.Time `json:"registration"`
-	UserVersion  int       `json:"user_version"`
+	UserVersion  int64     `json:"user_version"`
 }
 
 func (user User) UserLoginIsValid() bool {
@@ -59,7 +59,7 @@ func (user User) UserPasswordIsValid() bool {
 }
 
 func (user User) UserNameIsValid() bool {
-	return len(user.Name) >= 7 && len(user.Name) < 40
+	return len(user.Name) > 0 && len(user.Name) < 40
 }
 
 func (user User) UserAuthIsValid() bool {
@@ -80,12 +80,6 @@ type UserProfile struct {
 	Name         string    `json:"name" example:"Danila Polyakov"`
 	ProfilePhoto uuid.UUID `json:"profile_photo"`
 	Registration time.Time `json:"registration"`
-}
-
-type UserHomePage struct {
-	Name         string    `json:"name" example:"Danila Polyakov"`
-	ProfilePhoto uuid.UUID `json:"profile_photo"`
-	Posts        []Post    `json:"posts"`
 	IsCreator    bool      `json:"is_creator"`
 	CreatorId    uuid.UUID `json:"creator_id"`
 }
@@ -106,11 +100,11 @@ type UpdateProfileInfo struct {
 
 type Donate struct {
 	CreatorID  uuid.UUID `json:"creator_id"`
-	MoneyCount int       `json:"money_count"`
+	MoneyCount int64     `json:"money_count"`
 }
 
 func (creatorInfo *BecameCreatorInfo) IsValid() bool {
-	return (len(creatorInfo.Name) > 0 && len(creatorInfo.Name) < 40) && (len(creatorInfo.Name) > 0 && len(creatorInfo.Name) < 500)
+	return (len(creatorInfo.Name) > 0 && len(creatorInfo.Name) < 40) && (len(creatorInfo.Description) > 0 && len(creatorInfo.Description) < 500)
 }
 
 func (user *User) Sanitize() {
@@ -121,11 +115,4 @@ func (user *User) Sanitize() {
 func (userProfile *UserProfile) Sanitize() {
 	userProfile.Login = html.EscapeString(userProfile.Login)
 	userProfile.Name = html.EscapeString(userProfile.Name)
-}
-
-func (userHomePage *UserHomePage) Sanitize() {
-	userHomePage.Name = html.EscapeString(userHomePage.Name)
-	for i := range userHomePage.Posts {
-		userHomePage.Posts[i].Sanitize()
-	}
 }

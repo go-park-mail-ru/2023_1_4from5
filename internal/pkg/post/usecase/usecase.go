@@ -38,7 +38,7 @@ func (u *PostUsecase) GetPost(ctx context.Context, postID, userID uuid.UUID) (mo
 	}
 	post, err := u.repo.GetPost(ctx, postID, userID)
 	if err != nil {
-		return models.Post{}, models.InternalError
+		return models.Post{}, err
 	}
 
 	if !isAvailable {
@@ -53,15 +53,15 @@ func (u *PostUsecase) GetPost(ctx context.Context, postID, userID uuid.UUID) (mo
 func (u *PostUsecase) DeletePost(ctx context.Context, postID uuid.UUID) error {
 	return u.repo.DeletePost(ctx, postID)
 }
-func (u *PostUsecase) IsPostOwner(ctx context.Context, userId uuid.UUID, postId uuid.UUID) (bool, error) {
+func (u *PostUsecase) IsPostOwner(ctx context.Context, userId, postId uuid.UUID) (bool, error) {
 	return u.repo.IsPostOwner(ctx, userId, postId)
 }
 
-func (u *PostUsecase) AddLike(ctx context.Context, userID uuid.UUID, postID uuid.UUID) (models.Like, error) {
+func (u *PostUsecase) AddLike(ctx context.Context, userID, postID uuid.UUID) (models.Like, error) {
 	return u.repo.AddLike(ctx, userID, postID)
 }
 
-func (u *PostUsecase) RemoveLike(ctx context.Context, userID uuid.UUID, postID uuid.UUID) (models.Like, error) {
+func (u *PostUsecase) RemoveLike(ctx context.Context, userID, postID uuid.UUID) (models.Like, error) {
 	return u.repo.RemoveLike(ctx, userID, postID)
 }
 func (u *PostUsecase) EditPost(ctx context.Context, postData models.PostEditData) error {

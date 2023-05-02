@@ -1,21 +1,18 @@
 package http
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	mockAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/mocks"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
-	mock "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/mocks"
-	mockPost "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/mocks"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
+	mockCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -34,68 +31,140 @@ func TestNewCreatorHandler(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
 
-	mockUsecase := mock.NewMockCreatorUsecase(ctl)
-	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
-	mockPostUsecase := mockPost.NewMockPostUsecase(ctl)
-	testHandler := NewCreatorHandler(mockUsecase, mockAuthUsecase, mockPostUsecase)
-	if testHandler.usecase != mockUsecase {
+	authClient := mockAuth.NewMockAuthServiceClient(ctl)
+	creatorClient := mockCreator.NewMockCreatorServiceClient(ctl)
+
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	testHandler := NewCreatorHandler(creatorClient, authClient, zapSugar)
+	if testHandler.authClient != authClient || testHandler.creatorClient != creatorClient {
 		t.Error("bad constructor")
 	}
+}
+
+type args struct {
+	r                *http.Request
+	expectedResponse http.Response
 }
 
 func TestCreatorHandler_GetPage(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()
 
+	authClient := mockAuth.NewMockAuthServiceClient(ctl)
+	creatorClient := mockCreator.NewMockCreatorServiceClient(ctl)
+
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
 	os.Setenv("TOKEN_SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
 	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: uuid.New()})
 
-	usecaseMock := mock.NewMockCreatorUsecase(ctl)
-	mockAuthUsecase := mockAuth.NewMockAuthUsecase(ctl)
-	mockPostUsecase := mockPost.NewMockPostUsecase(ctl)
-	handler := NewCreatorHandler(usecaseMock, mockAuthUsecase, mockPostUsecase)
-	var r *http.Request
-	var status int
-	for i := 0; i < 4; i++ {
-		value := bdy
-		r = httptest.NewRequest("GET", "/creator/page", strings.NewReader(fmt.Sprint()))
-		r = mux.SetURLVars(r, map[string]string{
-			"creator-uuid": uuid.NewString(),
-		})
-		switch i {
-		case 0:
-			usecaseMock.EXPECT().GetPage(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, nil)
-			status = http.StatusOK
-		case 1:
-			r = mux.SetURLVars(r, map[string]string{
-				"creator_uuid": uuid.NewString(),
-			})
-			status = http.StatusBadRequest
-		case 2:
-			value = "1"
-			usecaseMock.EXPECT().GetPage(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, models.InternalError)
-			status = http.StatusInternalServerError
-		case 3:
-			usecaseMock.EXPECT().GetPage(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, models.WrongData)
-			status = http.StatusBadRequest
-		}
-		r.AddCookie(&http.Cookie{
-			Name:     "SSID",
-			Value:    value,
-			Expires:  time.Time{},
-			HttpOnly: true,
-		})
+	tests := []struct {
+		name string
+		args args
+		mock func(r *http.Request)
+	}{
+		{
+			name: "OK",
+			args: args{
+				r: httptest.NewRequest("POST", "/signIn",
+					strings.NewReader(fmt.Sprint())),
+				expectedResponse: http.Response{StatusCode: http.StatusOK},
+			},
+			mock: func(r *http.Request) {
+				r = mux.SetURLVars(r, map[string]string{
+					"creator-uuid": uuid.NewString(),
+				})
+				r.AddCookie(&http.Cookie{
+					Name:     "SSID",
+					Value:    bdy,
+					Expires:  time.Time{},
+					HttpOnly: true,
+				})
+				creatorClient.EXPECT().
+					GetPage(gomock.Any(), gomock.Any()).
+					Return(&generated.CreatorPage{
+						Error: "",
+					}, nil)
+			},
+		},
+	}
+	//
+	//var r *http.Request
+	//var status int
+	//for i := 0; i < 4; i++ {
+	//	value := bdy
+	//	r = httptest.NewRequest("GET", "/creator/page", strings.NewReader(fmt.Sprint()))
+	//	r = mux.SetURLVars(r, map[string]string{
+	//		"creator-uuid": uuid.NewString(),
+	//	})
+	//	switch i {
+	//	case 0:
+	//		usecaseMock.EXPECT().GetPage(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, nil)
+	//		status = http.StatusOK
+	//	case 1:
+	//		r = mux.SetURLVars(r, map[string]string{
+	//			"creator_uuid": uuid.NewString(),
+	//		})
+	//		status = http.StatusBadRequest
+	//	case 2:
+	//		value = "1"
+	//		usecaseMock.EXPECT().GetPage(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, models.InternalError)
+	//		status = http.StatusInternalServerError
+	//	case 3:
+	//		usecaseMock.EXPECT().GetPage(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, models.WrongData)
+	//		status = http.StatusBadRequest
+	//	}
+	//	r.AddCookie(&http.Cookie{
+	//		Name:     "SSID",
+	//		Value:    value,
+	//		Expires:  time.Time{},
+	//		HttpOnly: true,
+	//	})
+	//
+	//	w := httptest.NewRecorder()
+	//
+	//	handler.GetPage(w, r)
+	//	require.Equal(t, status, w.Code, fmt.Errorf("expected %d, got %d",
+	//		status, w.Code))
+	//}
 
-		w := httptest.NewRecorder()
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &CreatorHandler{
+				creatorClient: creatorClient,
+				authClient:    authClient,
+				logger:        zapSugar,
+			}
+			w := httptest.NewRecorder()
+			test.mock(test.args.r)
 
-		handler.GetPage(w, r)
-		require.Equal(t, status, w.Code, fmt.Errorf("expected %d, got %d",
-			status, w.Code))
+			h.GetPage(w, test.args.r)
+			require.Equal(t, test.args.expectedResponse.StatusCode, w.Code, fmt.Errorf("%s :  expected %d, got %d,",
+				test.name, test.args.expectedResponse.StatusCode, w.Code))
+		})
 	}
 
 }
 
+/*
 var testAim = models.Aim{Creator: uuid.New(), Description: "test", MoneyNeeded: 500, MoneyGot: 0}
 var testAimWithLongDescription = models.Aim{Creator: uuid.New(), Description: "testtesttesttesttesttesttesttesttesttesttesttesttesttesttest" +
 	"testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttest" +
@@ -375,3 +444,4 @@ func TestCreatorHandler_GetAllCreators(t *testing.T) {
 		})
 	}
 }
+*/

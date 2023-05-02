@@ -6,13 +6,16 @@ import (
 	"os"
 )
 
-func FileLogger(filename string) *zap.Logger {
+func FileLogger(filename string) (*zap.Logger, error) {
 	config := zap.NewProductionEncoderConfig()
 	config.EncodeTime = zapcore.ISO8601TimeEncoder
 	fileEncoder := zapcore.NewJSONEncoder(config)
 	consoleEncoder := zapcore.NewConsoleEncoder(config)
-	_ = os.Remove(filename)
-	logFile, _ := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	err := os.Remove(filename)
+	logFile, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return nil, err
+	}
 	writer := zapcore.AddSync(logFile)
 	defaultLogLevel := zapcore.DebugLevel
 	core := zapcore.NewTee(
@@ -22,5 +25,5 @@ func FileLogger(filename string) *zap.Logger {
 
 	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
 
-	return logger
+	return logger, nil
 }

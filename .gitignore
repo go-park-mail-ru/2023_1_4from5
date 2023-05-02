@@ -23,4 +23,8 @@
 
 images
 
-log.txt
+auth_app.log
+user_app.log
+main_app.log
+
+grafana-data

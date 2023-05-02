@@ -1,0 +1,374 @@
+{
+	"info": {
+		"_postman_id": "dd83ddac-4dec-4139-914d-414054f2e435",
+		"name": "User",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "GetProfile",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{url_l}}/api/user/profile",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"profile"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "HomePage",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/api/user/homePage",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"homePage"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "updateProfilePhoto",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var token = postman.getResponseHeader(\"X-CSRF-Token\");",
+							"if (token!=null){",
+							"postman.setEnvironmentVariable(\"csrf\", token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "X-Csrf-Token",
+						"value": "{{csrf}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "upload",
+							"type": "file",
+							"src": "/home/dasha/Downloads/ava.jpg"
+						},
+						{
+							"key": "path",
+							"value": "83fae5ee-da15-49a0-bc0a-f0e4c99d150a",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{url_l}}/api/user/updateProfilePhoto",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"updateProfilePhoto"
+					],
+					"query": [
+						{
+							"key": "upload",
+							"value": null,
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdatePassword",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var token = postman.getResponseHeader(\"X-CSRF-Token\");",
+							"if (token!=null){",
+							"postman.setEnvironmentVariable(\"csrf\", token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "X-Csrf-Token",
+						"value": "{{csrf}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"new_password\":\"Dasha2003!\",\n    \"old_password\":\"Bashmak1!!\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url_l}}/api/user/updatePassword",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"updatePassword"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateProfile",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var token = postman.getResponseHeader(\"X-CSRF-Token\");",
+							"if (token!=null){",
+							"postman.setEnvironmentVariable(\"csrf\", token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "X-Csrf-Token",
+						"value": "{{csrf}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"login\":\"Dasha2003\",\n    \"name\":\"Дарья Такташова\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url_l}}/api/user/updateData",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"updateData"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Donate",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var token = postman.getResponseHeader(\"X-CSRF-Token\");",
+							"if (token!=null){",
+							"postman.setEnvironmentVariable(\"csrf\", token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-Csrf-Token",
+						"value": "{{csrf}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"creator_id\" : \"83b1f4df-a232-400e-b71c-5d45b9111f8d\",\n    \"money_count\" : 100\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url_l}}/api/user/donate",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"donate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "BecameCreator",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var token = postman.getResponseHeader(\"X-CSRF-Token\");",
+							"if (token!=null){",
+							"postman.setEnvironmentVariable(\"csrf\", token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-Csrf-Token",
+						"value": "{{csrf}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\"name\" :\"PAMPERS\",\n\"description\" : \"PAMPERS_DESRIPTION\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url_l}}/api/user/becameCreator",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"becameCreator"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Follow",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{url_l}}/api/user/follow/83b1f4df-a232-400e-b71c-5d45b9111f8d",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"follow",
+						"83b1f4df-a232-400e-b71c-5d45b9111f8d"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Subscribe",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-Csrf-Token",
+						"value": "{{csrf}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"month_count\" : 2,\n    \"money\" : 700\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "127.0.0.1:8000/api/user/subscribe/aa382710-d873-44f0-940e-b12a6653f7ba",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"user",
+						"subscribe",
+						"aa382710-d873-44f0-940e-b12a6653f7ba"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Subscriptions",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	]
+}

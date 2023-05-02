@@ -1,10 +1,11 @@
 package http
 
 import (
+	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post"
+	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
+	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
+	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/google/uuid"
@@ -13,21 +14,21 @@ import (
 	"go.uber.org/zap"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 )
 
 type PostHandler struct {
-	usecase           post.PostUsecase
-	authUsecase       auth.AuthUsecase
-	attachmentUsecase attachment.AttachmentUsecase
-	logger            *zap.SugaredLogger
+	authClient    generatedAuth.AuthServiceClient
+	creatorClient generatedCreator.CreatorServiceClient
+	logger        *zap.SugaredLogger
 }
 
-func NewPostHandler(uc post.PostUsecase, auc auth.AuthUsecase, attuc attachment.AttachmentUsecase, logger *zap.SugaredLogger) *PostHandler {
+func NewPostHandler(auc generatedAuth.AuthServiceClient, csc generatedCreator.CreatorServiceClient, logger *zap.SugaredLogger) *PostHandler {
 	return &PostHandler{
-		usecase:           uc,
-		authUsecase:       auc,
-		attachmentUsecase: attuc,
-		logger:            logger,
+		authClient:    auc,
+		creatorClient: csc,
+		logger:        logger,
 	}
 }
 
@@ -38,8 +39,16 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
-
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: userDataJWT.UserVersion,
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -82,12 +91,10 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok, err = h.usecase.IsCreator(r.Context(), userDataJWT.Id, postData.Creator)
-
-	if err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
+	out, err := h.creatorClient.IsCreator(r.Context(), &generatedCreator.UserCreatorMessage{
+		UserID:    userDataJWT.Id.String(),
+		CreatorID: postData.Creator.String(),
+	})
 
 	if err != nil {
 		h.logger.Error(err)
@@ -95,7 +102,18 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ok {
+	if out.Error == models.WrongData.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if out.Error != "" {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if !out.Flag {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -123,6 +141,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, ok := r.MultipartForm.File["attachments"]; ok {
+		h.logger.Info("Got attachs")
 		if len(r.MultipartForm.File["attachments"]) > models.MaxFiles {
 			utils.Response(w, http.StatusBadRequest, nil)
 			return
@@ -137,6 +156,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		}
 
 		postFilesTmp := r.MultipartForm.File["attachments"]
+		h.logger.Info(postFilesTmp)
 
 		postData.Attachments = make([]models.AttachmentData, len(postFilesTmp))
 		for i, file := range postFilesTmp {
@@ -160,16 +180,6 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 			postData.Attachments[i].Type = http.DetectContentType(buf)
 			postData.Attachments[i].Id = uuid.New()
 		}
-
-		if err = h.attachmentUsecase.CreateAttachments(r.Context(), postData.Attachments...); err == models.Unsupported {
-			utils.Response(w, http.StatusUnsupportedMediaType, nil)
-			return
-		} else if err != nil {
-			h.logger.Error(err)
-			utils.Response(w, http.StatusInternalServerError, nil)
-			return
-		}
-
 	}
 
 	tmpSubs, ok := postValues["subscriptions"]
@@ -184,23 +194,144 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	postData.Id = uuid.New()
-	if err := h.usecase.CreatePost(r.Context(), postData); err != nil {
-		_ = h.attachmentUsecase.DeleteAttachments(postData.Attachments...)
+	var attachProto []*generatedCreator.Attachment
+	for _, attach := range postData.Attachments {
+		attachProto = append(attachProto, &generatedCreator.Attachment{
+			ID:   attach.Id.String(),
+			Type: attach.Type,
+		})
+	}
+
+	var subsProto []string
+	for _, sub := range postData.AvailableSubscriptions {
+		subsProto = append(subsProto, sub.String())
+	}
+
+	errMessage, err := h.creatorClient.CreatePost(r.Context(), &generatedCreator.PostCreationData{
+		Id:                     postData.Id.String(),
+		Creator:                postData.Creator.String(),
+		Title:                  postData.Title,
+		Text:                   postData.Text,
+		Attachments:            attachProto,
+		AvailableSubscriptions: subsProto,
+	})
+
+	if err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 
+	if errMessage.Error != "" {
+		_, _ = h.creatorClient.DeleteAttachmentsFiles(r.Context(), &generatedCreator.Attachments{Attachments: attachProto})
+		h.logger.Error(errMessage.Error)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	for i, attach := range postData.Attachments {
+		attachmentType, err := h.creatorClient.GetFileExtension(r.Context(), &generatedCreator.KeywordMessage{Keyword: attach.Type})
+
+		if err != nil {
+			h.logger.Error(err)
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+
+		if !attachmentType.Flag {
+			errMessage, err = h.creatorClient.DeleteAttachmentsFiles(r.Context(), &generatedCreator.Attachments{Attachments: attachProto[:i]})
+
+			if err != nil {
+				h.logger.Error(err)
+				utils.Response(w, http.StatusInternalServerError, nil)
+				return
+			}
+
+			if errMessage.Error != "" {
+				utils.Response(w, http.StatusInternalServerError, nil)
+				return
+			}
+			errMessage, err = h.creatorClient.DeletePost(r.Context(), &generatedCommon.UUIDMessage{Value: postData.Id.String()})
+
+			if err != nil {
+				h.logger.Error(err)
+				utils.Response(w, http.StatusInternalServerError, nil)
+				return
+			}
+
+			if errMessage.Error != "" {
+				utils.Response(w, http.StatusInternalServerError, nil)
+				return
+			}
+
+			utils.Response(w, http.StatusUnsupportedMediaType, nil)
+			return
+		}
+		f, err := os.Create(fmt.Sprintf("%s.%s", filepath.Join(models.FolderPath, attach.Id.String()), attachmentType.Extension))
+		if err != nil {
+			h.logger.Error(err)
+			errMessage, err = h.creatorClient.DeleteAttachmentsFiles(r.Context(), &generatedCreator.Attachments{Attachments: attachProto[:i]})
+
+			if err != nil {
+				h.logger.Error(err)
+				utils.Response(w, http.StatusInternalServerError, nil)
+				return
+			}
+
+			if errMessage.Error != "" {
+				utils.Response(w, http.StatusInternalServerError, nil)
+				return
+			}
+			errMessage, err = h.creatorClient.DeletePost(r.Context(), &generatedCommon.UUIDMessage{Value: postData.Id.String()})
+			if err != nil {
+				h.logger.Error(err)
+			}
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+
+		if _, err := io.Copy(f, attach.Data); err != nil {
+			h.logger.Error(err)
+			errMessage, err = h.creatorClient.DeleteAttachmentsFiles(r.Context(), &generatedCreator.Attachments{Attachments: attachProto[:i]})
+
+			if err != nil {
+				h.logger.Error(err)
+				utils.Response(w, http.StatusInternalServerError, nil)
+				return
+			}
+
+			if errMessage.Error != "" {
+				utils.Response(w, http.StatusInternalServerError, nil)
+				return
+			}
+
+			errMessage, err = h.creatorClient.DeletePost(r.Context(), &generatedCommon.UUIDMessage{Value: postData.Id.String()})
+			if err != nil {
+				h.logger.Error(err)
+			}
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+		_ = f.Close()
+	}
 	utils.Response(w, http.StatusOK, nil)
 }
 
 func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
-	userData, err := token.ExtractJWTTokenMetadata(r)
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userData); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: userDataJWT.UserVersion,
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -214,37 +345,68 @@ func (h *PostHandler) AddLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	postOwner, err := h.usecase.IsPostOwner(r.Context(), userData.Id, like.PostID)
+	isPostOwner, err := h.creatorClient.IsPostOwner(r.Context(), &generatedCreator.PostUserMessage{
+		UserID: (*userDataJWT).Id.String(),
+		PostID: like.PostID.String(),
+	})
+
 	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
-	if postOwner {
+
+	if isPostOwner.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if isPostOwner.Flag {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
 
-	like, err = h.usecase.AddLike(r.Context(), userData.Id, like.PostID)
-	if err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
+	likeProto, err := h.creatorClient.AddLike(r.Context(), &generatedCreator.PostUserMessage{
+		UserID: userDataJWT.Id.String(),
+		PostID: like.PostID.String(),
+	})
 
-	if err == models.InternalError {
+	if err != nil {
+		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
+
+	if likeProto.Error == models.WrongData.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	if likeProto.Error == models.InternalError.Error() {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	like.LikesCount = likeProto.LikesCount
 	utils.Response(w, http.StatusOK, like)
 }
 
 func (h *PostHandler) RemoveLike(w http.ResponseWriter, r *http.Request) {
-	userData, err := token.ExtractJWTTokenMetadata(r)
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userData); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: userDataJWT.UserVersion,
+	})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -257,16 +419,27 @@ func (h *PostHandler) RemoveLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	like, err = h.usecase.RemoveLike(r.Context(), userData.Id, like.PostID)
-	if err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
-	if err == models.InternalError {
+	likeProto, err := h.creatorClient.RemoveLike(r.Context(), &generatedCreator.PostUserMessage{
+		UserID: userDataJWT.Id.String(),
+		PostID: like.PostID.String(),
+	})
+
+	if err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
+
+	if likeProto.Error == models.WrongData.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	if likeProto.Error == models.InternalError.Error() {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	like.LikesCount = likeProto.LikesCount
 	utils.Response(w, http.StatusOK, like)
 }
 
@@ -277,7 +450,17 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: userDataJWT.UserVersion,
+	})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -313,11 +496,10 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok, err = h.usecase.IsPostOwner(r.Context(), (*userDataJWT).Id, postID)
-	if err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
+	isPostOwner, err := h.creatorClient.IsPostOwner(r.Context(), &generatedCreator.PostUserMessage{
+		UserID: (*userDataJWT).Id.String(),
+		PostID: postID.String(),
+	})
 
 	if err != nil {
 		h.logger.Error(err)
@@ -325,22 +507,45 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ok {
+	if isPostOwner.Error == models.WrongData.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if isPostOwner.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if !isPostOwner.Flag {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
-	err = h.attachmentUsecase.DeleteAttachmentsByPostID(r.Context(), postID)
-	if err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
+	out, err := h.creatorClient.DeleteAttachmentsByPostID(r.Context(), &generatedCommon.UUIDMessage{Value: postID.String()})
+
 	if err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
-	if err = h.usecase.DeletePost(r.Context(), postID); err != nil {
+
+	if out.Error == models.WrongData.Error() {
 		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	if out.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	out, err = h.creatorClient.DeletePost(r.Context(), &generatedCommon.UUIDMessage{Value: postID.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if out.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 
@@ -361,16 +566,32 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post, err := h.usecase.GetPost(r.Context(), postID, userDataJWT.Id)
+	postProto, err := h.creatorClient.GetPost(r.Context(), &generatedCreator.PostUserMessage{
+		UserID: userDataJWT.Id.String(),
+		PostID: postID.String(),
+	})
 
-	if err == models.Forbbiden {
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if postProto.Error == models.Forbbiden.Error() {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
-	if err == models.WrongData {
+	if postProto.Error == models.WrongData.Error() {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
+	if postProto.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	var post models.Post
+	err = post.PostToModel(postProto.Post)
 	if err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
@@ -389,7 +610,16 @@ func (h *PostHandler) EditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: userDataJWT.UserVersion,
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -422,12 +652,10 @@ func (h *PostHandler) EditPost(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-
-	ok, err = h.usecase.IsPostOwner(r.Context(), (*userDataJWT).Id, postEditData.Id)
-	if err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
+	isPostOwner, err := h.creatorClient.IsPostOwner(r.Context(), &generatedCreator.PostUserMessage{
+		UserID: (*userDataJWT).Id.String(),
+		PostID: postEditData.Id.String(),
+	})
 
 	if err != nil {
 		h.logger.Error(err)
@@ -435,7 +663,17 @@ func (h *PostHandler) EditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ok {
+	if isPostOwner.Error == models.WrongData.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if isPostOwner.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if !isPostOwner.Flag {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -445,12 +683,28 @@ func (h *PostHandler) EditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(postEditData.Title) > 40 || len(postEditData.Text) > 4000 {
+	if len(postEditData.Title) > 40 || len(postEditData.Text) > 4000 || len(postEditData.Title) == 0 {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
 
-	if err = h.usecase.EditPost(r.Context(), postEditData); err != nil {
+	var subs []string
+	for _, v := range postEditData.AvailableSubscriptions {
+		subs = append(subs, v.String())
+	}
+	out, err := h.creatorClient.EditPost(r.Context(), &generatedCreator.PostEditData{
+		Id:                     postEditData.Id.String(),
+		Title:                  postEditData.Title,
+		Text:                   postEditData.Text,
+		AvailableSubscriptions: subs,
+	})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if out.Error != "" {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
@@ -465,7 +719,16 @@ func (h *PostHandler) AddAttach(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: userDataJWT.UserVersion,
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -502,11 +765,10 @@ func (h *PostHandler) AddAttach(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok, err = h.usecase.IsPostOwner(r.Context(), (*userDataJWT).Id, postID)
-	if err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
+	isPostOwner, err := h.creatorClient.IsPostOwner(r.Context(), &generatedCreator.PostUserMessage{
+		UserID: (*userDataJWT).Id.String(),
+		PostID: postID.String(),
+	})
 
 	if err != nil {
 		h.logger.Error(err)
@@ -514,7 +776,17 @@ func (h *PostHandler) AddAttach(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ok {
+	if isPostOwner.Error == models.WrongData.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if isPostOwner.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if !isPostOwner.Flag {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
@@ -557,15 +829,55 @@ func (h *PostHandler) AddAttach(w http.ResponseWriter, r *http.Request) {
 	attach.Type = http.DetectContentType(buf)
 	attach.Id = uuid.New()
 
-	if err = h.attachmentUsecase.CreateAttachments(r.Context(), attach); err == models.Unsupported {
+	attachmentType, err := h.creatorClient.GetFileExtension(r.Context(), &generatedCreator.KeywordMessage{Keyword: attach.Type})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if !attachmentType.Flag {
 		utils.Response(w, http.StatusUnsupportedMediaType, nil)
 		return
-	} else if err != nil {
+	}
+	f, err := os.Create(fmt.Sprintf("%s.%s", filepath.Join(models.FolderPath, attach.Id.String()), attachmentType.Extension))
+	if err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 
+	if _, err := io.Copy(f, attach.Data); err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	_ = f.Close()
+
+	out, err := h.creatorClient.AddAttach(r.Context(), &generatedCreator.PostAttachMessage{
+		PostID: postID.String(),
+		Attachment: &generatedCreator.Attachment{
+			ID:   attach.Id.String(),
+			Type: attach.Type,
+		},
+	})
+
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if out.Error != "" {
+		var attachProto = []*generatedCreator.Attachment{&generatedCreator.Attachment{ID: attach.Id.String(), Type: attach.Type}}
+		_, err = h.creatorClient.DeleteAttachmentsFiles(r.Context(), &generatedCreator.Attachments{Attachments: attachProto})
+
+		if err != nil {
+			h.logger.Error(err)
+		}
+
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
 	utils.Response(w, http.StatusOK, nil)
 }
 
@@ -576,7 +888,16 @@ func (h *PostHandler) DeleteAttach(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.authUsecase.CheckUserVersion(r.Context(), *userDataJWT); err != nil {
+	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
+		Login:       userDataJWT.Login,
+		Id:          userDataJWT.Id.String(),
+		UserVersion: userDataJWT.UserVersion,
+	})
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if len(uv.Error) != 0 {
 		utils.Cookie(w, "", "SSID")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
@@ -618,11 +939,10 @@ func (h *PostHandler) DeleteAttach(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	ok, err = h.usecase.IsPostOwner(r.Context(), (*userDataJWT).Id, postID)
-	if err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
+	isPostOwner, err := h.creatorClient.IsPostOwner(r.Context(), &generatedCreator.PostUserMessage{
+		UserID: (*userDataJWT).Id.String(),
+		PostID: postID.String(),
+	})
 
 	if err != nil {
 		h.logger.Error(err)
@@ -630,28 +950,41 @@ func (h *PostHandler) DeleteAttach(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ok {
+	if isPostOwner.Error == models.WrongData.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if isPostOwner.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if !isPostOwner.Flag {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
 
-	err = h.attachmentUsecase.DeleteAttachment(r.Context(), attachInfo.Id, postID)
-	if err == models.WrongData {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
+	out, err := h.creatorClient.DeleteAttachment(r.Context(), &generatedCreator.PostAttachMessage{
+		PostID: postID.String(),
+		Attachment: &generatedCreator.Attachment{
+			ID:   attachInfo.Id.String(),
+			Type: attachInfo.Type,
+		},
+	})
+
 	if err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 
-	err = h.attachmentUsecase.DeleteAttachments(models.AttachmentData{Id: attachInfo.Id, Type: attachInfo.Type})
-	if err == models.WrongData {
+	if out.Error == models.WrongData.Error() {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	if err != nil {
+
+	if out.Error != "" {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return

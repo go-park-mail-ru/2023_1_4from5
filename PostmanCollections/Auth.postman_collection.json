@@ -1,0 +1,92 @@
+{
+	"info": {
+		"_postman_id": "2a10dc2b-3d65-4192-bd3e-1bf564306e10",
+		"name": "Auth",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "SignUp",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"login\" : \"Bashmacwwhok\",\n    \"name\" : \"Bashmakewqe4\",\n    \"password_hash\" : \"Qwww3wwwwww!\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url_l}}/api/auth/signUp",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"signUp"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "SignIn",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n     \"login\" : \"Dasha2003\",\n     \"password_hash\" : \"Dasha2003!\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url_l}}/api/auth/signIn",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"signIn"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Logout",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url_l}}/api/auth/logout",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"logout"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "New Request",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	]
+}

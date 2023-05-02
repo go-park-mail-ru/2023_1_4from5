@@ -29,7 +29,7 @@ func (u *AuthUsecase) EncryptPwd(ctx context.Context, pwd string) string {
 	return u.encrypter.EncryptPswd(ctx, pwd)
 }
 
-func (u *AuthUsecase) IncUserVersion(ctx context.Context, details models.AccessDetails) (int, error) {
+func (u *AuthUsecase) IncUserVersion(ctx context.Context, details models.AccessDetails) (int64, error) {
 	return u.repo.IncUserVersion(ctx, details.Id)
 }
 
@@ -63,6 +63,6 @@ func (u *AuthUsecase) SignUp(ctx context.Context, user models.User) (string, err
 	return "", models.InternalError
 }
 
-func (u *AuthUsecase) CheckUserVersion(ctx context.Context, details models.AccessDetails) (int, error) {
+func (u *AuthUsecase) CheckUserVersion(ctx context.Context, details models.AccessDetails) (int64, error) {
 	return u.repo.CheckUserVersion(ctx, details)
 }

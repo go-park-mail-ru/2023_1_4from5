@@ -1,0 +1,340 @@
+{
+	"info": {
+		"_postman_id": "81960d73-cbfc-49fb-8aac-e40cbb7ac240",
+		"name": "Post",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "AddLike",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"post_id\" : \"9432666b-b2fd-4094-b29d-6ea73aebf5c9\"\n}"
+				},
+				"url": {
+					"raw": "{{url_l}}/api/post/addLike",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"post",
+						"addLike"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RemoveLike",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"post_id\" : \"9432666b-b2fd-4094-b29d-6ea73aebf5c9\"\n}"
+				},
+				"url": {
+					"raw": "{{url_l}}/api/post/removeLike",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"post",
+						"removeLike"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var token = postman.getResponseHeader(\"X-CSRF-Token\");",
+							"if (token!=null){",
+							"postman.setEnvironmentVariable(\"csrf\", token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-Csrf-Token",
+						"value": "{{csrf}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "attachments",
+							"type": "file",
+							"src": "/Users/qqq/Documents/Pictures/AOHAKiXyHq4.jpg"
+						},
+						{
+							"key": "title",
+							"value": "Test",
+							"type": "text"
+						},
+						{
+							"key": "text",
+							"value": "<a onblur=\"alert(document.сookie)\" href=\"javascript:alert(document.сookie)\">Mail.ru</a>",
+							"type": "text"
+						},
+						{
+							"key": "creator",
+							"value": "10b0d1b8-0e67-4e7e-9f08-124b3e32cce4",
+							"type": "text"
+						},
+						{
+							"key": "subscriptions",
+							"value": "1b70e133-36ba-44ec-9d9a-2476442b154b",
+							"type": "text",
+							"disabled": true
+						},
+						{
+							"key": "subscriptions",
+							"value": "df0dd4ee-0772-43e2-919c-9b059e389b9a",
+							"type": "text",
+							"disabled": true
+						}
+					]
+				},
+				"url": {
+					"raw": "{{url}}/api/post/create",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"post",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var token = postman.getResponseHeader(\"X-CSRF-Token\");",
+							"if (token!=null){",
+							"postman.setEnvironmentVariable(\"csrf\", token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "X-Csrf-Token",
+						"value": "{{csrf}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{url_l}}/api/post/delete/eaff81d8-7aa6-40d4-8d1d-4b4d85f60fc2",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"post",
+						"delete",
+						"eaff81d8-7aa6-40d4-8d1d-4b4d85f60fc2"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetPost",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url_l}}/api/post/get/eaff81d8-7aa6-40d4-8d1d-4b4d85f60fc2",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"post",
+						"get",
+						"eaff81d8-7aa6-40d4-8d1d-4b4d85f60fc2"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "EditPost",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var token = postman.getResponseHeader(\"X-CSRF-Token\");",
+							"if (token!=null){",
+							"postman.setEnvironmentVariable(\"csrf\", token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "X-Csrf-Token",
+						"value": "{{csrf}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"title\" : \"\",\n    \"text\" : \"newText\",\n    \"available_subscriptions\" : [ \"df0dd4ee-0772-43e2-919c-9b059e389b9a\"]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url_l}}/api/post/edit/566ece0a-a3a4-466c-8425-251147a68e90",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"post",
+						"edit",
+						"566ece0a-a3a4-466c-8425-251147a68e90"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "addAttach",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var token = postman.getResponseHeader(\"X-CSRF-Token\");",
+							"if (token!=null){",
+							"postman.setEnvironmentVariable(\"csrf\", token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-Csrf-Token",
+						"value": "{{csrf}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "attachment",
+							"type": "file",
+							"src": "/Users/qqq/Documents/Pictures/AOHAKiXyHq4.jpg"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{url_l}}/api/post/addAttach/566ece0a-a3a4-466c-8425-251147a68e90",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"post",
+						"addAttach",
+						"566ece0a-a3a4-466c-8425-251147a68e90"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DeleteAtach",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var token = postman.getResponseHeader(\"X-CSRF-Token\");",
+							"if (token!=null){",
+							"postman.setEnvironmentVariable(\"csrf\", token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "X-Csrf-Token",
+						"value": "{{csrf}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\" : \"dfad07c8-b1b2-4136-9348-59fd0b0f5d8a\",\n    \"type\" : \"image/webp\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url_local}}:8000/api/post/deleteAttach/6bfc10e1-0e55-46ec-96bf-937e4fd477e4",
+					"host": [
+						"{{url_local}}"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"post",
+						"deleteAttach",
+						"6bfc10e1-0e55-46ec-96bf-937e4fd477e4"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

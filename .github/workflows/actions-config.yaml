@@ -3,7 +3,7 @@ name: SubMe build
 on:
   push:
     branches:
-      - rk2
+      - rk3
       - main
 jobs:
   linters-act:

@@ -12,6 +12,7 @@ drop table if exists "user" CASCADE;
 drop table if exists "post" CASCADE;
 drop table if exists "subscription" CASCADE;
 drop table if exists "tag" CASCADE;
+drop table if exists "follow" CASCADE;
 
 
 create table "user"
@@ -58,7 +59,8 @@ create table subscription
             references creator (creator_id),
     month_cost      int         not null,
     title           varchar(40) not null,
-    description     varchar(200)
+    description     varchar(200),
+    is_available    bool default true
 );
 
 create table user_subscription
@@ -78,7 +80,8 @@ create table user_payments
     subscription_id   uuid      not null
         constraint user_payments_subscription_subscription_id_fk references subscription (subscription_id),
     payment_timestamp timestamp not null default now(),
-    payment_info      text ---что-то, номер кошелька, что угодно
+    payment_info      text, ---что-то, номер кошелька, что угодно
+    money             int       not null
 );
 
 create table post
@@ -175,6 +178,53 @@ create table donation
             references "creator" (creator_id),
     money_count   int       not null,
     donation_date timestamp not null default now()
-)
+);
 
+create table follow
+(
+    user_id    uuid not null
+        constraint follow_user_user_id_fk
+            references "user" (user_id),
+    creator_id uuid not null
+        constraint follow_creator_creator_id_fk
+            references "creator" (creator_id)
+);
+
+CREATE TEXT SEARCH DICTIONARY russian_ispell (
+    TEMPLATE = ispell,
+    DictFile = russian,
+    AffFile = russian,
+    StopWords = russian
+    );
+
+CREATE TEXT SEARCH CONFIGURATION ru (COPY = russian);
+
+ALTER TEXT SEARCH CONFIGURATION ru
+    ALTER MAPPING FOR hword, hword_part, word
+        WITH russian_ispell, russian_stem;
+
+CREATE INDEX idx_gin_creator_name_eng ON creator USING gin (to_tsvector('english', name));
+CREATE INDEX idx_gin_creator_description_eng ON creator USING gin (to_tsvector('english', description));
+CREATE INDEX idx_gin_creator_name_rus ON creator USING gin (to_tsvector('russian', name));
+CREATE INDEX idx_gin_creator_description_rus ON creator USING gin (to_tsvector('russian', description));
+CREATE INDEX idx_creator_name ON creator (LOWER(name) varchar_pattern_ops);
+CREATE INDEX idx_creator_description ON creator (LOWER(description) varchar_pattern_ops);
+CREATE INDEX idx_creator_user_id ON creator (user_id);
+
+CREATE OR REPLACE FUNCTION make_tsvector(name TEXT, priority "char")
+    RETURNS tsvector AS
+$$
+BEGIN
+    RETURN (setweight(to_tsvector('english', name), priority) ||
+            setweight(to_tsvector('ru', name), priority));
+END
+$$ LANGUAGE 'plpgsql' IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION make_tsrank(param TEXT, phrase TEXT, lang regconfig)
+    RETURNS tsvector AS
+$$
+BEGIN
+    RETURN ts_rank(to_tsvector(lang, param), plainto_tsquery(lang, phrase));
+END
+$$ LANGUAGE 'plpgsql' IMMUTABLE;
 

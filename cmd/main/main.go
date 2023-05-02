@@ -2,25 +2,22 @@ package main
 
 import (
 	"database/sql"
-	attachmentRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment/repo"
-	attachmentUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment/usecase"
+	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	authDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/http"
-	authRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/repo"
-	authUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
+	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	creatorDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/http"
-	creatorRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/repo"
-	creatorUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/usecase"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
 	postDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/delivery/http"
-	postRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/repo"
-	postUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/usecase"
+	subscriptionDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription/delivery/http"
+	generatedUser "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/grpc/generated"
 	userDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/http"
-	userRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/repo"
-	userUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/usecase"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"log"
 	"net/http"
 	"os"
@@ -35,10 +32,13 @@ func main() {
 }
 
 func run() error {
-	logger := utils.FileLogger("log.txt")
+	logger, err := utils.FileLogger("/var/log/main_app.log")
+	if err != nil {
+		return err
+	}
 
 	defer func(logger *zap.Logger) {
-		err := logger.Sync()
+		err = logger.Sync()
 		if err != nil {
 			log.Print(err)
 		}
@@ -60,41 +60,64 @@ func run() error {
 	db.SetMaxIdleConns(25)
 	db.SetConnMaxLifetime(5 * time.Minute)
 
-	tokenGenerator := authUsecase.NewTokenator()
-	encryptor, err := authUsecase.NewEncryptor()
 	if err != nil {
 		return err
 	}
 
-	authRepo := authRepository.NewAuthRepo(db, zapSugar)
-	authUse := authUsecase.NewAuthUsecase(authRepo, tokenGenerator, encryptor, zapSugar)
-	authHandler := authDelivery.NewAuthHandler(authUse, zapSugar)
+	authConn, err := grpc.Dial(
+		"auth:8010",
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
 
-	userRepo := userRepository.NewUserRepo(db, zapSugar)
-	userUse := userUsecase.NewUserUsecase(userRepo, zapSugar)
-	userHandler := userDelivery.NewUserHandler(userUse, authUse)
+	if err != nil {
+		log.Fatalf("cant connect to session grpc")
+	}
 
-	attachmentRepo := attachmentRepository.NewAttachmentRepo(db, zapSugar)
-	attachmentUse := attachmentUsecase.NewAttachmentUsecase(attachmentRepo, zapSugar)
+	userConn, err := grpc.Dial(
+		"user:8020",
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
 
-	postRepo := postRepository.NewPostRepo(db, zapSugar)
-	postUse := postUsecase.NewPostUsecase(postRepo, zapSugar)
-	postHandler := postDelivery.NewPostHandler(postUse, authUse, attachmentUse, zapSugar)
+	if err != nil {
+		log.Fatalf("cant connect to session grpc")
+	}
 
-	creatorRepo := creatorRepository.NewCreatorRepo(db, zapSugar)
-	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo, zapSugar)
-	creatorHandler := creatorDelivery.NewCreatorHandler(creatorUse, authUse, postUse)
+	creatorConn, err := grpc.Dial(
+		"creator:8030",
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+
+	if err != nil {
+		log.Fatalf("cant connect to session grpc")
+	}
+
+	authClient := generatedAuth.NewAuthServiceClient(authConn)
+	userClient := generatedUser.NewUserServiceClient(userConn)
+	creatorClient := generatedCreator.NewCreatorServiceClient(creatorConn)
+
+	authHandler := authDelivery.NewAuthHandler(authClient, zapSugar)
+	userHandler := userDelivery.NewUserHandler(userClient, authClient, zapSugar)
+	creatorHandler := creatorDelivery.NewCreatorHandler(creatorClient, authClient, zapSugar)
+	postHandler := postDelivery.NewPostHandler(authClient, creatorClient, zapSugar)
+	subscriptionHandler := subscriptionDelivery.NewSubscriptionHandler(authClient, creatorClient, userClient, zapSugar)
+
+	r := mux.NewRouter().PathPrefix("/api").Subrouter()
+
+	r.Use(middleware.CORSMiddleware)
 
 	logMw := middleware.NewLoggerMiddleware(zapSugar)
-	r := mux.NewRouter().PathPrefix("/api").Subrouter()
-	r.Use(middleware.CORSMiddleware)
 	r.Use(logMw.LogRequest)
+
+	metricsMw := middleware.NewMetricsMiddleware()
+	metricsMw.Register(middleware.ServiceMainName)
+	r.PathPrefix("/metrics").Handler(promhttp.Handler())
+	r.Use(metricsMw.LogMetrics)
 
 	auth := r.PathPrefix("/auth").Subrouter()
 	{
 		auth.HandleFunc("/signUp", authHandler.SignUp).Methods(http.MethodPost, http.MethodOptions)
 		auth.HandleFunc("/signIn", authHandler.SignIn).Methods(http.MethodPost, http.MethodOptions)
-		auth.HandleFunc("/logout", authHandler.Logout).Methods(http.MethodGet, http.MethodOptions)
+		auth.HandleFunc("/logout", authHandler.Logout).Methods(http.MethodPut, http.MethodOptions)
 	}
 
 	user := r.PathPrefix("/user").Subrouter()
@@ -103,16 +126,28 @@ func run() error {
 		user.HandleFunc("/donate", userHandler.Donate).Methods(http.MethodPost, http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/updatePassword", userHandler.UpdatePassword).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/updateData", userHandler.UpdateData).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
-		user.HandleFunc("/homePage", userHandler.GetHomePage).Methods(http.MethodGet, http.MethodOptions)
+		user.HandleFunc("/feed", creatorHandler.GetFeed).Methods(http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/updateProfilePhoto", userHandler.UpdateProfilePhoto).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
+		user.HandleFunc("/deleteProfilePhoto/{image-uuid}", userHandler.DeleteProfilePhoto).Methods(http.MethodDelete, http.MethodOptions, http.MethodGet)
 		user.HandleFunc("/becameCreator", userHandler.BecomeCreator).Methods(http.MethodPost, http.MethodOptions, http.MethodGet)
+		user.HandleFunc("/follow/{creator-uuid}", userHandler.Follow).Methods(http.MethodPost, http.MethodOptions)
+		user.HandleFunc("/unfollow/{creator-uuid}", userHandler.Unfollow).Methods(http.MethodPut, http.MethodOptions)
+		user.HandleFunc("/subscribe/{sub-uuid}", userHandler.Subscribe).Methods(http.MethodPost, http.MethodOptions, http.MethodGet)
+		user.HandleFunc("/subscriptions", userHandler.UserSubscriptions).Methods(http.MethodOptions, http.MethodGet)
+		user.HandleFunc("/follows", userHandler.UserFollows).Methods(http.MethodOptions, http.MethodGet)
 	}
 
 	creator := r.PathPrefix("/creator").Subrouter()
 	{
 		creator.HandleFunc("/list", creatorHandler.GetAllCreators).Methods(http.MethodGet, http.MethodOptions)
+		creator.HandleFunc("/search/{keyword}", creatorHandler.FindCreator).Methods(http.MethodGet, http.MethodOptions)
 		creator.HandleFunc("/page/{creator-uuid}", creatorHandler.GetPage).Methods(http.MethodGet, http.MethodOptions)
 		creator.HandleFunc("/aim/create", creatorHandler.CreateAim).Methods(http.MethodPost, http.MethodOptions)
+		creator.HandleFunc("/updateData", creatorHandler.UpdateCreatorData).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
+		creator.HandleFunc("/updateProfilePhoto", creatorHandler.UpdateProfilePhoto).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
+		creator.HandleFunc("/deleteProfilePhoto/{image-uuid}", creatorHandler.DeleteProfilePhoto).Methods(http.MethodDelete, http.MethodOptions, http.MethodGet)
+		creator.HandleFunc("/deleteCoverPhoto/{image-uuid}", creatorHandler.DeleteCoverPhoto).Methods(http.MethodDelete, http.MethodOptions, http.MethodGet)
+		creator.HandleFunc("/updateCoverPhoto", creatorHandler.UpdateCoverPhoto).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
 	}
 
 	post := r.PathPrefix("/post").Subrouter()
@@ -125,6 +160,13 @@ func run() error {
 		post.HandleFunc("/removeLike", postHandler.RemoveLike).Methods(http.MethodPut, http.MethodOptions)
 		post.HandleFunc("/delete/{post-uuid}", postHandler.DeletePost).Methods(http.MethodDelete, http.MethodOptions, http.MethodGet)
 		post.HandleFunc("/get/{post-uuid}", postHandler.GetPost).Methods(http.MethodGet, http.MethodOptions)
+	}
+
+	subscription := r.PathPrefix("/subscription").Subrouter()
+	{
+		subscription.HandleFunc("/create", subscriptionHandler.CreateSubscription).Methods(http.MethodPost, http.MethodGet, http.MethodOptions)
+		subscription.HandleFunc("/edit/{sub-uuid}", subscriptionHandler.EditSubscription).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
+		subscription.HandleFunc("/delete/{sub-uuid}", subscriptionHandler.DeleteSubscription).Methods(http.MethodDelete, http.MethodGet, http.MethodOptions)
 	}
 
 	http.Handle("/", r)

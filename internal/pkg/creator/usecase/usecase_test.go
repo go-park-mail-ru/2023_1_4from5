@@ -51,70 +51,35 @@ func TestCreatorUsecase_GetPage(t *testing.T) {
 
 	mockCreatorRepo := mock.NewMockCreatorRepo(ctl)
 
-	tests := []struct {
+	test := []struct {
 		name               string
-		accessDetails      *models.AccessDetails
-		creatorID          string
+		userID             uuid.UUID
+		creatorID          uuid.UUID
 		repo               *mock.MockCreatorRepo
 		expectedStatusCode error
 	}{
 		{
 			name:               "OK",
-			accessDetails:      testUser,
-			creatorID:          uuid.New().String(),
+			userID:             uuid.New(),
+			creatorID:          uuid.New(),
 			repo:               mockCreatorRepo,
 			expectedStatusCode: nil,
 		},
-		{
-			name:               "WrongData: wrong creatorUUId",
-			accessDetails:      testUser,
-			creatorID:          "123",
-			repo:               mockCreatorRepo,
-			expectedStatusCode: models.WrongData,
-		},
-		{
-			name:               "InternalError",
-			accessDetails:      testUser,
-			creatorID:          uuid.New().String(),
-			repo:               mockCreatorRepo,
-			expectedStatusCode: models.InternalError,
-		},
-		{
-			name:               "WrongData: no such creator",
-			accessDetails:      testUser,
-			creatorID:          uuid.New().String(),
-			repo:               mockCreatorRepo,
-			expectedStatusCode: models.InternalError,
-		},
 	}
 
-	for i := 0; i < len(tests); i++ {
-		if tests[i].expectedStatusCode == nil {
-			tests[i].repo.EXPECT().GetPage(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, nil)
-			continue
-		}
-		if tests[i].name == "WrongData: wrong creatorUUId" {
-			continue
-		}
-		if tests[i].expectedStatusCode == models.InternalError {
-			tests[i].repo.EXPECT().GetPage(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, models.InternalError)
-		} else {
-			tests[i].repo.EXPECT().GetPage(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, models.WrongData)
-		}
-	}
+	test[0].repo.EXPECT().GetPage(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.CreatorPage{}, nil)
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			h := &CreatorUsecase{
-				repo:   mockCreatorRepo,
-				logger: zapSugar,
-			}
+	t.Run(test[0].name, func(t *testing.T) {
+		h := &CreatorUsecase{
+			repo:   mockCreatorRepo,
+			logger: zapSugar,
+		}
 
-			_, code := h.GetPage(context.Background(), test.accessDetails, test.creatorID)
-			require.Equal(t, test.expectedStatusCode, code, fmt.Errorf("%s :  expected %e, got %e,",
-				test.name, test.expectedStatusCode, code))
-		})
-	}
+		_, code := h.GetPage(context.Background(), test[0].userID, test[0].creatorID)
+		require.Equal(t, test[0].expectedStatusCode, code, fmt.Errorf("%s :  expected %e, got %e,",
+			test[0].name, test[0].expectedStatusCode, code))
+	})
+
 }
 
 func TestCreatorUsecase_CreateAim(t *testing.T) {

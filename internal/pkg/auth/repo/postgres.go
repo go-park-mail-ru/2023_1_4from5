@@ -52,7 +52,7 @@ func (r *AuthRepo) CreateUser(ctx context.Context, user models.User) (models.Use
 func (r *AuthRepo) CheckUser(ctx context.Context, user models.User) (models.User, error) {
 	var (
 		passwordHash string
-		userVersion  int
+		userVersion  int64
 		id           uuid.UUID
 	)
 
@@ -79,9 +79,9 @@ func (r *AuthRepo) CheckUser(ctx context.Context, user models.User) (models.User
 	return models.User{}, models.WrongPassword
 }
 
-func (r *AuthRepo) IncUserVersion(ctx context.Context, userId uuid.UUID) (int, error) {
+func (r *AuthRepo) IncUserVersion(ctx context.Context, userId uuid.UUID) (int64, error) {
 	row := r.db.QueryRowContext(ctx, IncUserVersion, userId)
-	var userVersion int
+	var userVersion int64
 
 	if err := row.Scan(&userVersion); err != nil {
 		r.logger.Error(err)
@@ -91,9 +91,9 @@ func (r *AuthRepo) IncUserVersion(ctx context.Context, userId uuid.UUID) (int, e
 	return userVersion, nil
 }
 
-func (r *AuthRepo) CheckUserVersion(ctx context.Context, details models.AccessDetails) (int, error) {
+func (r *AuthRepo) CheckUserVersion(ctx context.Context, details models.AccessDetails) (int64, error) {
 	row := r.db.QueryRowContext(ctx, CheckUserVersion, details.Id)
-	var userVersion int
+	var userVersion int64
 	if err := row.Scan(&userVersion); err != nil {
 		r.logger.Error(err)
 		return 0, models.InternalError

@@ -1,0 +1,17 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'metrics'
+    static_configs:
+      - targets: [ 'localhost:9090' ]
+
+  - job_name: 'metrics_app'
+    metrics_path: /api/metrics
+    static_configs:
+      - targets: [ 'main:8000','auth:8011','user:8021','creator:8031' ]
+
+  - job_name: 'metrics_node'
+    static_configs:
+      - targets: [ 'node-exporter:9100' ]

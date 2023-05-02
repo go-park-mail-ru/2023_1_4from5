@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-var user = models.User{Id: uuid.New(), Login: "testlogin", PasswordHash: "testpwd", UserVersion: 2, Name: "TESTNAME", ProfilePhoto: uuid.New()}
+var user = models.User{Id: uuid.New(), Login: "testlogin", PasswordHash: "testpwd", UserVersion: int64(2), Name: "TESTNAME", ProfilePhoto: uuid.New()}
 
 func TestAuthRepo_CheckUser(t *testing.T) {
 	db, mock, err := sqlmock.New()
@@ -158,7 +158,7 @@ func TestAuthRepo_CreateUser(t *testing.T) {
 	}
 }
 
-var user2 = models.AccessDetails{Id: uuid.New(), Login: "testlogin", UserVersion: 2}
+var user2 = models.AccessDetails{Id: uuid.New(), Login: "testlogin", UserVersion: int64(2)}
 
 func TestAuthRepo_CheckUserVersion(t *testing.T) {
 	db, mock, err := sqlmock.New()
@@ -181,7 +181,7 @@ func TestAuthRepo_CheckUserVersion(t *testing.T) {
 		name        string
 		mock        func()
 		input       models.AccessDetails
-		expectedRes int
+		expectedRes int64
 		expectedErr error
 	}{
 		{
@@ -252,7 +252,7 @@ func TestAuthRepo_IncUserVersion(t *testing.T) {
 		name        string
 		mock        func()
 		input       uuid.UUID
-		expectedRes int
+		expectedRes int64
 		expectedErr error
 	}{
 		{
@@ -262,7 +262,7 @@ func TestAuthRepo_IncUserVersion(t *testing.T) {
 				mock.ExpectQuery(`UPDATE "user" SET user_version \= user_version \+ 1 WHERE user_id\=\$1 RETURNING user_version;`).WithArgs(user2.Id).WillReturnRows(rows)
 			},
 			input:       user2.Id,
-			expectedRes: 2,
+			expectedRes: int64(2),
 		},
 		{
 			name: "InternalErr",
