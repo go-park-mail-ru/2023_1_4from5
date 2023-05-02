@@ -79,7 +79,343 @@ func TestCreatorUsecase_GetPage(t *testing.T) {
 		require.Equal(t, test[0].expectedStatusCode, code, fmt.Errorf("%s :  expected %e, got %e,",
 			test[0].name, test[0].expectedStatusCode, code))
 	})
+}
 
+func TestCreatorUsecase_UpdateCreatorData(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	mockCreatorRepo := mock.NewMockCreatorRepo(ctl)
+
+	test := []struct {
+		name        string
+		expectedErr error
+	}{
+		{
+			name:        "OK",
+			expectedErr: nil,
+		},
+	}
+
+	mockCreatorRepo.EXPECT().UpdateCreatorData(gomock.Any(), gomock.Any()).Return(nil)
+
+	t.Run(test[0].name, func(t *testing.T) {
+		h := &CreatorUsecase{
+			repo:   mockCreatorRepo,
+			logger: zapSugar,
+		}
+
+		err := h.UpdateCreatorData(context.Background(), models.UpdateCreatorInfo{
+			Description: "",
+			CreatorName: "",
+			CreatorID:   uuid.UUID{},
+		})
+		require.Equal(t, test[0].expectedErr, err, fmt.Errorf("%s :  expected %e, got %e,",
+			test[0].name, test[0].expectedErr, err))
+	})
+}
+
+func TestCreatorUsecase_CheckIfCreator(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	mockCreatorRepo := mock.NewMockCreatorRepo(ctl)
+
+	test := []struct {
+		name        string
+		expectedErr error
+	}{
+		{
+			name:        "OK",
+			expectedErr: nil,
+		},
+	}
+
+	mockCreatorRepo.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(uuid.Nil, nil)
+
+	t.Run(test[0].name, func(t *testing.T) {
+		h := &CreatorUsecase{
+			repo:   mockCreatorRepo,
+			logger: zapSugar,
+		}
+
+		_, err := h.CheckIfCreator(context.Background(), uuid.New())
+		require.Equal(t, test[0].expectedErr, err, fmt.Errorf("%s :  expected %e, got %e,",
+			test[0].name, test[0].expectedErr, err))
+	})
+
+}
+
+func TestCreatorUsecase_FindCreators(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	mockCreatorRepo := mock.NewMockCreatorRepo(ctl)
+
+	test := []struct {
+		name        string
+		expectedErr error
+	}{
+		{
+			name:        "OK",
+			expectedErr: nil,
+		},
+	}
+
+	mockCreatorRepo.EXPECT().FindCreators(gomock.Any(), gomock.Any()).Return(nil, nil)
+
+	t.Run(test[0].name, func(t *testing.T) {
+		h := &CreatorUsecase{
+			repo:   mockCreatorRepo,
+			logger: zapSugar,
+		}
+
+		_, err := h.FindCreators(context.Background(), "test")
+		require.Equal(t, test[0].expectedErr, err, fmt.Errorf("%s :  expected %e, got %e,",
+			test[0].name, test[0].expectedErr, err))
+	})
+}
+
+func TestCreatorUsecase_GetFeed(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	mockCreatorRepo := mock.NewMockCreatorRepo(ctl)
+
+	test := []struct {
+		name        string
+		expectedErr error
+	}{
+		{
+			name:        "OK",
+			expectedErr: nil,
+		},
+	}
+
+	mockCreatorRepo.EXPECT().GetFeed(gomock.Any(), gomock.Any()).Return(nil, nil)
+
+	t.Run(test[0].name, func(t *testing.T) {
+		h := &CreatorUsecase{
+			repo:   mockCreatorRepo,
+			logger: zapSugar,
+		}
+
+		_, err := h.GetFeed(context.Background(), uuid.New())
+		require.Equal(t, test[0].expectedErr, err, fmt.Errorf("%s :  expected %e, got %e,",
+			test[0].name, test[0].expectedErr, err))
+	})
+}
+
+func TestCreatorUsecase_DeleteCoverPhoto(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	mockCreatorRepo := mock.NewMockCreatorRepo(ctl)
+
+	test := []struct {
+		name        string
+		expectedErr error
+	}{
+		{
+			name:        "OK",
+			expectedErr: nil,
+		},
+	}
+
+	mockCreatorRepo.EXPECT().DeleteCoverPhoto(gomock.Any(), gomock.Any()).Return(nil)
+
+	t.Run(test[0].name, func(t *testing.T) {
+		h := &CreatorUsecase{
+			repo:   mockCreatorRepo,
+			logger: zapSugar,
+		}
+
+		err := h.DeleteCoverPhoto(context.Background(), uuid.New())
+		require.Equal(t, test[0].expectedErr, err, fmt.Errorf("%s :  expected %e, got %e,",
+			test[0].name, test[0].expectedErr, err))
+	})
+}
+
+func TestCreatorUsecase_DeleteProfilePhoto(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	mockCreatorRepo := mock.NewMockCreatorRepo(ctl)
+
+	test := []struct {
+		name        string
+		expectedErr error
+	}{
+		{
+			name:        "OK",
+			expectedErr: nil,
+		},
+	}
+
+	mockCreatorRepo.EXPECT().DeleteProfilePhoto(gomock.Any(), gomock.Any()).Return(nil)
+
+	t.Run(test[0].name, func(t *testing.T) {
+		h := &CreatorUsecase{
+			repo:   mockCreatorRepo,
+			logger: zapSugar,
+		}
+
+		err := h.DeleteProfilePhoto(context.Background(), uuid.New())
+		require.Equal(t, test[0].expectedErr, err, fmt.Errorf("%s :  expected %e, got %e,",
+			test[0].name, test[0].expectedErr, err))
+	})
+}
+
+func TestCreatorUsecase_UpdateCoverPhoto(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	mockCreatorRepo := mock.NewMockCreatorRepo(ctl)
+
+	tests := []struct {
+		name        string
+		expectedErr error
+		mock        func()
+	}{
+		{
+			name:        "OK",
+			expectedErr: nil,
+			mock: func() {
+				mockCreatorRepo.EXPECT().UpdateCoverPhoto(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+			},
+		},
+		{
+			name:        "Internal Err",
+			expectedErr: models.InternalError,
+			mock: func() {
+				mockCreatorRepo.EXPECT().UpdateCoverPhoto(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.InternalError)
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &CreatorUsecase{
+				repo:   mockCreatorRepo,
+				logger: zapSugar,
+			}
+			test.mock()
+			_, err := h.UpdateCoverPhoto(context.Background(), uuid.New())
+			require.Equal(t, test.expectedErr, err, fmt.Errorf("%s :  expected %e, got %e,",
+				test.name, test.expectedErr, err))
+		})
+	}
+}
+
+func TestCreatorUsecase_UpdateProfilePhoto(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	mockCreatorRepo := mock.NewMockCreatorRepo(ctl)
+
+	tests := []struct {
+		name        string
+		expectedErr error
+		mock        func()
+	}{
+		{
+			name:        "OK",
+			expectedErr: nil,
+			mock: func() {
+				mockCreatorRepo.EXPECT().UpdateProfilePhoto(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+			},
+		},
+		{
+			name:        "Internal Err",
+			expectedErr: models.InternalError,
+			mock: func() {
+				mockCreatorRepo.EXPECT().UpdateProfilePhoto(gomock.Any(), gomock.Any(), gomock.Any()).Return(models.InternalError)
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &CreatorUsecase{
+				repo:   mockCreatorRepo,
+				logger: zapSugar,
+			}
+			test.mock()
+			_, err := h.UpdateProfilePhoto(context.Background(), uuid.New())
+			require.Equal(t, test.expectedErr, err, fmt.Errorf("%s :  expected %e, got %e,",
+				test.name, test.expectedErr, err))
+		})
+	}
 }
 
 func TestCreatorUsecase_CreateAim(t *testing.T) {
