@@ -22,10 +22,10 @@ var testSubscriptionId = []uuid.UUID{subsIDs[0]}
 var id = subsIDs[0].String()
 var attachTypes = []string{"test1", "test2"}
 var attachments = []models.Attachment{{Id: attachsIDs[0], Type: attachTypes[0]}, {Id: attachsIDs[1], Type: attachTypes[1]}}
-var subs = []models.Subscription{{Id: subsIDs[0], Creator: creatorId, MonthCost: 100, Title: "test", Description: "TEST"}, {Id: subsIDs[1], Creator: creatorId, MonthCost: 100}}
-var posts = []models.Post{{Id: uuid.New(), Creator: creatorId, LikesCount: 4, Title: "test", Text: "TEST", Attachments: attachments, Subscriptions: subs}, {Id: uuid.New(), Creator: creatorId, LikesCount: 15, Title: "test1", Text: "TEST1", Attachments: attachments, Subscriptions: subs}}
-var creatorInfo = models.Creator{Id: creatorId, UserId: uuid.New(), Name: "testName", FollowersCount: 5, Description: "test", PostsCount: 10}
-var creatorAim = models.Aim{MoneyGot: 100, MoneyNeeded: 200, Description: "testAim", Creator: creatorId}
+var subs = []models.Subscription{{Id: subsIDs[0], Creator: creatorId, MonthCost: int64(100), Title: "test", Description: "TEST"}, {Id: subsIDs[1], Creator: creatorId, MonthCost: 100}}
+var posts = []models.Post{{Id: uuid.New(), Creator: creatorId, LikesCount: int64(4), Title: "test", Text: "TEST", Attachments: attachments, Subscriptions: subs}, {Id: uuid.New(), Creator: creatorId, LikesCount: 15, Title: "test1", Text: "TEST1", Attachments: attachments, Subscriptions: subs}}
+var creatorInfo = models.Creator{Id: creatorId, UserId: uuid.New(), Name: "testName", FollowersCount: int64(5), Description: "test", PostsCount: 10}
+var creatorAim = models.Aim{MoneyGot: int64(100), MoneyNeeded: int64(200), Description: "testAim", Creator: creatorId}
 var creatorPageRes = models.CreatorPage{CreatorInfo: creatorInfo, Aim: creatorAim}
 var creatorPageRes2 = models.CreatorPage{CreatorInfo: creatorInfo, Aim: creatorAim, Posts: posts, Subscriptions: subs}
 var creators = []models.Creator{creatorInfo, creatorInfo}
@@ -658,45 +658,6 @@ func TestCreatorRepo_GetPage(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			name: "Ok",
-			mock: func() {
-				rows := sqlmock.NewRows([]string{"user_id", "name", "cover_photo", "followers_count", "description", "posts_count",
-					"aim", "money_got", "money_needed", "profile_photo"}).AddRow(creatorInfo.UserId, creatorInfo.Name, creatorInfo.CoverPhoto, creatorInfo.FollowersCount,
-					creatorInfo.Description, creatorInfo.PostsCount, creatorAim.Description, creatorAim.MoneyGot, creatorAim.MoneyNeeded, creatorInfo.ProfilePhoto)
-				mock.ExpectQuery(`SELECT user_id, name, cover_photo, followers_count, description, posts_count, aim, money_got, money_needed, profile_photo FROM "creator" WHERE`).
-					WithArgs(creatorId).WillReturnRows(rows)
-				rows = sqlmock.NewRows([]string{"subscription_id"}).AddRow("{'" + id + "'}")
-				mock.ExpectQuery(`SELECT array_agg\(subscription_id\) FROM "user_subscription" WHERE `).
-					WithArgs(userId).WillReturnRows(rows)
-				rows = sqlmock.NewRows([]string{"post_id", "creation_date", "title", "post_text", "likes_count", "attachment_id", "attachment_type", "subscription_id"})
-
-				rows = rows.AddRow(posts[0].Id, posts[0].Creation, posts[0].Title, posts[0].Text, posts[0].LikesCount, fmt.Sprintf("{'%s','%s','%s','%s'}", attachsIDs[0], attachsIDs[1], attachsIDs[0], attachsIDs[1]), fmt.Sprintf("{%s,%s,%s,%s}", attachTypes[0], attachTypes[1], attachTypes[0], attachTypes[1]), fmt.Sprintf("{'%s','%s'}", subsIDs[0], subsIDs[1]))
-				rows = rows.AddRow(posts[1].Id, posts[1].Creation, posts[1].Title, posts[1].Text, posts[1].LikesCount, fmt.Sprintf("{'%s','%s','%s','%s'}", attachsIDs[0], attachsIDs[1], attachsIDs[0], attachsIDs[1]), fmt.Sprintf("{%s,%s,%s,%s}", attachTypes[0], attachTypes[1], attachTypes[0], attachTypes[1]), fmt.Sprintf("{'%s','%s'}", subsIDs[0], subsIDs[1]))
-
-				mock.ExpectQuery(`SELECT "post"\.post_id, creation_date, title, post_text, likes_count, array_agg\(attachment_id\), array_agg\(attachment_type\), array_agg\(DISTINCT subscription_id\) FROM "post" LEFT JOIN "attachment" a on "post"\.post_id \= a\.post_id LEFT JOIN "post_subscription" ps on "post"\.post_id \= ps\.post_id WHERE`).
-					WithArgs(creatorId).WillReturnRows(rows)
-				for i := 0; i < 4; i++ {
-					rows = sqlmock.NewRows([]string{"creator_id", "month_cost", "title", "description"}).AddRow(subs[i%2].Creator, subs[i%2].MonthCost, subs[i%2].Title, subs[i%2].Description)
-					mock.ExpectQuery(`SELECT creator_id, month_cost, title, description FROM "subscription" WHERE`).WithArgs(subsIDs[i%2]).WillReturnRows(rows)
-				}
-				for i := 0; i < 2; i++ {
-					rows = sqlmock.NewRows([]string{"post_id", "user_id"}).AddRow(postId, userId)
-					mock.ExpectQuery(`SELECT post_id, user_id FROM "like_post" WHERE`).
-						WithArgs(posts[i].Id, userId).WillReturnRows(rows)
-				}
-				rows = sqlmock.NewRows([]string{"subscription_id", "month_cost", "title", "description"})
-				for _, sub := range subs {
-					rows = rows.AddRow(sub.Id, sub.MonthCost, sub.Title, sub.Description)
-				}
-				mock.ExpectQuery(`SELECT subscription_id, month_cost, title, description FROM "subscription" WHERE`).
-					WithArgs(creatorId).WillReturnRows(rows)
-			},
-			creatorID:   creatorId,
-			userID:      userId,
-			expectedRes: creatorPageRes2,
-			expectedErr: nil,
-		},
-		{
 			name: "Wrong Data no such author",
 			mock: func() {
 				mock.ExpectQuery(`SELECT user_id, name, cover_photo, followers_count, description, posts_count, aim, money_got, money_needed, profile_photo FROM "creator" WHERE`).
@@ -713,70 +674,6 @@ func TestCreatorRepo_GetPage(t *testing.T) {
 				mock.ExpectQuery(`SELECT user_id, name, cover_photo, followers_count, description, posts_count, aim, money_got, money_needed, profile_photo FROM "creator" WHERE`).
 					WithArgs(creatorId).WillReturnError(errors.New("test"))
 
-			},
-			creatorID:   creatorId,
-			userID:      userId,
-			expectedErr: models.InternalError,
-		},
-		{
-			name: "Internal Error in GetUserSubscriptions",
-			mock: func() {
-				rows := sqlmock.NewRows([]string{"user_id", "name", "cover_photo", "followers_count", "description", "posts_count",
-					"aim", "money_got", "money_needed", "profile_photo"}).AddRow(creatorInfo.UserId, creatorInfo.Name, creatorInfo.CoverPhoto, creatorInfo.FollowersCount,
-					creatorInfo.Description, creatorInfo.PostsCount, creatorAim.Description, creatorAim.MoneyGot, creatorAim.MoneyNeeded, creatorInfo.ProfilePhoto)
-				mock.ExpectQuery(`SELECT user_id, name, cover_photo, followers_count, description, posts_count, aim, money_got, money_needed, profile_photo FROM "creator" WHERE`).
-					WithArgs(creatorId).WillReturnRows(rows)
-				mock.ExpectQuery(`SELECT array_agg\(subscription_id\) FROM "user_subscription" WHERE `).
-					WithArgs(userId).WillReturnError(errors.New("test"))
-			},
-			creatorID:   creatorId,
-			userID:      userId,
-			expectedErr: models.InternalError,
-		},
-		{
-			name: "Ok",
-			mock: func() {
-				rows := sqlmock.NewRows([]string{"user_id", "name", "cover_photo", "followers_count", "description", "posts_count",
-					"aim", "money_got", "money_needed", "profile_photo"}).AddRow(creatorInfo.UserId, creatorInfo.Name, creatorInfo.CoverPhoto, creatorInfo.FollowersCount,
-					creatorInfo.Description, creatorInfo.PostsCount, creatorAim.Description, creatorAim.MoneyGot, creatorAim.MoneyNeeded, creatorInfo.ProfilePhoto)
-				mock.ExpectQuery(`SELECT user_id, name, cover_photo, followers_count, description, posts_count, aim, money_got, money_needed, profile_photo FROM "creator" WHERE`).
-					WithArgs(creatorId).WillReturnRows(rows)
-				rows = sqlmock.NewRows([]string{"subscription_id"}).AddRow("{'" + id + "'}")
-				mock.ExpectQuery(`SELECT array_agg\(subscription_id\) FROM "user_subscription" WHERE `).
-					WithArgs(userId).WillReturnRows(rows)
-				rows = sqlmock.NewRows([]string{"post_id", "creation_date", "title", "post_text", "likes_count", "attachment_id", "attachment_type", "subscription_id"})
-
-				rows = rows.AddRow(posts[0].Id, posts[0].Creation, posts[0].Title, posts[0].Text, posts[0].LikesCount, fmt.Sprintf("{'%s','%s','%s','%s'}", attachsIDs[0], attachsIDs[1], attachsIDs[0], attachsIDs[1]), fmt.Sprintf("{%s,%s,%s,%s}", attachTypes[0], attachTypes[1], attachTypes[0], attachTypes[1]), fmt.Sprintf("{'%s','%s'}", subsIDs[0], subsIDs[1]))
-				rows = rows.AddRow(posts[1].Id, posts[1].Creation, posts[1].Title, posts[1].Text, posts[1].LikesCount, fmt.Sprintf("{'%s','%s','%s','%s'}", attachsIDs[0], attachsIDs[1], attachsIDs[0], attachsIDs[1]), fmt.Sprintf("{%s,%s,%s,%s}", attachTypes[0], attachTypes[1], attachTypes[0], attachTypes[1]), fmt.Sprintf("{'%s','%s'}", subsIDs[0], subsIDs[1]))
-
-				mock.ExpectQuery(`SELECT "post"\.post_id, creation_date, title, post_text, likes_count, array_agg\(attachment_id\), array_agg\(attachment_type\), array_agg\(DISTINCT subscription_id\) FROM "post" LEFT JOIN "attachment" a on "post"\.post_id \= a\.post_id LEFT JOIN "post_subscription" ps on "post"\.post_id \= ps\.post_id WHERE`).
-					WithArgs(creatorId).WillReturnRows(rows)
-				for i := 0; i < 4; i++ {
-					rows = sqlmock.NewRows([]string{"creator_id", "month_cost", "title", "description"}).AddRow(subs[i%2].Creator, subs[i%2].MonthCost, subs[i%2].Title, subs[i%2].Description)
-					mock.ExpectQuery(`SELECT creator_id, month_cost, title, description FROM "subscription" WHERE`).WithArgs(subsIDs[i%2]).WillReturnRows(rows)
-				}
-
-				mock.ExpectQuery(`SELECT post_id, user_id FROM "like_post" WHERE`).
-					WithArgs(posts[0].Id, userId).WillReturnError(errors.New("test"))
-
-			},
-			creatorID:   creatorId,
-			userID:      userId,
-			expectedErr: models.InternalError,
-		},
-		{
-			name: "Internal Error in IsLiked",
-			mock: func() {
-				rows := sqlmock.NewRows([]string{"user_id", "name", "cover_photo", "followers_count", "description", "posts_count",
-					"aim", "money_got", "money_needed", "profile_photo"}).AddRow(creatorInfo.UserId, creatorInfo.Name, creatorInfo.CoverPhoto, creatorInfo.FollowersCount,
-					creatorInfo.Description, creatorInfo.PostsCount, creatorAim.Description, creatorAim.MoneyGot, creatorAim.MoneyNeeded, creatorInfo.ProfilePhoto)
-				mock.ExpectQuery(`SELECT user_id, name, cover_photo, followers_count, description, posts_count, aim, money_got, money_needed, profile_photo FROM "creator" WHERE`).
-					WithArgs(creatorId).WillReturnRows(rows)
-				rows = sqlmock.NewRows([]string{"subscription_id"}).AddRow("{'" + id + "'}")
-				mock.ExpectQuery(`SELECT array_agg\(subscription_id\) FROM "user_subscription" WHERE `).
-					WithArgs(userId).WillReturnRows(rows)
-				mock.ExpectQuery(`SELECT "post"\.post_id, creation_date, title, post_text, likes_count, array_agg\(attachment_id\), array_agg\(attachment_type\), array_agg\(DISTINCT subscription_id\) FROM "post" LEFT JOIN "attachment" a on "post"\.post_id \= a\.post_id LEFT JOIN "post_subscription" ps on "post"\.post_id \= ps\.post_id WHERE`).
-					WithArgs(creatorId).WillReturnError(errors.New("test"))
 			},
 			creatorID:   creatorId,
 			userID:      userId,

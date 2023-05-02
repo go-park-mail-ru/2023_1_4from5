@@ -148,3 +148,8 @@ ORDER BY creation_date DESC;
 
 
 --isPostAvailable
+
+SELECT c.creator_id, name, profile_photo, description
+FROM "follow"
+         join creator c on c.creator_id = follow.creator_id
+WHERE c.user_id = 'b184cc4e-78ef-434f-ac88-5084a77ee087';

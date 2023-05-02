@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -171,6 +172,7 @@ func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId u
 		} else { // находим подписки пользователя
 			tmp, err := r.GetUserSubscriptions(ctx, userId)
 			if err != nil {
+				fmt.Println("user subs")
 				r.logger.Error(err)
 				return models.CreatorPage{}, models.InternalError
 			}
@@ -201,6 +203,7 @@ func (r *CreatorRepo) GetPage(ctx context.Context, userId uuid.UUID, creatorId u
 				}
 			}
 			if creatorPage.Posts[i].IsLiked, err = r.IsLiked(ctx, userId, creatorPage.Posts[i].Id); err != nil {
+				fmt.Println("is liked")
 				return models.CreatorPage{}, models.InternalError
 			}
 			if !creatorPage.Posts[i].IsAvailable {

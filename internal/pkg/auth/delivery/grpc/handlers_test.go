@@ -274,6 +274,77 @@ func TestGrpcAuthHandler_CheckUser(t *testing.T) {
 	}
 }
 
+func TestGrpcAuthHandler_CheckUserVersion(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	usecase := mocks.NewMockAuthUsecase(ctrl)
+	handler := NewGrpcAuthHandler(usecase)
+
+	client, closer := startGRPCServer(handler)
+	defer closer()
+	_, err := uuid.Parse("uuid.New().String()")
+
+	tests := []struct {
+		name string
+		in   *generated.AccessDetails
+		out  *generated.UserVersion
+		err  error
+		mock func()
+	}{
+		{
+			name: "OK",
+			in: &generated.AccessDetails{
+				Login:       "test_login",
+				UserVersion: int64(2),
+				Id:          uuid.New().String(),
+			},
+			out: &generated.UserVersion{Error: "", UserVersion: int64(2)},
+			err: nil,
+			mock: func() {
+				usecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Times(1).Return(int64(2), nil)
+			},
+		},
+		{
+			name: "Error while parsing uuid",
+			in: &generated.AccessDetails{
+				Login:       "test_login",
+				UserVersion: int64(2),
+				Id:          "uuid.New().String()",
+			},
+			out: &generated.UserVersion{Error: err.Error()},
+			err: nil,
+			mock: func() {
+			},
+		},
+		{
+			name: "Error",
+			in: &generated.AccessDetails{
+				Login:       "test_login",
+				UserVersion: int64(2),
+				Id:          uuid.New().String(),
+			},
+			out: &generated.UserVersion{Error: errors.New("test").Error()},
+			err: nil,
+			mock: func() {
+				usecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Times(1).Return(int64(2), errors.New("test"))
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.mock()
+
+			token, err := client.CheckUserVersion(context.Background(), test.in)
+
+			require.Equal(t, test.out, token, fmt.Errorf("%s :  expected %s, got %s",
+				test.name, test.out, token))
+			require.Equal(t, nil, err, fmt.Errorf("error wasnt expected, got %s",
+				err))
+		})
+	}
+}
+
 func startGRPCServer(impl generated.AuthServiceServer) (generated.AuthServiceClient, func()) {
 	bufferSize := 1024 * 1024
 	listener := bufconn.Listen(bufferSize)
