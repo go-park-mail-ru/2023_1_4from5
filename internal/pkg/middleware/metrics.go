@@ -45,11 +45,12 @@ func (w *writer) WriteHeader(code int) {
 }
 
 type MetricsMiddleware struct {
-	metric    *prometheus.GaugeVec
-	counter   *prometheus.CounterVec   //количество ошибок
-	durations *prometheus.HistogramVec //сколько выполняются различные запросы
-	errors    *prometheus.CounterVec
-	name      string
+	metric      *prometheus.GaugeVec
+	counter     *prometheus.CounterVec
+	durations   *prometheus.HistogramVec
+	errors      *prometheus.CounterVec
+	durationNew *prometheus.SummaryVec
+	name        string
 }
 
 func NewMetricsMiddleware() *MetricsMiddleware {
@@ -113,12 +114,28 @@ func (m *MetricsMiddleware) Register(name string) {
 		Help: "Number of all errors.",
 	}, []string{URL})
 
+	s := prometheus.NewSummaryVec(prometheus.SummaryOpts{
+		Namespace: name,
+		Subsystem: name,
+		Name:      name,
+		Objectives: map[float64]float64{
+			0.5:  0.1,
+			0.8:  0.1,
+			0.9:  0.1,
+			0.95: 0.1,
+			0.99: 0.1,
+			1:    0.1}},
+		[]string{URL, StatusCode})
+
+	m.durationNew = s
+
 	m.errors = errs
 	rand.Seed(time.Now().Unix())
 	prometheus.MustRegister(m.metric)
 	prometheus.MustRegister(m.counter)
 	prometheus.MustRegister(m.durations)
 	prometheus.MustRegister(m.errors)
+	prometheus.MustRegister(m.durationNew)
 }
 
 func (m *MetricsMiddleware) LogMetrics(next http.Handler) http.Handler {
@@ -144,6 +161,8 @@ func (m *MetricsMiddleware) LogMetrics(next http.Handler) http.Handler {
 		}).Inc()
 
 		m.durations.With(prometheus.Labels{URL: string(urlWithCuttedUUID)}).Observe(float64(tm.Milliseconds()))
+
+		m.durationNew.With(prometheus.Labels{URL: string(urlWithCuttedUUID), StatusCode: fmt.Sprintf("%d", wrapper.statusCode)}).Observe(float64(tm.Milliseconds()))
 
 		if wrapper.statusCode != http.StatusOK {
 			m.errors.With(prometheus.Labels{URL: string(urlWithCuttedUUID)}).Inc()
