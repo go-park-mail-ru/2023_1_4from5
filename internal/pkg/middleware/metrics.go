@@ -143,7 +143,7 @@ func (m *MetricsMiddleware) LogMetrics(next http.Handler) http.Handler {
 			FullTime:    tm.String(),
 		}).Inc()
 
-		m.durations.With(prometheus.Labels{URL: string(urlWithCuttedUUID)}).Observe(tm.Seconds())
+		m.durations.With(prometheus.Labels{URL: string(urlWithCuttedUUID)}).Observe(float64(tm.Milliseconds()))
 
 		if wrapper.statusCode != http.StatusOK {
 			m.errors.With(prometheus.Labels{URL: string(urlWithCuttedUUID)}).Inc()
