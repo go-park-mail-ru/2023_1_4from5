@@ -134,6 +134,7 @@ func (m *MetricsMiddleware) LogMetrics(next http.Handler) http.Handler {
 
 		bytesUrl := []byte(r.URL.Path)
 		urlWithCuttedUUID := UUIDRegExp.ReplaceAll(bytesUrl, []byte("uuid"))
+
 		m.metric.With(prometheus.Labels{
 			ServiceName: m.name,
 			URL:         string(urlWithCuttedUUID),
@@ -142,11 +143,11 @@ func (m *MetricsMiddleware) LogMetrics(next http.Handler) http.Handler {
 			FullTime:    tm.String(),
 		}).Inc()
 
-		m.durations.With(prometheus.Labels{URL: r.URL.Path}).Observe(tm.Seconds())
+		m.durations.With(prometheus.Labels{URL: string(urlWithCuttedUUID)}).Observe(tm.Seconds())
 
 		if wrapper.statusCode != http.StatusOK {
-			m.errors.With(prometheus.Labels{URL: r.URL.Path}).Inc()
+			m.errors.With(prometheus.Labels{URL: string(urlWithCuttedUUID)}).Inc()
 		}
-		m.counter.With(prometheus.Labels{URL: r.URL.Path}).Inc()
+		m.counter.With(prometheus.Labels{URL: string(urlWithCuttedUUID)}).Inc()
 	})
 }
