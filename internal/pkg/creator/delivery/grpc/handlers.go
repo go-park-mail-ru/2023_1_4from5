@@ -13,6 +13,8 @@ import (
 	"golang.org/x/net/context"
 )
 
+//go:generate mockgen -source=./generated/creator_grpc.pb.go -destination=../../mocks/creator_grpc.go -package=mock
+
 type GrpcCreatorHandler struct {
 	uc  creator.CreatorUsecase
 	puc post.PostUsecase

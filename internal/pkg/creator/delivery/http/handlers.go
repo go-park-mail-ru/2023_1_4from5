@@ -418,6 +418,7 @@ func (h *CreatorHandler) FindCreator(w http.ResponseWriter, r *http.Request) {
 func (h *CreatorHandler) GetPage(w http.ResponseWriter, r *http.Request) {
 	creatorUUID, ok := mux.Vars(r)["creator-uuid"]
 	if !ok {
+		fmt.Println(creatorUUID)
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
