@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc"
 	"math/rand"
 	"net/http"
+	"regexp"
 	"time"
 )
 
@@ -15,6 +16,10 @@ const (
 	ServiceAuthName    = "auth"
 	ServiceUserName    = "user"
 	ServiceCreatorName = "creator"
+)
+
+var (
+	UUIDRegExp = regexp.MustCompile(`[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{12}`)
 )
 
 const (
@@ -126,9 +131,12 @@ func (m *MetricsMiddleware) LogMetrics(next http.Handler) http.Handler {
 		next.ServeHTTP(wrapper, r.WithContext(ctx))
 
 		tm := time.Since(start)
+
+		bytesUrl := []byte(r.URL.Path)
+		urlWithCuttedUUID := UUIDRegExp.ReplaceAll(bytesUrl, []byte("uuid"))
 		m.metric.With(prometheus.Labels{
 			ServiceName: m.name,
-			URL:         r.URL.Path,
+			URL:         string(urlWithCuttedUUID),
 			Method:      r.Method,
 			StatusCode:  fmt.Sprintf("%d", wrapper.statusCode),
 			FullTime:    tm.String(),
