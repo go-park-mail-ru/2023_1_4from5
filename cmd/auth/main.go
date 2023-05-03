@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	grpcAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	authRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/repo"

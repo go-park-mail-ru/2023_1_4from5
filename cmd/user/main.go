@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
 	grpcUser "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/grpc"
 	generatedUser "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/grpc/generated"
