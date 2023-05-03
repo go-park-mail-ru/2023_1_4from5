@@ -26,7 +26,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		log.Print(err)
+		fmt.Print(err)
 		os.Exit(1)
 	}
 }
@@ -40,7 +40,7 @@ func run() error {
 	defer func(logger *zap.Logger) {
 		err = logger.Sync()
 		if err != nil {
-			log.Print(err)
+			fmt.Print(err)
 		}
 	}(logger)
 
