@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-//go:generate mockgen -source=user_grpc.pb.go -destination=user_grpc.go -package=grpc
+//go:generate mockgen -source=./generated/user_grpc.pb.go -destination=../../mocks/user_grpc.go -package=mock
 
 type GrpcUserHandler struct {
 	uc user.UserUsecase

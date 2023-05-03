@@ -88,35 +88,7 @@ func TestUserUsecase_GetProfile(t *testing.T) {
 				repo: test.mockUserRepo,
 			}
 
-			_, code := u.GetProfile(context.Background(), test.accessDetails)
-			require.Equal(t, test.expectedStatusCode, code, fmt.Errorf("%s :  expected %e, got %e,",
-				test.name, test.expectedStatusCode, code))
-		})
-	}
-}
-
-func TestUserUsecase_GetHomePage(t *testing.T) {
-	ctl := gomock.NewController(t)
-	defer ctl.Finish()
-	tests := userUsecaseTestsSetup(ctl)
-
-	for i := 0; i < len(tests); i++ {
-		if tests[i].expectedStatusCode == nil {
-			tests[i].mockUserRepo.EXPECT().GetHomePage(gomock.Any(), gomock.Any()).Return(models.UserHomePage{}, nil)
-		} else if tests[i].expectedStatusCode == models.InternalError {
-			tests[i].mockUserRepo.EXPECT().GetHomePage(gomock.Any(), gomock.Any()).Return(models.UserHomePage{}, models.InternalError)
-		} else {
-			tests[i].mockUserRepo.EXPECT().GetHomePage(gomock.Any(), gomock.Any()).Return(models.UserHomePage{}, models.NotFound)
-		}
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			h := &UserUsecase{
-				repo: test.mockUserRepo,
-			}
-
-			_, code := h.GetHomePage(context.Background(), test.accessDetails)
+			_, code := u.GetProfile(context.Background(), test.accessDetails.Id)
 			require.Equal(t, test.expectedStatusCode, code, fmt.Errorf("%s :  expected %e, got %e,",
 				test.name, test.expectedStatusCode, code))
 		})
@@ -158,7 +130,7 @@ func TestUserUsecase_UpdatePhoto(t *testing.T) {
 				repo: mockUserRepo,
 			}
 			test.mock()
-			_, code := h.UpdatePhoto(context.Background(), test.accessDetails)
+			_, code := h.UpdatePhoto(context.Background(), test.accessDetails.Id)
 			require.Equal(t, test.expectedStatusCode, code, fmt.Errorf("%s :  expected %e, got %e,",
 				test.name, test.expectedStatusCode, code))
 		})
@@ -266,14 +238,14 @@ func TestUserUsecase_Donate(t *testing.T) {
 		donateInfo         models.Donate
 		mock               func()
 		expectedStatusCode error
-		expectedRes        int
+		expectedRes        int64
 	}{
 		{
 			name:       "OK",
 			id:         uuid.New(),
 			donateInfo: models.Donate{},
 			mock: func() {
-				mockUserRepo.EXPECT().Donate(gomock.Any(), gomock.Any(), gomock.Any()).Return(100, nil)
+				mockUserRepo.EXPECT().Donate(gomock.Any(), gomock.Any(), gomock.Any()).Return(int64(100), nil)
 			},
 			expectedStatusCode: nil,
 			expectedRes:        100,
@@ -283,7 +255,7 @@ func TestUserUsecase_Donate(t *testing.T) {
 			id:         uuid.New(),
 			donateInfo: models.Donate{},
 			mock: func() {
-				mockUserRepo.EXPECT().Donate(gomock.Any(), gomock.Any(), gomock.Any()).Return(0, models.InternalError)
+				mockUserRepo.EXPECT().Donate(gomock.Any(), gomock.Any(), gomock.Any()).Return(int64(0), models.InternalError)
 			},
 			expectedStatusCode: models.InternalError,
 			expectedRes:        0,

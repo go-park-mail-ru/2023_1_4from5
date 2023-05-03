@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	authDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/http"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
@@ -26,7 +27,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		log.Print(err)
+		fmt.Print(err)
 		os.Exit(1)
 	}
 }
@@ -40,7 +41,7 @@ func run() error {
 	defer func(logger *zap.Logger) {
 		err = logger.Sync()
 		if err != nil {
-			log.Print(err)
+			fmt.Print(err)
 		}
 	}(logger)
 

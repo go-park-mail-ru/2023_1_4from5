@@ -333,21 +333,22 @@ func (h *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.authClient.CheckUser(r.Context(), &generatedAuth.User{
+	out1, err := h.authClient.CheckUser(r.Context(), &generatedAuth.User{
 		Login:        userDataJWT.Login,
 		PasswordHash: updPwd.OldPassword,
 	})
-	if err == models.WrongPassword {
-		utils.Response(w, http.StatusUnauthorized, nil)
-		return
-	}
-	if err == models.InternalError {
+
+	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 
-	if err != nil {
-		utils.Response(w, http.StatusBadRequest, nil)
+	if out1.Error == models.WrongPassword.Error() {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+	if out1.Error == models.InternalError.Error() {
+		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 

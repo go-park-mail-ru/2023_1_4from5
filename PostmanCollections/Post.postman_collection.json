@@ -12,7 +12,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"post_id\" : \"9432666b-b2fd-4094-b29d-6ea73aebf5c9\"\n}"
+					"raw": "{\n    \"post_id\" : \"c4670330-b454-4059-af61-ff9d9ccbaafd\"\n}"
 				},
 				"url": {
 					"raw": "{{url_l}}/api/post/addLike",
@@ -35,7 +35,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"post_id\" : \"9432666b-b2fd-4094-b29d-6ea73aebf5c9\"\n}"
+					"raw": "{\n    \"post_id\" : \"c4670330-b454-4059-af61-ff9d9ccbaafd\"\n}"
 				},
 				"url": {
 					"raw": "{{url_l}}/api/post/removeLike",
@@ -114,9 +114,9 @@
 					]
 				},
 				"url": {
-					"raw": "{{url}}/api/post/create",
+					"raw": "{{url_l}}/api/post/create",
 					"host": [
-						"{{url}}"
+						"{{url_l}}"
 					],
 					"path": [
 						"api",
@@ -153,7 +153,7 @@
 					}
 				],
 				"url": {
-					"raw": "{{url_l}}/api/post/delete/eaff81d8-7aa6-40d4-8d1d-4b4d85f60fc2",
+					"raw": "{{url_l}}/api/post/delete/0dff7afc-b2fb-4c5a-a65e-6626f2eb5bb3",
 					"host": [
 						"{{url_l}}"
 					],
@@ -161,7 +161,7 @@
 						"api",
 						"post",
 						"delete",
-						"eaff81d8-7aa6-40d4-8d1d-4b4d85f60fc2"
+						"0dff7afc-b2fb-4c5a-a65e-6626f2eb5bb3"
 					]
 				}
 			},
@@ -214,7 +214,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"title\" : \"\",\n    \"text\" : \"newText\",\n    \"available_subscriptions\" : [ \"df0dd4ee-0772-43e2-919c-9b059e389b9a\"]\n}",
+					"raw": "{\n    \"title\" : \"11\",\n    \"text\" : \"newText\",\n    \"available_subscriptions\" : [ \"df0dd4ee-0772-43e2-919c-9b059e389b9a\"]\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -222,7 +222,7 @@
 					}
 				},
 				"url": {
-					"raw": "{{url_l}}/api/post/edit/566ece0a-a3a4-466c-8425-251147a68e90",
+					"raw": "{{url_l}}/api/post/edit/91772c81-60a0-4766-911d-38a529796e17",
 					"host": [
 						"{{url_l}}"
 					],
@@ -230,7 +230,7 @@
 						"api",
 						"post",
 						"edit",
-						"566ece0a-a3a4-466c-8425-251147a68e90"
+						"91772c81-60a0-4766-911d-38a529796e17"
 					]
 				}
 			},
@@ -267,12 +267,12 @@
 						{
 							"key": "attachment",
 							"type": "file",
-							"src": "/Users/qqq/Documents/Pictures/AOHAKiXyHq4.jpg"
+							"src": "/home/dasha/Downloads/69wTNngoP3s.jpg"
 						}
 					]
 				},
 				"url": {
-					"raw": "{{url_l}}/api/post/addAttach/566ece0a-a3a4-466c-8425-251147a68e90",
+					"raw": "{{url_l}}/api/post/addAttach/91772c81-60a0-4766-911d-38a529796e17",
 					"host": [
 						"{{url_l}}"
 					],
@@ -280,7 +280,7 @@
 						"api",
 						"post",
 						"addAttach",
-						"566ece0a-a3a4-466c-8425-251147a68e90"
+						"91772c81-60a0-4766-911d-38a529796e17"
 					]
 				}
 			},
@@ -313,7 +313,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"id\" : \"dfad07c8-b1b2-4136-9348-59fd0b0f5d8a\",\n    \"type\" : \"image/webp\"\n}",
+					"raw": "{\n    \"id\" : \"38cb15f5-63b7-4554-9447-0fa322628af0\",\n    \"type\" : \"image/jpeg\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -321,16 +321,15 @@
 					}
 				},
 				"url": {
-					"raw": "{{url_local}}:8000/api/post/deleteAttach/6bfc10e1-0e55-46ec-96bf-937e4fd477e4",
+					"raw": "{{url_l}}/api/post/deleteAttach/91772c81-60a0-4766-911d-38a529796e17",
 					"host": [
-						"{{url_local}}"
+						"{{url_l}}"
 					],
-					"port": "8000",
 					"path": [
 						"api",
 						"post",
 						"deleteAttach",
-						"6bfc10e1-0e55-46ec-96bf-937e4fd477e4"
+						"91772c81-60a0-4766-911d-38a529796e17"
 					]
 				}
 			},

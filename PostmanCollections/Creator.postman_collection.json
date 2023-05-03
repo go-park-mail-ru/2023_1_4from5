@@ -23,9 +23,11 @@
 					}
 				},
 				"url": {
-					"raw": "{{url_l}}/api/creator/page/10b0d1b8-0e67-4e7e-9f08-124b3e32cce4",
+					"raw": "https://sub-me.ru/api/creator/page/10b0d1b8-0e67-4e7e-9f08-124b3e32cce4",
+					"protocol": "https",
 					"host": [
-						"{{url_l}}"
+						"sub-me",
+						"ru"
 					],
 					"path": [
 						"api",
@@ -86,44 +88,12 @@
 			"response": []
 		},
 		{
-			"name": "CreatorsList",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
-			"request": {
-				"method": "GET",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"creator_id\" : \"10b0d1b8-0e67-4e7e-9f08-124b3e32cce4\",\n\t\"description\" : \"TestDesc\",\n\t\"money_needed\" : \"150\",\n\t\"money_got\" : \"50\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{url_local}}:8000/api/creator/list",
-					"host": [
-						"{{url_local}}"
-					],
-					"port": "8000",
-					"path": [
-						"api",
-						"creator",
-						"list"
-					]
-				}
-			},
-			"response": []
-		},
-		{
 			"name": "FindCreators",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{url_l}}/api/creator/search/blogger",
+					"raw": "{{url_l}}/api/creator/search/блог",
 					"host": [
 						"{{url_l}}"
 					],
@@ -131,7 +101,264 @@
 						"api",
 						"creator",
 						"search",
-						"blogger"
+						"блог"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateData",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var token = postman.getResponseHeader(\"X-CSRF-Token\");",
+							"",
+							"if (token!=null) {",
+							"    postman.setEnvironmentVariable(\"csrf\", token);",
+							"}",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "X-Csrf-Token",
+						"value": "{{csrf}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\":\"FOOD BLOGGER\",\n    \"description\": \"TEST\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url_l}}/api/creator/updateData",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"creator",
+						"updateData"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateProfilePhoto",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var token = postman.getResponseHeader(\"X-CSRF-Token\");",
+							"if (token!=null){",
+							"postman.setEnvironmentVariable(\"csrf\", token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "X-Csrf-Token",
+						"value": "{{csrf}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "upload",
+							"type": "file",
+							"src": "/home/dasha/Downloads/69wTNngoP3s.jpg"
+						},
+						{
+							"key": "path",
+							"value": "00000000-0000-0000-0000-000000000000",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{url_l}}/api/creator/updateProfilePhoto",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"creator",
+						"updateProfilePhoto"
+					],
+					"query": [
+						{
+							"key": "upload",
+							"value": null,
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateCoverPhoto",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var token = postman.getResponseHeader(\"X-CSRF-Token\");",
+							"if (token!=null){",
+							"postman.setEnvironmentVariable(\"csrf\", token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "X-Csrf-Token",
+						"value": "{{csrf}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "upload",
+							"type": "file",
+							"src": "/home/dasha/Downloads/69wTNngoP3s.jpg"
+						},
+						{
+							"key": "path",
+							"value": "00000000-0000-0000-0000-000000000000",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{url_l}}/api/creator/updateCoverPhoto",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"creator",
+						"updateCoverPhoto"
+					],
+					"query": [
+						{
+							"key": "upload",
+							"value": "",
+							"disabled": true
+						},
+						{
+							"key": "path",
+							"value": null,
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DeleteProfilePhoto",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var token = postman.getResponseHeader(\"X-CSRF-Token\");",
+							"if (token!=null){",
+							"postman.setEnvironmentVariable(\"csrf\", token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "X-Csrf-Token",
+						"value": "{{csrf}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{url_l}}/api/creator/deleteProfilePhoto/9a6444ec-cdb6-4624-9380-7e918dbc6234",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"creator",
+						"deleteProfilePhoto",
+						"9a6444ec-cdb6-4624-9380-7e918dbc6234"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DeleteCoverPhoto",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var token = postman.getResponseHeader(\"X-CSRF-Token\");",
+							"if (token!=null){",
+							"postman.setEnvironmentVariable(\"csrf\", token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "X-Csrf-Token",
+						"value": "{{csrf}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{url_l}}/api/creator/deleteCoverPhoto/9f0e461a-1022-463c-b63c-8d2e46e74741",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"creator",
+						"deleteCoverPhoto",
+						"9f0e461a-1022-463c-b63c-8d2e46e74741"
 					]
 				}
 			},

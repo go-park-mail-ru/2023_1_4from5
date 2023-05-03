@@ -135,7 +135,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	postData.Title = postValues["title"][0]
-	if len(postData.Title) > 40 {
+	if len(postData.Title) > 80 {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
@@ -178,6 +178,20 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			postData.Attachments[i].Type = http.DetectContentType(buf)
+
+			attachmentType, err := h.creatorClient.GetFileExtension(r.Context(), &generatedCreator.KeywordMessage{Keyword: postData.Attachments[i].Type})
+
+			if err != nil {
+				h.logger.Error(err)
+				utils.Response(w, http.StatusInternalServerError, nil)
+				return
+			}
+
+			if !attachmentType.Flag {
+				utils.Response(w, http.StatusUnsupportedMediaType, nil)
+				return
+
+			}
 			postData.Attachments[i].Id = uuid.New()
 		}
 	}

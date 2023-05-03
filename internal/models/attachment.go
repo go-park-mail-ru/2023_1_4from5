@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	MaxFileSize = 5 << 20
-	MaxFormSize = 20 << 20
+	MaxFileSize = 10 << 20
+	MaxFormSize = 50 << 20
 	MaxFiles    = 10
 	FolderPath  = "/images/"
 )
