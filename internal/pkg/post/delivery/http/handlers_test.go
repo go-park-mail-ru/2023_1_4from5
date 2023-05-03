@@ -1107,7 +1107,7 @@ func TestPostHandler_CreatePost(t *testing.T) {
 	}
 }
 
-var newPostErr = models.PostEditData{Title: "testavbjkwkjebojweabkvsn;awlvmnbjerkvjawlvnkaoeibr aelsvjoerbjvkas,zjfonwileabuv", Text: "testtest"}
+var newPostErr = models.PostEditData{Title: "testavbjkwkjebojweabkvsn;awlvmnbjerkvjawlvnkaoeibr aelsvjoerbjvkas,zjfonwileabuvtsyhexfnsrjdfyxdhfsehrjm", Text: "testtest"}
 var newPost = models.PostEditData{Title: "test", Text: "testtest"}
 
 func TestPostHandler_EditPost(t *testing.T) {
@@ -1152,7 +1152,7 @@ func TestPostHandler_EditPost(t *testing.T) {
 		{
 			name: "Internal err from auth service",
 			mock: func() *http.Request {
-				r := httptest.NewRequest("PUT", "//post/edit/{post-uuid}",
+				r := httptest.NewRequest("PUT", "/post/edit/{post-uuid}",
 					nil)
 
 				setJWTToken(r, bdy)
@@ -1167,7 +1167,7 @@ func TestPostHandler_EditPost(t *testing.T) {
 		{
 			name: "Forbidden",
 			mock: func() *http.Request {
-				r := httptest.NewRequest("PUT", "//post/edit/{post-uuid}",
+				r := httptest.NewRequest("PUT", "/post/edit/{post-uuid}",
 					nil)
 
 				setJWTToken(r, bdy)
@@ -1274,125 +1274,7 @@ func TestPostHandler_EditPost(t *testing.T) {
 				return r
 			},
 			expectedStatus: http.StatusForbidden,
-		}, /*
-			{
-				name: "Is post owner internal error",
-				mock: func() *http.Request {
-					r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
-						bytes.NewReader(bodyPrepare(newPost)))
-
-					setJWTToken(r, bdy)
-					setCSRFToken(r, tokenCSRF)
-
-					r = mux.SetURLVars(r, map[string]string{
-						"post-uuid": uuid.NewString(),
-					})
-
-					mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-					mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, models.InternalError)
-					return r
-				},
-				expectedStatus: http.StatusInternalServerError,
-			},
-			{
-				name: "Is post owner forbidden",
-				mock: func() *http.Request {
-					r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
-						bytes.NewReader(bodyPrepare(newPost)))
-
-					setJWTToken(r, bdy)
-					setCSRFToken(r, tokenCSRF)
-
-					r = mux.SetURLVars(r, map[string]string{
-						"post-uuid": uuid.NewString(),
-					})
-
-					mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-					mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil)
-					return r
-				},
-				expectedStatus: http.StatusForbidden,
-			},
-			{
-				name: "Wrong data in body",
-				mock: func() *http.Request {
-					r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
-						bytes.NewReader([]byte("111")))
-
-					setJWTToken(r, bdy)
-					setCSRFToken(r, tokenCSRF)
-
-					r = mux.SetURLVars(r, map[string]string{
-						"post-uuid": uuid.NewString(),
-					})
-
-					mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-					mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
-					return r
-				},
-				expectedStatus: http.StatusBadRequest,
-			},
-			{
-				name: "Wrong length for text or title",
-				mock: func() *http.Request {
-					r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
-						bytes.NewReader(bodyPrepare(newPostErr)))
-
-					setJWTToken(r, bdy)
-					setCSRFToken(r, tokenCSRF)
-
-					r = mux.SetURLVars(r, map[string]string{
-						"post-uuid": uuid.NewString(),
-					})
-
-					mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-					mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
-					return r
-				},
-				expectedStatus: http.StatusBadRequest,
-			},
-			{
-				name: "Wrong length for text or title",
-				mock: func() *http.Request {
-					r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
-						bytes.NewReader(bodyPrepare(newPost)))
-
-					setJWTToken(r, bdy)
-					setCSRFToken(r, tokenCSRF)
-
-					r = mux.SetURLVars(r, map[string]string{
-						"post-uuid": uuid.NewString(),
-					})
-
-					mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-					mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
-					mockPostUsecase.EXPECT().EditPost(gomock.Any(), gomock.Any()).Return(models.InternalError)
-
-					return r
-				},
-				expectedStatus: http.StatusInternalServerError,
-			},
-			{
-				name: "Wrong length for text or title",
-				mock: func() *http.Request {
-					r := httptest.NewRequest("POST", "/post/edit/{post-uuid}",
-						bytes.NewReader(bodyPrepare(newPost)))
-
-					setJWTToken(r, bdy)
-					setCSRFToken(r, tokenCSRF)
-
-					r = mux.SetURLVars(r, map[string]string{
-						"post-uuid": uuid.NewString(),
-					})
-
-					mockAuthUsecase.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(0, nil)
-					mockPostUsecase.EXPECT().IsPostOwner(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
-					mockPostUsecase.EXPECT().EditPost(gomock.Any(), gomock.Any()).Return(nil)
-
-					return r
-				},
-				expectedStatus: http.StatusOK,
-			},*/
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
