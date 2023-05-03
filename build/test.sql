@@ -3,7 +3,7 @@ CREATE OR REPLACE FUNCTION make_tsvector(name TEXT, priority "char")
 $$
 BEGIN
     RETURN (setweight(to_tsvector('english', name), priority) ||
-            setweight(to_tsvector('russian', name), priority));
+            setweight(to_tsvector('ru', name), priority));
 END
 $$ LANGUAGE 'plpgsql' IMMUTABLE;
 
@@ -18,9 +18,9 @@ $$ LANGUAGE 'plpgsql' IMMUTABLE;
 SELECT *
 FROM creator
 WHERE (make_tsvector(name, 'A'::"char") || make_tsvector(description, 'B'::"char")) @@
-      (plainto_tsquery('russian', $1) || plainto_tsquery('english', $1))
-ORDER BY make_tsrank(name, $1, 'russian'::regconfig),
-         make_tsrank(description, $1, 'russian'::regconfig) DESC
+      (plainto_tsquery('ru', 'писать') || plainto_tsquery('english', 'писать'))
+ORDER BY make_tsrank(name, 'писать', 'ru'::regconfig),
+         make_tsrank(description, 'писать', 'ru'::regconfig) DESC
 LIMIT 30;
 
 
