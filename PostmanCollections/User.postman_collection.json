@@ -32,19 +32,19 @@
 			"response": []
 		},
 		{
-			"name": "HomePage",
+			"name": "Feed",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{url}}/api/user/homePage",
+					"raw": "{{url_l}}/api/user/feed",
 					"host": [
-						"{{url}}"
+						"{{url_l}}"
 					],
 					"path": [
 						"api",
 						"user",
-						"homePage"
+						"feed"
 					]
 				}
 			},
@@ -81,11 +81,11 @@
 						{
 							"key": "upload",
 							"type": "file",
-							"src": "/home/dasha/Downloads/ava.jpg"
+							"src": "/Users/qqq/Documents/Pictures/AOHAKiXyHq4.jpg"
 						},
 						{
 							"key": "path",
-							"value": "83fae5ee-da15-49a0-bc0a-f0e4c99d150a",
+							"value": "8f0a4c7a-8b40-427e-8bb1-90cd05bfca64",
 							"type": "text"
 						}
 					]
@@ -138,7 +138,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"new_password\":\"Dasha2003!\",\n    \"old_password\":\"Bashmak1!!\"\n}",
+					"raw": "{\n    \"new_password\":\"Dasha2003!!\",\n    \"old_password\":\"Dasha2003!\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -186,7 +186,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"login\":\"Dasha2003\",\n    \"name\":\"Дарья Такташова\"\n}",
+					"raw": "{\n    \"login\":\"Dasha2003\",\n    \"name\":\"Дашка Такташова\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -324,7 +324,41 @@
 			"response": []
 		},
 		{
+			"name": "Unfollow",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "{{url_l}}/api/user/unfollow/83b1f4df-a232-400e-b71c-5d45b9111f8d",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"unfollow",
+						"83b1f4df-a232-400e-b71c-5d45b9111f8d"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "Subscribe",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var token = postman.getResponseHeader(\"X-CSRF-Token\");",
+							"if (token!=null){",
+							"postman.setEnvironmentVariable(\"csrf\", token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "POST",
 				"header": [
@@ -336,7 +370,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"month_count\" : 2,\n    \"money\" : 700\n}",
+					"raw": "{\n    \"creator_id\" : \"83b1f4df-a232-400e-b71c-5d45b9111f8d\",\n    \"month_count\" : 3,\n    \"money\" : 700\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -344,14 +378,12 @@
 					}
 				},
 				"url": {
-					"raw": "127.0.0.1:8000/api/user/subscribe/aa382710-d873-44f0-940e-b12a6653f7ba",
+					"raw": "https://sub-me.ru/api/user/subscribe/aa382710-d873-44f0-940e-b12a6653f7ba",
+					"protocol": "https",
 					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
+						"sub-me",
+						"ru"
 					],
-					"port": "8000",
 					"path": [
 						"api",
 						"user",
@@ -366,7 +398,77 @@
 			"name": "Subscriptions",
 			"request": {
 				"method": "GET",
-				"header": []
+				"header": [],
+				"url": {
+					"raw": "{{url}}/api/user/subscriptions",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"subscriptions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DeleteProfilePhoto",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var token = postman.getResponseHeader(\"X-CSRF-Token\");",
+							"if (token!=null){",
+							"postman.setEnvironmentVariable(\"csrf\", token);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-Csrf-Token",
+						"value": "{{csrf}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{url_l}}/api/user/deleteProfilePhoto/45a655ff-0873-4dc2-9b52-97cda7074da1.",
+					"host": [
+						"{{url_l}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"deleteProfilePhoto",
+						"45a655ff-0873-4dc2-9b52-97cda7074da1."
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Follows",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url}}/api/user/follows",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"follows"
+					]
+				}
 			},
 			"response": []
 		}

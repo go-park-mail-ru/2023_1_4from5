@@ -48,9 +48,9 @@
 					}
 				},
 				"url": {
-					"raw": "{{url_l}}/api/auth/signIn",
+					"raw": "{{url}}/api/auth/signIn",
 					"host": [
-						"{{url_l}}"
+						"{{url}}"
 					],
 					"path": [
 						"api",
@@ -77,14 +77,6 @@
 						"logout"
 					]
 				}
-			},
-			"response": []
-		},
-		{
-			"name": "New Request",
-			"request": {
-				"method": "GET",
-				"header": []
 			},
 			"response": []
 		}

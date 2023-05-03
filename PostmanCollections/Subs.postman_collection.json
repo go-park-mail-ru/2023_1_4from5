@@ -32,7 +32,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"description\":\"testdesc\",\n    \"title\":\"testtitle\",\n    \"month_cost\": 10\n}",
+					"raw": "{\n    \"description\":\"testdesc2\",\n    \"title\":\"testtitle\",\n    \"month_cost\": 10\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -40,9 +40,9 @@
 					}
 				},
 				"url": {
-					"raw": "{{url}}/api/subscription/create",
+					"raw": "{{url_l}}/api/subscription/create",
 					"host": [
-						"{{url}}"
+						"{{url_l}}"
 					],
 					"path": [
 						"api",
@@ -88,7 +88,7 @@
 					}
 				},
 				"url": {
-					"raw": "{{url_l}}/api/subscription/delete/aa382710-d873-44f0-940e-b12a6653f7ba",
+					"raw": "{{url_l}}/api/subscription/delete/4cb9f899-8fea-4246-bcd0-a5361c46bd98",
 					"host": [
 						"{{url_l}}"
 					],
@@ -96,7 +96,7 @@
 						"api",
 						"subscription",
 						"delete",
-						"aa382710-d873-44f0-940e-b12a6653f7ba"
+						"4cb9f899-8fea-4246-bcd0-a5361c46bd98"
 					]
 				}
 			},
@@ -129,7 +129,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"creator\":\"10b0d1b8-0e67-4e7e-9f08-124b3e32cce4\",\n    \"description\":\"testdesc\",\n    \"title\":\"qq\",\n    \"month_cost\": 10\n}",
+					"raw": "{\n    \"creator\":\"10b0d1b8-0e67-4e7e-9f08-124b3e32cce4\",\n    \"description\":\"999999999999\",\n    \"title\":\"qqqqqqqqqqqqqqqqqqq\",\n    \"month_cost\": 100\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -137,15 +137,15 @@
 					}
 				},
 				"url": {
-					"raw": "{{url}}/api/subscription/edit/ed4ac0c8-9882-42c3-a992-03663d1a8dc5",
+					"raw": "{{url_l}}/api/subscription/edit/3f7f667d-7c8f-4ba8-857b-fe16018bab8c",
 					"host": [
-						"{{url}}"
+						"{{url_l}}"
 					],
 					"path": [
 						"api",
 						"subscription",
 						"edit",
-						"ed4ac0c8-9882-42c3-a992-03663d1a8dc5"
+						"3f7f667d-7c8f-4ba8-857b-fe16018bab8c"
 					]
 				}
 			},
