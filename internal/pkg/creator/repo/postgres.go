@@ -24,7 +24,7 @@ const (
 	FindCreators       = `SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM creator WHERE (make_tsvector(name, 'A'::"char") || make_tsvector(description, 'B'::"char")) @@ (plainto_tsquery('ru', $1) || plainto_tsquery('english', $1)) or LOWER(name) like LOWER($1) or LOWER(description) like LOWER($1) ORDER BY make_tsrank(name, $1, 'russian'::regconfig), make_tsrank(description, $1, 'russian'::regconfig) DESC LIMIT 30;`
 	CheckIfCreator     = `SELECT creator_id FROM "creator" WHERE user_id = $1`
 	UpdateCreatorData  = `UPDATE creator SET name = $1, description = $2 WHERE creator_id = $3`
-	Feed               = `SELECT DISTINCT p.post_id, p.creator_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), c.name, c.profile_photo, c.creator_id, p.likes_count FROM follow f JOIN post p on p.creator_id = f.creator_id JOIN creator c on f.creator_id = c.creator_id LEFT JOIN post_subscription ps on p.post_id = ps.post_id JOIN user_subscription us on f.user_id = us.user_id and (ps.subscription_id = us.subscription_id or ps.subscription_id is null) LEFT JOIN "attachment" a on p.post_id = a.post_id WHERE f.user_id = $1 GROUP BY c.name, p.creator_id, creation_date, title, post_text, p.post_id, c.profile_photo, c.creator_id ORDER BY creation_date DESC LIMIT 50;`
+	Feed               = `SELECT t.post_id, t.creator_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), t.name, t.profile_photo, t.likes_count FROM ( SELECT DISTINCT p.post_id, p.creator_id, creation_date, title, post_text, c.name, c.profile_photo, p.likes_count FROM follow f JOIN post p on p.creator_id = f.creator_id JOIN creator c on f.creator_id = c.creator_id LEFT JOIN post_subscription ps on p.post_id = ps.post_id JOIN user_subscription us on f.user_id = us.user_id and (ps.subscription_id = us.subscription_id or ps.subscription_id is null) WHERE f.user_id = $1 GROUP BY c.name, p.creator_id, creation_date, title, post_text, p.post_id, c.profile_photo, c.creator_id LIMIT 50) as t LEFT JOIN attachment a on a.post_id = t.post_id GROUP BY t.name, t.creator_id, creation_date, title, post_text, t.post_id, t.profile_photo, t.likes_count ORDER BY creation_date DESC;`
 	UpdateProfilePhoto = `UPDATE "creator" SET profile_photo = $1 WHERE creator_id = $2;`
 	UpdateCoverPhoto   = `UPDATE "creator" SET cover_photo = $1 WHERE creator_id = $2;`
 	DeleteCoverPhoto   = `UPDATE "creator" SET cover_photo = null WHERE creator_id = $1`
@@ -333,7 +333,7 @@ func (r *CreatorRepo) GetFeed(ctx context.Context, userID uuid.UUID) ([]models.P
 		attachs := make([]uuid.UUID, 0)
 		types := make([]sql.NullString, 0)
 		err = rows.Scan(&post.Id, &post.Creator, &post.Creation,
-			&post.Title, &post.Text, pq.Array(&attachs), pq.Array(&types), &post.CreatorName, &post.CreatorPhoto, &post.Creator, &post.LikesCount)
+			&post.Title, &post.Text, pq.Array(&attachs), pq.Array(&types), &post.CreatorName, &post.CreatorPhoto, &post.LikesCount)
 		if err != nil {
 			r.logger.Error(err)
 			return nil, models.InternalError
