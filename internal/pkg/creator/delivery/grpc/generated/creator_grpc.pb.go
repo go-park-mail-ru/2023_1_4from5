@@ -47,6 +47,8 @@ const (
 	CreatorService_CreateSubscription_FullMethodName        = "/CreatorService/CreateSubscription"
 	CreatorService_DeleteSubscription_FullMethodName        = "/CreatorService/DeleteSubscription"
 	CreatorService_EditSubscription_FullMethodName          = "/CreatorService/EditSubscription"
+	CreatorService_CreateComment_FullMethodName             = "/CreatorService/CreateComment"
+	CreatorService_IsPostAvailable_FullMethodName           = "/CreatorService/IsPostAvailable"
 )
 
 // CreatorServiceClient is the client API for CreatorService service.
@@ -80,6 +82,8 @@ type CreatorServiceClient interface {
 	CreateSubscription(ctx context.Context, in *proto.Subscription, opts ...grpc.CallOption) (*proto.Empty, error)
 	DeleteSubscription(ctx context.Context, in *SubscriptionCreatorMessage, opts ...grpc.CallOption) (*proto.Empty, error)
 	EditSubscription(ctx context.Context, in *proto.Subscription, opts ...grpc.CallOption) (*proto.Empty, error)
+	CreateComment(ctx context.Context, in *proto.Comment, opts ...grpc.CallOption) (*proto.Empty, error)
+	IsPostAvailable(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*proto.Empty, error)
 }
 
 type creatorServiceClient struct {
@@ -333,6 +337,24 @@ func (c *creatorServiceClient) EditSubscription(ctx context.Context, in *proto.S
 	return out, nil
 }
 
+func (c *creatorServiceClient) CreateComment(ctx context.Context, in *proto.Comment, opts ...grpc.CallOption) (*proto.Empty, error) {
+	out := new(proto.Empty)
+	err := c.cc.Invoke(ctx, CreatorService_CreateComment_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) IsPostAvailable(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*proto.Empty, error) {
+	out := new(proto.Empty)
+	err := c.cc.Invoke(ctx, CreatorService_IsPostAvailable_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CreatorServiceServer is the server API for CreatorService service.
 // All implementations must embed UnimplementedCreatorServiceServer
 // for forward compatibility
@@ -364,6 +386,8 @@ type CreatorServiceServer interface {
 	CreateSubscription(context.Context, *proto.Subscription) (*proto.Empty, error)
 	DeleteSubscription(context.Context, *SubscriptionCreatorMessage) (*proto.Empty, error)
 	EditSubscription(context.Context, *proto.Subscription) (*proto.Empty, error)
+	CreateComment(context.Context, *proto.Comment) (*proto.Empty, error)
+	IsPostAvailable(context.Context, *PostUserMessage) (*proto.Empty, error)
 	mustEmbedUnimplementedCreatorServiceServer()
 }
 
@@ -451,6 +475,12 @@ func (UnimplementedCreatorServiceServer) DeleteSubscription(context.Context, *Su
 }
 func (UnimplementedCreatorServiceServer) EditSubscription(context.Context, *proto.Subscription) (*proto.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EditSubscription not implemented")
+}
+func (UnimplementedCreatorServiceServer) CreateComment(context.Context, *proto.Comment) (*proto.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateComment not implemented")
+}
+func (UnimplementedCreatorServiceServer) IsPostAvailable(context.Context, *PostUserMessage) (*proto.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IsPostAvailable not implemented")
 }
 func (UnimplementedCreatorServiceServer) mustEmbedUnimplementedCreatorServiceServer() {}
 
@@ -951,6 +981,42 @@ func _CreatorService_EditSubscription_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CreatorService_CreateComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(proto.Comment)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).CreateComment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CreatorService_CreateComment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).CreateComment(ctx, req.(*proto.Comment))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_IsPostAvailable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PostUserMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).IsPostAvailable(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CreatorService_IsPostAvailable_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).IsPostAvailable(ctx, req.(*PostUserMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CreatorService_ServiceDesc is the grpc.ServiceDesc for CreatorService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1065,6 +1131,14 @@ var CreatorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EditSubscription",
 			Handler:    _CreatorService_EditSubscription_Handler,
+		},
+		{
+			MethodName: "CreateComment",
+			Handler:    _CreatorService_CreateComment_Handler,
+		},
+		{
+			MethodName: "IsPostAvailable",
+			Handler:    _CreatorService_IsPostAvailable_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

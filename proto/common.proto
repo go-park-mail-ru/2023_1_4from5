@@ -27,3 +27,13 @@ message Subscription{
   string Title = 6;
   string Description = 7;
 }
+
+message Comment{
+  string Id = 1;
+  string UserId = 2;
+  string UserPhoto = 3;
+  string PostID = 4;
+  string  Text = 5;
+  string Creation = 6;
+  int64 LikesCount = 7;
+}

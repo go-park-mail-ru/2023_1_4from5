@@ -1,9 +1,11 @@
 package grpcCreator
 
 import (
+	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment"
+	comment "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/comment"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post"
@@ -19,15 +21,17 @@ type GrpcCreatorHandler struct {
 	puc post.PostUsecase
 	auc attachment.AttachmentUsecase
 	suc subscription.SubscriptionUsecase
+	cuc comment.CommentUsecase
 	generatedCreator.CreatorServiceServer
 }
 
-func NewGrpcCreatorHandler(uc creator.CreatorUsecase, puc post.PostUsecase, auc attachment.AttachmentUsecase, suc subscription.SubscriptionUsecase) *GrpcCreatorHandler {
+func NewGrpcCreatorHandler(uc creator.CreatorUsecase, puc post.PostUsecase, auc attachment.AttachmentUsecase, suc subscription.SubscriptionUsecase, cuc comment.CommentUsecase) *GrpcCreatorHandler {
 	return &GrpcCreatorHandler{
 		uc:  uc,
 		puc: puc,
 		auc: auc,
 		suc: suc,
+		cuc: cuc,
 	}
 }
 
@@ -415,6 +419,24 @@ func (h GrpcCreatorHandler) IsPostOwner(ctx context.Context, in *generatedCreato
 	return &generatedCreator.FlagMessage{Flag: flag, Error: ""}, nil
 }
 
+func (h GrpcCreatorHandler) IsPostAvailable(ctx context.Context, in *generatedCreator.PostUserMessage) (*generatedCommon.Empty, error) {
+	postID, err := uuid.Parse(in.PostID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+
+	userID, err := uuid.Parse(in.UserID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+
+	err = h.puc.IsPostAvailable(ctx, userID, postID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
 func (h GrpcCreatorHandler) DeletePost(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedCommon.Empty, error) {
 	postID, err := uuid.Parse(in.Value)
 	if err != nil {
@@ -645,6 +667,29 @@ func (h GrpcCreatorHandler) DeleteSubscription(ctx context.Context, in *generate
 	}
 	err = h.suc.DeleteSubscription(ctx, subId, creatorId)
 	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) CreateComment(ctx context.Context, in *generatedCommon.Comment) (*generatedCommon.Empty, error) {
+	commentId, err := uuid.Parse(in.Id)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	userId, err := uuid.Parse(in.UserId)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	postId, err := uuid.Parse(in.PostID)
+	err = h.cuc.CreateComment(ctx, models.Comment{
+		CommentID: commentId,
+		UserID:    userId,
+		PostID:    postId,
+		Text:      in.Text,
+	})
+	if err != nil {
+		fmt.Println(err)
 		return &generatedCommon.Empty{Error: err.Error()}, nil
 	}
 	return &generatedCommon.Empty{Error: ""}, nil

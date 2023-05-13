@@ -5,6 +5,7 @@ import (
 	"fmt"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	authDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/http"
+	commentDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/comment/delivery/http"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	creatorDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/http"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
@@ -104,6 +105,7 @@ func run() error {
 	creatorHandler := creatorDelivery.NewCreatorHandler(creatorClient, authClient, zapSugar)
 	postHandler := postDelivery.NewPostHandler(authClient, creatorClient, zapSugar)
 	subscriptionHandler := subscriptionDelivery.NewSubscriptionHandler(authClient, creatorClient, userClient, zapSugar)
+	commentHandler := commentDelivery.NewCommentHandler(authClient, userClient, creatorClient, zapSugar)
 
 	r := mux.NewRouter().PathPrefix("/api").Subrouter()
 
@@ -171,6 +173,14 @@ func run() error {
 		subscription.HandleFunc("/create", subscriptionHandler.CreateSubscription).Methods(http.MethodPost, http.MethodGet, http.MethodOptions)
 		subscription.HandleFunc("/edit/{sub-uuid}", subscriptionHandler.EditSubscription).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
 		subscription.HandleFunc("/delete/{sub-uuid}", subscriptionHandler.DeleteSubscription).Methods(http.MethodDelete, http.MethodGet, http.MethodOptions)
+	}
+	comment := r.PathPrefix("/comment").Subrouter()
+	{
+		comment.HandleFunc("/create", commentHandler.CreateComment).Methods(http.MethodPost, http.MethodGet, http.MethodOptions)
+		//comment.HandleFunc("/edit/{comment-uuid}", commentHandler.EditComment).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
+		//comment.HandleFunc("/delete/{comment-uuid}", commentHandler.DeleteComment).Methods(http.MethodDelete, http.MethodGet, http.MethodOptions)
+		//comment.HandleFunc("/addLike/{comment-uuid}", commentHandler.AddLike).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
+		//comment.HandleFunc("/removeLike/{comment-uuid}", commentHandler.RemoveLike).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
 	}
 
 	http.Handle("/", r)

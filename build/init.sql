@@ -118,7 +118,7 @@ create table comment
     user_id       uuid not null
         constraint comment_user_user_id_fk
             references "user" (user_id),
-    comment_text  text not null,
+    comment_text  varchar(400) not null,
     creation_date date          default now() not null,
     likes_count   int  not null default 0
 

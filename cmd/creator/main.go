@@ -5,6 +5,8 @@ import (
 	"fmt"
 	attachmentRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment/repo"
 	attachmentUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment/usecase"
+	commentRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/comment/repo"
+	commentUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/comment/usecase"
 	grpcCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	creatorRepository "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/repo"
@@ -73,7 +75,11 @@ func run() error {
 
 	creatorRepo := creatorRepository.NewCreatorRepo(db, zapSugar)
 	creatorUse := creatorUsecase.NewCreatorUsecase(creatorRepo, zapSugar)
-	service := grpcCreator.NewGrpcCreatorHandler(creatorUse, postUse, attachmentUse, subscriptionUse)
+
+	commentRepo := commentRepository.NewCommentRepo(db, zapSugar)
+	commentUse := commentUsecase.NewCommentUsecase(commentRepo, zapSugar)
+
+	service := grpcCreator.NewGrpcCreatorHandler(creatorUse, postUse, attachmentUse, subscriptionUse, commentUse)
 
 	srv, ok := net.Listen("tcp", ":8030")
 	if ok != nil {

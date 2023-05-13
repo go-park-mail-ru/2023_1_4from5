@@ -17,6 +17,7 @@ type PostUsecase interface {
 	RemoveLike(ctx context.Context, userID uuid.UUID, postID uuid.UUID) (models.Like, error)
 	IsCreator(ctx context.Context, userID uuid.UUID, creatorID uuid.UUID) (bool, error)
 	EditPost(ctx context.Context, postData models.PostEditData) error
+	IsPostAvailable(ctx context.Context, postID, userID uuid.UUID) error
 }
 type PostRepo interface {
 	CreatePost(ctx context.Context, postData models.PostCreationData) error

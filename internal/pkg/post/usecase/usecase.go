@@ -67,3 +67,7 @@ func (u *PostUsecase) RemoveLike(ctx context.Context, userID, postID uuid.UUID) 
 func (u *PostUsecase) EditPost(ctx context.Context, postData models.PostEditData) error {
 	return u.repo.EditPost(ctx, postData)
 }
+
+func (u *PostUsecase) IsPostAvailable(ctx context.Context, postID, userID uuid.UUID) error {
+	return u.repo.IsPostAvailable(ctx, postID, userID)
+}
