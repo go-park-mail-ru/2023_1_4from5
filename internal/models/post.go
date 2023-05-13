@@ -17,6 +17,7 @@ type Post struct {
 	CreatorName   string         `json:"creator_name,omitempty"`
 	Creation      time.Time      `json:"creation_date"`
 	LikesCount    int64          `json:"likes_count"`
+	CommentsCount int64          `json:"comments_count"`
 	Title         string         `json:"title"`
 	Text          string         `json:"text"`
 	IsAvailable   bool           `json:"is_available"`
@@ -80,6 +81,7 @@ func (post *Post) PostToModel(postInfo *generatedCreator.Post) error {
 	post.CreatorName = postInfo.CreatorName
 	post.Creation = reg
 	post.LikesCount = postInfo.LikesCount
+	post.CommentsCount = postInfo.CommentsCount
 	post.Title = postInfo.Title
 	post.Text = postInfo.Text
 	post.IsAvailable = postInfo.IsAvailable

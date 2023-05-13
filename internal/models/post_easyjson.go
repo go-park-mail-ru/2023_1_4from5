@@ -176,6 +176,8 @@ func easyjson5a72dc82DecodeGithubComGoParkMailRu202314from5InternalModels1(in *j
 			}
 		case "likes_count":
 			out.LikesCount = int64(in.Int64())
+		case "comments_count":
+			out.CommentsCount = int64(in.Int64())
 		case "title":
 			out.Title = string(in.String())
 		case "text":
@@ -273,6 +275,11 @@ func easyjson5a72dc82EncodeGithubComGoParkMailRu202314from5InternalModels1(out *
 		const prefix string = ",\"likes_count\":"
 		out.RawString(prefix)
 		out.Int64(int64(in.LikesCount))
+	}
+	{
+		const prefix string = ",\"comments_count\":"
+		out.RawString(prefix)
+		out.Int64(int64(in.CommentsCount))
 	}
 	{
 		const prefix string = ",\"title\":"

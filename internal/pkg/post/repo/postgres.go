@@ -25,6 +25,7 @@ const (
 	UpdateLikeCount            = `UPDATE "post" SET likes_count = likes_count + $1 WHERE post_id = $2 RETURNING likes_count;`
 	IsLiked                    = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2;`
 	DeleteLikes                = `DELETE FROM "like_post" WHERE post_id = $1;`
+	DeleteComments             = `DELETE FROM "comment" WHERE post_id = $1;`
 	IsPostAvailableWithSub     = `SELECT user_id FROM "user_subscription" INNER JOIN "post_subscription" p on "user_subscription".subscription_id = p.subscription_id WHERE user_id = $1 AND post_id = $2 AND expire_date > now()`
 	IsPostAvailableForEveryone = `SELECT post_id FROM post_subscription WHERE post_id = $1`
 	IsCreator                  = `SELECT user_id FROM "creator" WHERE creator_id = $1;`
@@ -198,7 +199,19 @@ func (r *PostRepo) DeletePost(ctx context.Context, postID uuid.UUID) error {
 		r.logger.Error(err)
 		return models.InternalError
 	}
-	row, err := tx.QueryContext(ctx, DeleteLikes, postID)
+
+	row, err := tx.QueryContext(ctx, DeleteComments, postID)
+	if err != nil {
+		_ = tx.Rollback()
+		r.logger.Error(err)
+		return models.InternalError
+	}
+	if err = row.Close(); err != nil {
+		r.logger.Error(err)
+		return models.InternalError
+	}
+
+	row, err = tx.QueryContext(ctx, DeleteLikes, postID)
 	if err != nil {
 		_ = tx.Rollback()
 		r.logger.Error(err)

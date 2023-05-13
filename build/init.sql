@@ -95,7 +95,8 @@ create table post
     creation_date timestamp     default now() not null,
     title         varchar(40),
     post_text     varchar(4000),
-    likes_count   int  not null default 0
+    likes_count   int  not null default 0,
+    comments_count   int  not null default 0
 );
 
 create table post_subscription

@@ -68,14 +68,15 @@ message Post{
   string CreatorID = 2;
   string Creation = 3;
   int64 LikesCount = 4;
-  string CreatorPhoto = 5;
-  string CreatorName = 6;
-  string Title = 7;
-  string Text = 8;
-  bool IsAvailable = 9;
-  bool IsLiked = 10;
-  repeated Attachment PostAttachments = 11;
-  repeated common.Subscription Subscriptions = 12;
+  int64 CommentsCount = 5;
+  string CreatorPhoto = 6;
+  string CreatorName = 7;
+  string Title = 8;
+  string Text = 9;
+  bool IsAvailable = 10;
+  bool IsLiked = 11;
+  repeated Attachment PostAttachments = 12;
+  repeated common.Subscription Subscriptions = 13;
 };
 
 message PostsMessage{
