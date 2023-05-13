@@ -153,3 +153,37 @@ SELECT c.creator_id, name, profile_photo, description
 FROM "follow"
          join creator c on c.creator_id = follow.creator_id
 WHERE follow.user_id = 'b184cc4e-78ef-434f-ac88-5084a77ee087';
+
+
+SELECT t.post_id,
+       t.creator_id,
+       creation_date,
+       title,
+       post_text,
+       array_agg(attachment_id),
+       array_agg(attachment_type),
+       t.name,
+       t.profile_photo,
+       t.likes_count,
+       t.comments_count
+FROM (SELECT DISTINCT p.post_id,
+                      p.creator_id,
+                      creation_date,
+                      title,
+                      post_text,
+                      c.name,
+                      c.profile_photo,
+                      p.likes_count,
+                      p.comments_count
+      FROM follow f
+               JOIN post p on p.creator_id = f.creator_id
+               JOIN creator c on f.creator_id = c.creator_id
+               LEFT JOIN post_subscription ps on p.post_id = ps.post_id
+               JOIN user_subscription us on f.user_id = us.user_id and
+                                            (ps.subscription_id = us.subscription_id or ps.subscription_id is null)
+      WHERE f.user_id = 1
+      GROUP BY c.name, p.creator_id, creation_date, title, post_text, p.post_id, c.profile_photo, c.creator_id
+      LIMIT 50) as t
+         LEFT JOIN attachment a on a.post_id = t.post_id
+GROUP BY t.name, t.creator_id, creation_date, title, post_text, t.post_id, t.profile_photo, t.likes_count, t.comments_count
+ORDER BY creation_date DESC

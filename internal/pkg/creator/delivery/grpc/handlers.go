@@ -1,7 +1,6 @@
 package grpcCreator
 
 import (
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment"
@@ -128,7 +127,6 @@ func (h GrpcCreatorHandler) GetPage(ctx context.Context, in *generatedCreator.Us
 	}
 
 	page, err := h.uc.GetPage(ctx, userID, creatorID)
-	fmt.Println(page.IsMyPage)
 
 	if err != nil {
 		return &generatedCreator.CreatorPage{Error: err.Error()}, nil
