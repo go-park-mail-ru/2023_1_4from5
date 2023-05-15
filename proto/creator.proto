@@ -168,6 +168,7 @@ service CreatorService {
   rpc EditSubscription(common.Subscription) returns (common.Empty) {}
 
   rpc CreateComment(common.Comment) returns (common.Empty) {}
+  rpc DeleteComment(common.Comment) returns (common.Empty) {}
 
   rpc IsPostAvailable(PostUserMessage) returns (common.Empty) {}
 }
