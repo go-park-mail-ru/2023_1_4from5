@@ -7,6 +7,8 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/mailru/easyjson"
 	"go.uber.org/zap"
+	"io"
+	"log"
 	"net/http"
 )
 
@@ -20,6 +22,14 @@ func NewAuthHandler(cl generatedAuth.AuthServiceClient, logger *zap.SugaredLogge
 		client: cl,
 		logger: logger,
 	}
+}
+
+func (h *AuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	strBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		return
+	}
+	log.Println(string(strBody))
 }
 
 func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {

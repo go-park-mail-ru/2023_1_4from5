@@ -67,8 +67,8 @@ func run() error {
 	}
 
 	authConn, err := grpc.Dial(
-		//"auth:8010",
-		":8010",
+		"auth:8010",
+		//":8010",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -77,8 +77,8 @@ func run() error {
 	}
 
 	userConn, err := grpc.Dial(
-		//"user:8020",
-		":8020",
+		"user:8020",
+		//":8020",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -87,8 +87,8 @@ func run() error {
 	}
 
 	creatorConn, err := grpc.Dial(
-		//"creator:8030",
-		":8030",
+		"creator:8030",
+		//":8030",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -107,7 +107,10 @@ func run() error {
 	subscriptionHandler := subscriptionDelivery.NewSubscriptionHandler(authClient, creatorClient, userClient, zapSugar)
 	commentHandler := commentDelivery.NewCommentHandler(authClient, userClient, creatorClient, zapSugar)
 
-	r := mux.NewRouter().PathPrefix("/api").Subrouter()
+	r1 := mux.NewRouter()
+	r1.NotFoundHandler = authHandler
+
+	r := r1.PathPrefix("/api").Subrouter()
 
 	r.Use(middleware.CORSMiddleware)
 
@@ -177,13 +180,14 @@ func run() error {
 	comment := r.PathPrefix("/comment").Subrouter()
 	{
 		comment.HandleFunc("/create", commentHandler.CreateComment).Methods(http.MethodPost, http.MethodGet, http.MethodOptions)
+		comment.HandleFunc("/delete/{comment-uuid}", commentHandler.DeleteComment).Methods(http.MethodDelete, http.MethodGet, http.MethodOptions)
 		//comment.HandleFunc("/edit/{comment-uuid}", commentHandler.EditComment).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
-		//comment.HandleFunc("/delete/{comment-uuid}", commentHandler.DeleteComment).Methods(http.MethodDelete, http.MethodGet, http.MethodOptions)
 		//comment.HandleFunc("/addLike/{comment-uuid}", commentHandler.AddLike).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
 		//comment.HandleFunc("/removeLike/{comment-uuid}", commentHandler.RemoveLike).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
 	}
 
-	http.Handle("/", r)
-	srv := http.Server{Handler: r, Addr: ":8000"}
+	http.Handle("/", r1)
+
+	srv := http.Server{Handler: r1, Addr: ":8000"}
 	return srv.ListenAndServe()
 }
