@@ -29,8 +29,17 @@ type SubscriptionDetails struct {
 	CreatorId  uuid.UUID `json:"creator_id"`
 	Id         uuid.UUID `json:"id,omitempty"`
 	UserID     uuid.UUID `json:"user_id,omitempty"`
-	MonthCount int64     `json:"month_count"`
-	Money      int64     `json:"money"`
+	MonthCount int64     `json:"month_count,omitempty"`
+	Money      int64     `json:"money,omitempty"`
+}
+
+type PaymentDetails struct {
+	Operation  string    `json:"operation"`
+	CreatorId  uuid.UUID `json:"creator_id"`
+	Id         uuid.UUID `json:"id,omitempty"`
+	UserID     uuid.UUID `json:"user_id,omitempty"`
+	MonthCount int64     `json:"month_count,omitempty"`
+	Money      int64     `json:"money,omitempty"`
 }
 
 func (subscription *Subscription) Sanitize() {
