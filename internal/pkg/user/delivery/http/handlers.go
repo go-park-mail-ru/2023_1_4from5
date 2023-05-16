@@ -722,8 +722,9 @@ func (h *UserHandler) Payment(w http.ResponseWriter, r *http.Request) {
 
 	paymentInfo := models.PaymentDetails{}
 	str := strings.Split(paymentStringMap["label"], ";")
-	fmt.Println("operation: ", str[0])
-	fmt.Println("creatorID: ", str[1])
+	fmt.Println("operation:", str[0])
+	fmt.Println("donate" == str[0])
+	fmt.Println("creatorID:", str[1])
 	paymentInfo.Operation = str[0]
 	paymentInfo.CreatorId, err = uuid.Parse(str[1])
 	paymentInfo.UserID = uuid.Nil
