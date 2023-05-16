@@ -1,6 +1,7 @@
 package http
 
 import (
+	"crypto/sha1"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
@@ -15,6 +16,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -677,109 +680,113 @@ func GetPaymentStringMap() map[string]string {
 }
 
 func (h *UserHandler) Payment(w http.ResponseWriter, r *http.Request) {
-	utils.Response(w, http.StatusOK, nil)
-	return
-	//err := r.ParseForm()
-	//if err != nil {
-	//	h.logger.Error(err)
-	//	utils.Response(w, http.StatusBadRequest, nil)
-	//	return
-	//}
-	////check sha-1
-	//paymentStringMap := GetPaymentStringMap()
-	//
-	//sha1Hash := ""
-	//for key, value := range r.Form {
-	//	if key == "sha1_hash" {
-	//		sha1Hash = value[0]
-	//	}
-	//	if _, ok := paymentStringMap[key]; ok {
-	//		paymentStringMap[key] = value[0]
-	//	}
-	//}
-	//
-	//paymentSecret, flag := os.LookupEnv("PAYMENT_SECRET")
-	//if !flag {
-	//	h.logger.Error(err)
-	//	utils.Response(w, http.StatusInternalServerError, nil)
-	//	return
-	//}
-	//fmt.Println("Payment")
-	//paymentString := strings.Join([]string{paymentStringMap["notification_type"],
-	//	paymentStringMap["operation_id"], paymentStringMap["amount"], paymentStringMap["currency"], paymentStringMap["datetime"], paymentStringMap["sender"],
-	//	paymentStringMap["codepro"], paymentSecret, paymentStringMap["label"]}, "&")
-	//fmt.Println(paymentString)
-	//
-	//hash := sha1.New()
-	//hash.Write([]byte(paymentString))
-	//paymentStringSHA := hash.Sum(nil)
-	//if fmt.Sprintf("%x", paymentStringSHA) != sha1Hash {
-	//	fmt.Println("wrong hash")
-	//	utils.Response(w, http.StatusForbidden, nil)
-	//	return
-	//}
-	//
-	//paymentInfo := models.PaymentDetails{}
-	//str := strings.Split(paymentStringMap["label"], ";")
-	//
-	//paymentInfo.Operation = str[0]
-	//paymentInfo.CreatorId, err = uuid.Parse(str[1])
-	//paymentInfo.UserID = uuid.Nil
-	//paymentInfo.Money, err = strconv.ParseInt(paymentStringMap["amount"], 10, 64)
-	//if err != nil {
-	//	utils.Response(w, http.StatusBadRequest, nil)
-	//	return
-	//}
-	//fmt.Println("Got:   ", paymentInfo)
-	//if paymentInfo.Operation == "subscribe" {
-	//
-	//	out, err := h.userClient.Subscribe(r.Context(), &generatedUser.SubscriptionDetails{
-	//		CreatorID:  paymentInfo.CreatorId.String(),
-	//		UserID:     paymentInfo.UserID.String(),
-	//		Id:         paymentInfo.Id.String(),
-	//		MonthCount: paymentInfo.MonthCount,
-	//		Money:      paymentInfo.Money})
-	//
-	//	if err != nil {
-	//		h.logger.Error(err)
-	//		utils.Response(w, http.StatusInternalServerError, nil)
-	//		return
-	//	}
-	//
-	//	if out.Error == models.InternalError.Error() {
-	//		utils.Response(w, http.StatusInternalServerError, nil)
-	//		return
-	//	}
-	//
-	//	if out.Error == models.WrongData.Error() {
-	//		utils.Response(w, http.StatusBadRequest, nil)
-	//		return
-	//	}
-	//
-	//	utils.Response(w, http.StatusOK, nil)
-	//} else if paymentInfo.Operation == "donate" {
-	//	newMoneyCount, err := h.userClient.Donate(r.Context(), &generatedUser.DonateMessage{
-	//		MoneyCount: paymentInfo.Money,
-	//		CreatorID:  paymentInfo.CreatorId.String()})
-	//
-	//	if err != nil {
-	//		h.logger.Error(err)
-	//		utils.Response(w, http.StatusInternalServerError, nil)
-	//		return
-	//	}
-	//
-	//	if newMoneyCount.Error == models.WrongData.Error() {
-	//		utils.Response(w, http.StatusBadRequest, nil)
-	//		return
-	//	}
-	//	if newMoneyCount.Error != "" {
-	//		utils.Response(w, http.StatusInternalServerError, nil)
-	//		return
-	//	}
-	//	utils.Response(w, http.StatusOK, nil)
-	//} else {
-	//	utils.Response(w, http.StatusBadRequest, nil)
-	//}
+	err := r.ParseForm()
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	//check sha-1
+	paymentStringMap := GetPaymentStringMap()
+
+	sha1Hash := ""
+	for key, value := range r.Form {
+		if key == "sha1_hash" {
+			sha1Hash = value[0]
+		}
+		if _, ok := paymentStringMap[key]; ok {
+			paymentStringMap[key] = value[0]
+		}
+	}
+
+	paymentSecret, flag := os.LookupEnv("PAYMENT_SECRET")
+	if !flag {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	fmt.Println("Payment")
+	paymentString := strings.Join([]string{paymentStringMap["notification_type"],
+		paymentStringMap["operation_id"], paymentStringMap["amount"], paymentStringMap["currency"], paymentStringMap["datetime"], paymentStringMap["sender"],
+		paymentStringMap["codepro"], paymentSecret, paymentStringMap["label"]}, "&")
+	fmt.Println(paymentString)
+
+	hash := sha1.New()
+	hash.Write([]byte(paymentString))
+	paymentStringSHA := hash.Sum(nil)
+	if fmt.Sprintf("%x", paymentStringSHA) != sha1Hash {
+		fmt.Println("wrong hash")
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+
+	paymentInfo := models.PaymentDetails{}
+	str := strings.Split(paymentStringMap["label"], ";")
+	fmt.Println("operation: ", str[0])
+	fmt.Println("creatorID: ", str[1])
+	paymentInfo.Operation = str[0]
+	paymentInfo.CreatorId, err = uuid.Parse(str[1])
+	paymentInfo.UserID = uuid.Nil
+	paymentInfo.Money, err = strconv.ParseInt(paymentStringMap["amount"], 10, 64)
+	if err != nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	fmt.Println("money: ", paymentStringMap["amount"])
+	fmt.Println("Got:   ", paymentInfo)
+	if paymentInfo.Operation == "subscribe" {
+
+		out, err := h.userClient.Subscribe(r.Context(), &generatedUser.SubscriptionDetails{
+			CreatorID:  paymentInfo.CreatorId.String(),
+			UserID:     paymentInfo.UserID.String(),
+			Id:         paymentInfo.Id.String(),
+			MonthCount: paymentInfo.MonthCount,
+			Money:      paymentInfo.Money})
+
+		if err != nil {
+			h.logger.Error(err)
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+
+		if out.Error == models.InternalError.Error() {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+
+		if out.Error == models.WrongData.Error() {
+			utils.Response(w, http.StatusBadRequest, nil)
+			return
+		}
+
+		utils.Response(w, http.StatusOK, nil)
+	} else if paymentInfo.Operation == "donate" {
+		fmt.Println(764)
+		newMoneyCount, err := h.userClient.Donate(r.Context(), &generatedUser.DonateMessage{
+			MoneyCount: paymentInfo.Money,
+			CreatorID:  paymentInfo.CreatorId.String()})
+
+		if err != nil {
+			h.logger.Error(err)
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+
+		if newMoneyCount.Error == models.WrongData.Error() {
+			fmt.Println(776)
+			utils.Response(w, http.StatusBadRequest, nil)
+			return
+		}
+		if newMoneyCount.Error != "" {
+			fmt.Println(781)
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+		utils.Response(w, http.StatusOK, nil)
+	} else {
+		fmt.Println(787)
+		utils.Response(w, http.StatusBadRequest, nil)
+	}
 }
 
 func (h *UserHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
