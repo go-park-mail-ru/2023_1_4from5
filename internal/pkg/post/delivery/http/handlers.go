@@ -567,8 +567,11 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
-	userDataJWT, _ := token.ExtractJWTTokenMetadata(r)
-
+	var userID uuid.UUID
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+	if err == nil {
+		userID = userDataJWT.Id
+	}
 	postIDtmp, ok := mux.Vars(r)["post-uuid"]
 	if !ok {
 		utils.Response(w, http.StatusBadRequest, nil)
@@ -581,7 +584,7 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	postProto, err := h.creatorClient.GetPost(r.Context(), &generatedCreator.PostUserMessage{
-		UserID: userDataJWT.Id.String(),
+		UserID: userID.String(),
 		PostID: postID.String(),
 	})
 
