@@ -108,7 +108,8 @@ func run() error {
 	commentHandler := commentDelivery.NewCommentHandler(authClient, userClient, creatorClient, zapSugar)
 
 	r1 := mux.NewRouter()
-	r1.NotFoundHandler = authHandler
+	r1.HandleFunc("/payment", userHandler.Payment).Methods(http.MethodPost, http.MethodOptions)
+	// r1.NotFoundHandler = authHandler
 
 	r := r1.PathPrefix("/api").Subrouter()
 
