@@ -131,6 +131,7 @@ func run() error {
 
 	user := r.PathPrefix("/user").Subrouter()
 	{
+		user.HandleFunc("/pay", userHandler.GetID).Methods(http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/profile", userHandler.GetProfile).Methods(http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/donate", userHandler.Donate).Methods(http.MethodPost, http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/updatePassword", userHandler.UpdatePassword).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)

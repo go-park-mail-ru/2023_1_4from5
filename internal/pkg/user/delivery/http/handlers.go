@@ -112,6 +112,15 @@ func (h *UserHandler) Unfollow(w http.ResponseWriter, r *http.Request) {
 	utils.Response(w, http.StatusOK, nil)
 }
 
+func (h *UserHandler) GetID(w http.ResponseWriter, r *http.Request) {
+	userInfo, err := token.ExtractJWTTokenMetadata(r)
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+	utils.Response(w, http.StatusOK, userInfo.Id)
+}
+
 func (h *UserHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	userInfo, err := token.ExtractJWTTokenMetadata(r)
 	if err != nil {
