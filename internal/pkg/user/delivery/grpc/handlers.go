@@ -149,17 +149,13 @@ func (h GrpcUserHandler) UpdateProfileInfo(ctx context.Context, in *generatedUse
 }
 
 func (h GrpcUserHandler) Donate(ctx context.Context, in *generatedUser.DonateMessage) (*generatedUser.DonateResponse, error) {
-	userId, err := uuid.Parse(in.UserID)
-	if err != nil {
-		return &generatedUser.DonateResponse{Error: err.Error()}, nil
-	}
 	creatorId, err := uuid.Parse(in.CreatorID)
 	if err != nil {
 		return &generatedUser.DonateResponse{Error: err.Error()}, nil
 	}
 	money, err := h.uc.Donate(ctx, models.Donate{
 		CreatorID:  creatorId,
-		MoneyCount: in.MoneyCount}, userId)
+		MoneyCount: in.MoneyCount})
 	if err != nil {
 		return &generatedUser.DonateResponse{Error: err.Error()}, nil
 	}

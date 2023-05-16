@@ -45,7 +45,6 @@ message UpdateProfileInfoMessage{
 message DonateMessage{
   string CreatorID = 1;
   int64 MoneyCount = 2;
-  string UserID = 3;
 }
 
 message DonateResponse{

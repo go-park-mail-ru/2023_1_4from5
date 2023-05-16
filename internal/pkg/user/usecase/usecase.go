@@ -75,8 +75,8 @@ func (uc *UserUsecase) UpdateProfileInfo(ctx context.Context, profileInfo models
 	return uc.repo.UpdateProfileInfo(ctx, profileInfo, id)
 }
 
-func (uc *UserUsecase) Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int64, error) {
-	return uc.repo.Donate(ctx, donateInfo, userID)
+func (uc *UserUsecase) Donate(ctx context.Context, donateInfo models.Donate) (int64, error) {
+	return uc.repo.Donate(ctx, donateInfo)
 }
 
 func (uc *UserUsecase) BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error) {

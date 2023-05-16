@@ -16,6 +16,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -446,8 +447,7 @@ func (h *UserHandler) Donate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	newMoneyCount, err := h.userClient.Donate(r.Context(), &generatedUser.DonateMessage{MoneyCount: donateInfo.MoneyCount,
-		CreatorID: donateInfo.CreatorID.String(),
-		UserID:    userDataJWT.Id.String()})
+		CreatorID: donateInfo.CreatorID.String()})
 
 	if err != nil {
 		h.logger.Error(err)
@@ -726,6 +726,7 @@ func (h *UserHandler) Payment(w http.ResponseWriter, r *http.Request) {
 	paymentInfo.Operation = str[0]
 	paymentInfo.CreatorId, err = uuid.Parse(str[1])
 	paymentInfo.UserID = uuid.Nil
+	paymentInfo.Money, err = strconv.ParseInt(paymentStringMap["amount"], 10, 64)
 	if err != nil {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
@@ -758,9 +759,9 @@ func (h *UserHandler) Payment(w http.ResponseWriter, r *http.Request) {
 
 		utils.Response(w, http.StatusOK, nil)
 	} else if paymentInfo.Operation == "donate" {
-		newMoneyCount, err := h.userClient.Donate(r.Context(), &generatedUser.DonateMessage{MoneyCount: paymentInfo.Money,
-			CreatorID: paymentInfo.CreatorId.String(),
-			UserID:    paymentInfo.UserID.String()})
+		newMoneyCount, err := h.userClient.Donate(r.Context(), &generatedUser.DonateMessage{
+			MoneyCount: paymentInfo.Money,
+			CreatorID:  paymentInfo.CreatorId.String()})
 
 		if err != nil {
 			h.logger.Error(err)
