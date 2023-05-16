@@ -22,3 +22,11 @@ func NewCommentUsecase(repo comment.CommentRepo, logger *zap.SugaredLogger) *Com
 func (uc *CommentUsecase) CreateComment(ctx context.Context, commentInfo models.Comment) error {
 	return uc.repo.CreateComment(ctx, commentInfo)
 }
+
+func (uc *CommentUsecase) DeleteComment(ctx context.Context, commentInfo models.Comment) error {
+	return uc.repo.DeleteComment(ctx, commentInfo)
+}
+
+func (uc *CommentUsecase) IsCommentOwner(ctx context.Context, commentInfo models.Comment) (bool, error) {
+	return uc.repo.IsCommentOwner(ctx, commentInfo)
+}

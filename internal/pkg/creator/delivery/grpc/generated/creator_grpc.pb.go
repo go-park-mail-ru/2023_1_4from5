@@ -32,6 +32,7 @@ const (
 	CreatorService_GetPost_FullMethodName                   = "/CreatorService/GetPost"
 	CreatorService_DeletePost_FullMethodName                = "/CreatorService/DeletePost"
 	CreatorService_IsPostOwner_FullMethodName               = "/CreatorService/IsPostOwner"
+	CreatorService_IsCommentOwner_FullMethodName            = "/CreatorService/IsCommentOwner"
 	CreatorService_AddLike_FullMethodName                   = "/CreatorService/AddLike"
 	CreatorService_RemoveLike_FullMethodName                = "/CreatorService/RemoveLike"
 	CreatorService_EditPost_FullMethodName                  = "/CreatorService/EditPost"
@@ -48,6 +49,7 @@ const (
 	CreatorService_DeleteSubscription_FullMethodName        = "/CreatorService/DeleteSubscription"
 	CreatorService_EditSubscription_FullMethodName          = "/CreatorService/EditSubscription"
 	CreatorService_CreateComment_FullMethodName             = "/CreatorService/CreateComment"
+	CreatorService_DeleteComment_FullMethodName             = "/CreatorService/DeleteComment"
 	CreatorService_IsPostAvailable_FullMethodName           = "/CreatorService/IsPostAvailable"
 )
 
@@ -67,6 +69,7 @@ type CreatorServiceClient interface {
 	GetPost(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*PostMessage, error)
 	DeletePost(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.Empty, error)
 	IsPostOwner(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*FlagMessage, error)
+	IsCommentOwner(ctx context.Context, in *proto.Comment, opts ...grpc.CallOption) (*FlagMessage, error)
 	AddLike(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*Like, error)
 	RemoveLike(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*Like, error)
 	EditPost(ctx context.Context, in *PostEditData, opts ...grpc.CallOption) (*proto.Empty, error)
@@ -83,6 +86,7 @@ type CreatorServiceClient interface {
 	DeleteSubscription(ctx context.Context, in *SubscriptionCreatorMessage, opts ...grpc.CallOption) (*proto.Empty, error)
 	EditSubscription(ctx context.Context, in *proto.Subscription, opts ...grpc.CallOption) (*proto.Empty, error)
 	CreateComment(ctx context.Context, in *proto.Comment, opts ...grpc.CallOption) (*proto.Empty, error)
+	DeleteComment(ctx context.Context, in *proto.Comment, opts ...grpc.CallOption) (*proto.Empty, error)
 	IsPostAvailable(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*proto.Empty, error)
 }
 
@@ -196,6 +200,15 @@ func (c *creatorServiceClient) DeletePost(ctx context.Context, in *proto.UUIDMes
 func (c *creatorServiceClient) IsPostOwner(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*FlagMessage, error) {
 	out := new(FlagMessage)
 	err := c.cc.Invoke(ctx, CreatorService_IsPostOwner_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) IsCommentOwner(ctx context.Context, in *proto.Comment, opts ...grpc.CallOption) (*FlagMessage, error) {
+	out := new(FlagMessage)
+	err := c.cc.Invoke(ctx, CreatorService_IsCommentOwner_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -346,6 +359,15 @@ func (c *creatorServiceClient) CreateComment(ctx context.Context, in *proto.Comm
 	return out, nil
 }
 
+func (c *creatorServiceClient) DeleteComment(ctx context.Context, in *proto.Comment, opts ...grpc.CallOption) (*proto.Empty, error) {
+	out := new(proto.Empty)
+	err := c.cc.Invoke(ctx, CreatorService_DeleteComment_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *creatorServiceClient) IsPostAvailable(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*proto.Empty, error) {
 	out := new(proto.Empty)
 	err := c.cc.Invoke(ctx, CreatorService_IsPostAvailable_FullMethodName, in, out, opts...)
@@ -371,6 +393,7 @@ type CreatorServiceServer interface {
 	GetPost(context.Context, *PostUserMessage) (*PostMessage, error)
 	DeletePost(context.Context, *proto.UUIDMessage) (*proto.Empty, error)
 	IsPostOwner(context.Context, *PostUserMessage) (*FlagMessage, error)
+	IsCommentOwner(context.Context, *proto.Comment) (*FlagMessage, error)
 	AddLike(context.Context, *PostUserMessage) (*Like, error)
 	RemoveLike(context.Context, *PostUserMessage) (*Like, error)
 	EditPost(context.Context, *PostEditData) (*proto.Empty, error)
@@ -387,6 +410,7 @@ type CreatorServiceServer interface {
 	DeleteSubscription(context.Context, *SubscriptionCreatorMessage) (*proto.Empty, error)
 	EditSubscription(context.Context, *proto.Subscription) (*proto.Empty, error)
 	CreateComment(context.Context, *proto.Comment) (*proto.Empty, error)
+	DeleteComment(context.Context, *proto.Comment) (*proto.Empty, error)
 	IsPostAvailable(context.Context, *PostUserMessage) (*proto.Empty, error)
 	mustEmbedUnimplementedCreatorServiceServer()
 }
@@ -430,6 +454,9 @@ func (UnimplementedCreatorServiceServer) DeletePost(context.Context, *proto.UUID
 }
 func (UnimplementedCreatorServiceServer) IsPostOwner(context.Context, *PostUserMessage) (*FlagMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsPostOwner not implemented")
+}
+func (UnimplementedCreatorServiceServer) IsCommentOwner(context.Context, *proto.Comment) (*FlagMessage, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IsCommentOwner not implemented")
 }
 func (UnimplementedCreatorServiceServer) AddLike(context.Context, *PostUserMessage) (*Like, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddLike not implemented")
@@ -478,6 +505,9 @@ func (UnimplementedCreatorServiceServer) EditSubscription(context.Context, *prot
 }
 func (UnimplementedCreatorServiceServer) CreateComment(context.Context, *proto.Comment) (*proto.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateComment not implemented")
+}
+func (UnimplementedCreatorServiceServer) DeleteComment(context.Context, *proto.Comment) (*proto.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteComment not implemented")
 }
 func (UnimplementedCreatorServiceServer) IsPostAvailable(context.Context, *PostUserMessage) (*proto.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsPostAvailable not implemented")
@@ -707,6 +737,24 @@ func _CreatorService_IsPostOwner_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CreatorServiceServer).IsPostOwner(ctx, req.(*PostUserMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_IsCommentOwner_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(proto.Comment)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).IsCommentOwner(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CreatorService_IsCommentOwner_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).IsCommentOwner(ctx, req.(*proto.Comment))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -999,6 +1047,24 @@ func _CreatorService_CreateComment_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CreatorService_DeleteComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(proto.Comment)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).DeleteComment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CreatorService_DeleteComment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).DeleteComment(ctx, req.(*proto.Comment))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CreatorService_IsPostAvailable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PostUserMessage)
 	if err := dec(in); err != nil {
@@ -1073,6 +1139,10 @@ var CreatorService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CreatorService_IsPostOwner_Handler,
 		},
 		{
+			MethodName: "IsCommentOwner",
+			Handler:    _CreatorService_IsCommentOwner_Handler,
+		},
+		{
 			MethodName: "AddLike",
 			Handler:    _CreatorService_AddLike_Handler,
 		},
@@ -1135,6 +1205,10 @@ var CreatorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateComment",
 			Handler:    _CreatorService_CreateComment_Handler,
+		},
+		{
+			MethodName: "DeleteComment",
+			Handler:    _CreatorService_DeleteComment_Handler,
 		},
 		{
 			MethodName: "IsPostAvailable",

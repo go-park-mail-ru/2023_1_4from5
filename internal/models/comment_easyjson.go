@@ -110,7 +110,7 @@ func easyjsonE9abebc9EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 		}
 		out.RawText((in.PostID).MarshalText())
 	}
-	{
+	if in.Text != "" {
 		const prefix string = ",\"text\":"
 		out.RawString(prefix)
 		out.String(string(in.Text))

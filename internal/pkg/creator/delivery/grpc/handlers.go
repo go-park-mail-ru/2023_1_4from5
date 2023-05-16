@@ -1,7 +1,6 @@
 package grpcCreator
 
 import (
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment"
@@ -675,13 +674,16 @@ func (h GrpcCreatorHandler) DeleteSubscription(ctx context.Context, in *generate
 func (h GrpcCreatorHandler) CreateComment(ctx context.Context, in *generatedCommon.Comment) (*generatedCommon.Empty, error) {
 	commentId, err := uuid.Parse(in.Id)
 	if err != nil {
-		return &generatedCommon.Empty{Error: err.Error()}, nil
+		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
 	}
 	userId, err := uuid.Parse(in.UserId)
 	if err != nil {
-		return &generatedCommon.Empty{Error: err.Error()}, nil
+		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
 	}
 	postId, err := uuid.Parse(in.PostID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
+	}
 	err = h.cuc.CreateComment(ctx, models.Comment{
 		CommentID: commentId,
 		UserID:    userId,
@@ -689,8 +691,58 @@ func (h GrpcCreatorHandler) CreateComment(ctx context.Context, in *generatedComm
 		Text:      in.Text,
 	})
 	if err != nil {
-		fmt.Println(err)
 		return &generatedCommon.Empty{Error: err.Error()}, nil
 	}
 	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) DeleteComment(ctx context.Context, in *generatedCommon.Comment) (*generatedCommon.Empty, error) {
+	commentId, err := uuid.Parse(in.Id)
+	if err != nil {
+		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
+	}
+	postId, err := uuid.Parse(in.PostID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
+	}
+	err = h.cuc.DeleteComment(ctx, models.Comment{
+		CommentID: commentId,
+		PostID:    postId,
+	})
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) IsCommentOwner(ctx context.Context, in *generatedCommon.Comment) (*generatedCreator.FlagMessage, error) {
+	commentId, err := uuid.Parse(in.Id)
+	if err != nil {
+		return &generatedCreator.FlagMessage{
+			Flag:  false,
+			Error: models.WrongData.Error(),
+		}, nil
+	}
+	userId, err := uuid.Parse(in.UserId)
+	if err != nil {
+		return &generatedCreator.FlagMessage{
+			Flag:  false,
+			Error: models.WrongData.Error(),
+		}, nil
+	}
+
+	flag, err := h.cuc.IsCommentOwner(ctx, models.Comment{
+		CommentID: commentId,
+		UserID:    userId,
+	})
+	if err != nil {
+		return &generatedCreator.FlagMessage{
+			Flag:  flag,
+			Error: err.Error(),
+		}, nil
+	}
+	return &generatedCreator.FlagMessage{
+		Flag:  flag,
+		Error: "",
+	}, nil
 }

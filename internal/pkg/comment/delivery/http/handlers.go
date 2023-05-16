@@ -154,34 +154,70 @@ func (h *CommentHandler) DeleteComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	postIDtmp, ok := mux.Vars(r)["post-uuid"]
+	commentInfo := models.Comment{}
+	if err = easyjson.UnmarshalFromReader(r.Body, &commentInfo); err != nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	commentIDtmp, ok := mux.Vars(r)["comment-uuid"]
 
 	if !ok {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	commentID, err := uuid.Parse(postIDtmp)
+	commentInfo.CommentID, err = uuid.Parse(commentIDtmp)
 	if err != nil {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
 
-	//out, err = h.creatorClient.DeleteComment(r.Context(), &generatedCommon.Comment{
-	//	Id:     commentID.String(),
-	//	UserId: userDataJWT.Id.String(),
-	//})
-	//
-	//if err != nil {
-	//	h.logger.Error(err)
-	//	utils.Response(w, http.StatusInternalServerError, nil)
-	//	return
-	//}
-	//
-	//if out.Error == models.Forbbiden.Error() {
-	//	utils.Response(w, http.StatusForbidden, nil)
-	//	return
-	//}
+	isCommentOwner, err := h.creatorClient.IsCommentOwner(r.Context(), &generatedCommon.Comment{
+		Id:     commentInfo.CommentID.String(),
+		UserId: userDataJWT.Id.String(),
+	})
 
-	utils.Response(w, http.StatusOK, commentID)
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if isCommentOwner.Error == models.WrongData.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if isCommentOwner.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if !isCommentOwner.Flag {
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+
+	out, err := h.creatorClient.DeleteComment(r.Context(), &generatedCommon.Comment{
+		Id:     commentInfo.CommentID.String(),
+		PostID: commentInfo.PostID.String(),
+	})
+
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if out.Error == models.WrongData.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	if out.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, out.Error)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, nil)
 
 }

@@ -149,6 +149,7 @@ service CreatorService {
   rpc GetPost(PostUserMessage) returns (PostMessage) {}
   rpc DeletePost(common.UUIDMessage) returns (common.Empty) {}
   rpc IsPostOwner(PostUserMessage) returns (FlagMessage) {}
+  rpc IsCommentOwner(common.Comment) returns (FlagMessage) {}
   rpc AddLike(PostUserMessage) returns (Like) {}
   rpc RemoveLike(PostUserMessage) returns (Like) {}
   rpc EditPost(PostEditData) returns (common.Empty) {}

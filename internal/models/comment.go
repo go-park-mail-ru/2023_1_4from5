@@ -13,7 +13,7 @@ type Comment struct {
 	UserID     uuid.UUID `json:"user_id,omitempty"`
 	UserPhoto  uuid.UUID `json:"user_photo,omitempty"`
 	PostID     uuid.UUID `json:"post_id"`
-	Text       string    `json:"text"`
+	Text       string    `json:"text,omitempty"`
 	Creation   time.Time `json:"creation,omitempty"`
 	LikesCount int64     `json:"likes_count,omitempty"`
 }
