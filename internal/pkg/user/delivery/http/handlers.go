@@ -705,6 +705,7 @@ func (h *UserHandler) Payment(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
+	fmt.Println("Payment")
 	paymentString := strings.Join([]string{paymentStringMap["notification_type"],
 		paymentStringMap["operation_id"], paymentStringMap["amount"], paymentStringMap["currency"], paymentStringMap["datetime"], paymentStringMap["sender"],
 		paymentStringMap["codepro"], paymentSecret, paymentStringMap["label"]}, "&")
@@ -720,7 +721,15 @@ func (h *UserHandler) Payment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	paymentInfo := models.PaymentDetails{}
-	err = easyjson.Unmarshal([]byte(paymentStringMap["label"]), &paymentInfo)
+	str := strings.Split(paymentStringMap["label"], ";")
+
+	paymentInfo.Operation = str[0]
+	paymentInfo.CreatorId, err = uuid.Parse(str[1])
+	paymentInfo.UserID = uuid.Nil
+	if err != nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
 	fmt.Println("Got:   ", paymentInfo)
 	if paymentInfo.Operation == "subscribe" {
 
