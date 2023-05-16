@@ -13,7 +13,7 @@ services:
         source: /var/log
         target: /var/log
     deploy:
-      replicas: 2
+      replicas: 1
       mode: replicated
       restart_policy:
         condition: on-failure
@@ -33,7 +33,7 @@ services:
         source: /var/log
         target: /var/log
     deploy:
-      replicas: 2
+      replicas: 1
       mode: replicated
       restart_policy:
         condition: on-failure
@@ -54,7 +54,7 @@ services:
         source: /var/log
         target: /var/log
     deploy:
-      replicas: 2
+      replicas: 1
       mode: replicated
       restart_policy:
         condition: on-failure
