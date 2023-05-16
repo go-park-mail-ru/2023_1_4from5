@@ -17,7 +17,7 @@ const (
 	UpdatePassword       = `UPDATE "user" SET password_hash = $1, user_version = user_version+1 WHERE user_id = $2;`
 	UpdateProfileInfo    = `UPDATE "user" SET login = $1, display_name = $2 WHERE user_id = $3;`
 	UpdateAuthorAimMoney = `UPDATE "creator" SET money_got = money_got + $1 WHERE creator_id = $2 RETURNING money_got;`
-	AddDonate            = `INSERT INTO "donation"(creator_id, money_count) VALUES ($2, $3);`
+	AddDonate            = `INSERT INTO "donation"(creator_id, money_count) VALUES ($1, $2);`
 	BecameCreator        = `INSERT INTO "creator"(creator_id, user_id, name, description) VALUES ($1, $2, $3, $4);`
 	Follow               = `INSERT INTO "follow" (user_id, creator_id) VALUES ($1, $2);`
 	Unfollow             = `DELETE FROM "follow" WHERE user_id = $1 AND creator_id = $2;`
