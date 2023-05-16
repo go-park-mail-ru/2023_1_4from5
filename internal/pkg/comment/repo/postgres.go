@@ -71,35 +71,23 @@ func (r *CommentRepo) DeleteComment(ctx context.Context, commentInfo models.Comm
 		return models.InternalError
 	}
 
-	row, err := tx.QueryContext(ctx, DeleteCommentLikes, commentInfo.CommentID)
+	_, err = tx.ExecContext(ctx, DeleteCommentLikes, commentInfo.CommentID)
 	if err != nil {
 		_ = tx.Rollback()
-		r.logger.Error(err)
-		return models.InternalError
-	}
-	if err = row.Close(); err != nil {
 		r.logger.Error(err)
 		return models.InternalError
 	}
 
-	row, err = tx.QueryContext(ctx, DecCommentsCount, commentInfo.PostID)
+	_, err = tx.ExecContext(ctx, DecCommentsCount, commentInfo.PostID)
 	if err != nil {
 		_ = tx.Rollback()
-		r.logger.Error(err)
-		return models.InternalError
-	}
-	if err = row.Close(); err != nil {
 		r.logger.Error(err)
 		return models.InternalError
 	}
 
-	row, err = tx.QueryContext(ctx, DeleteComment, commentInfo.CommentID)
+	_, err = tx.ExecContext(ctx, DeleteComment, commentInfo.CommentID)
 	if err != nil {
 		_ = tx.Rollback()
-		r.logger.Error(err)
-		return models.InternalError
-	}
-	if err = row.Close(); err != nil {
 		r.logger.Error(err)
 		return models.InternalError
 	}

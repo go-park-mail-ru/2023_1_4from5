@@ -90,34 +90,22 @@ func (r *PostRepo) CreatePost(ctx context.Context, postData models.PostCreationD
 	}
 
 	for _, attach := range postData.Attachments {
-		if row, err = tx.QueryContext(ctx, InsertAttach, attach.Id, postData.Id, attach.Type); err != nil {
+		if _, err = tx.ExecContext(ctx, InsertAttach, attach.Id, postData.Id, attach.Type); err != nil {
 			_ = tx.Rollback()
-			r.logger.Error(err)
-			return models.InternalError
-		}
-		if err = row.Close(); err != nil {
 			r.logger.Error(err)
 			return models.InternalError
 		}
 	}
 
-	if row, err = tx.QueryContext(ctx, IncPostCount, postData.Creator); err != nil {
+	if _, err = tx.ExecContext(ctx, IncPostCount, postData.Creator); err != nil {
 		_ = tx.Rollback()
-		r.logger.Error(err)
-		return models.InternalError
-	}
-	if err = row.Close(); err != nil {
 		r.logger.Error(err)
 		return models.InternalError
 	}
 
 	for _, sub := range postData.AvailableSubscriptions {
-		if row, err = tx.QueryContext(ctx, AddSubscriptionsToPost, postData.Id, sub); err != nil {
+		if _, err = tx.ExecContext(ctx, AddSubscriptionsToPost, postData.Id, sub); err != nil {
 			_ = tx.Rollback()
-			r.logger.Error(err)
-			return models.InternalError
-		}
-		if err = row.Close(); err != nil {
 			r.logger.Error(err)
 			return models.InternalError
 		}
@@ -227,46 +215,30 @@ func (r *PostRepo) DeletePost(ctx context.Context, postID uuid.UUID) error {
 		return models.InternalError
 	}
 
-	row, err := tx.QueryContext(ctx, DeleteComments, postID)
+	_, err = tx.ExecContext(ctx, DeleteComments, postID)
 	if err != nil {
 		_ = tx.Rollback()
-		r.logger.Error(err)
-		return models.InternalError
-	}
-	if err = row.Close(); err != nil {
 		r.logger.Error(err)
 		return models.InternalError
 	}
 
-	row, err = tx.QueryContext(ctx, DeleteLikes, postID)
+	_, err = tx.ExecContext(ctx, DeleteLikes, postID)
 	if err != nil {
 		_ = tx.Rollback()
-		r.logger.Error(err)
-		return models.InternalError
-	}
-	if err = row.Close(); err != nil {
 		r.logger.Error(err)
 		return models.InternalError
 	}
 
-	row, err = tx.QueryContext(ctx, DeletePostSubscription, postID)
+	_, err = tx.ExecContext(ctx, DeletePostSubscription, postID)
 	if err != nil {
 		_ = tx.Rollback()
-		r.logger.Error(err)
-		return models.InternalError
-	}
-	if err = row.Close(); err != nil {
 		r.logger.Error(err)
 		return models.InternalError
 	}
 
-	row, err = tx.QueryContext(ctx, DeletePost, postID)
+	_, err = tx.ExecContext(ctx, DeletePost, postID)
 	if err != nil {
 		_ = tx.Rollback()
-		r.logger.Error(err)
-		return models.InternalError
-	}
-	if err = row.Close(); err != nil {
 		r.logger.Error(err)
 		return models.InternalError
 	}
@@ -378,34 +350,23 @@ func (r *PostRepo) EditPost(ctx context.Context, postData models.PostEditData) e
 		return models.InternalError
 	}
 
-	row, err := tx.QueryContext(ctx, UpdatePostInfo, postData.Title, postData.Text, postData.Id)
+	_, err = tx.ExecContext(ctx, UpdatePostInfo, postData.Title, postData.Text, postData.Id)
 	if err != nil {
 		_ = tx.Rollback()
 		r.logger.Error(err)
 		return models.InternalError
 	}
-	if err = row.Close(); err != nil {
-		r.logger.Error(err)
-		return models.InternalError
-	}
 
-	if row, err = tx.QueryContext(ctx, DeletePostSubscriptions, postData.Id); err != nil {
+	if _, err = tx.ExecContext(ctx, DeletePostSubscriptions, postData.Id); err != nil {
 		_ = tx.Rollback()
 		r.logger.Error(err)
 		return models.InternalError
 	}
-	if err = row.Close(); err != nil {
-		r.logger.Error(err)
-		return models.InternalError
-	}
+
 	for _, sub := range postData.AvailableSubscriptions {
-		row, err := tx.QueryContext(ctx, AddSubscriptionsToPost, postData.Id, sub)
+		_, err = tx.ExecContext(ctx, AddSubscriptionsToPost, postData.Id, sub)
 		if err != nil {
 			_ = tx.Rollback()
-			r.logger.Error(err)
-			return models.InternalError
-		}
-		if err = row.Close(); err != nil {
 			r.logger.Error(err)
 			return models.InternalError
 		}
