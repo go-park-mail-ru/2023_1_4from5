@@ -81,7 +81,7 @@ create table user_payments
         constraint user_payments_subscription_subscription_id_fk references subscription (subscription_id),
     payment_timestamp timestamp not null default now(),
     payment_info      text, ---что-то, номер кошелька, что угодно
-    money             int       not null
+    money             decimal(10, 2)       not null
 );
 
 create table post

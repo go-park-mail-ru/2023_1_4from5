@@ -14,7 +14,7 @@ type UserUsecase interface {
 	DeletePhoto(ctx context.Context, userId uuid.UUID) error
 	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
 	UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error
-	Donate(ctx context.Context, donateInfo models.Donate) (int64, error)
+	Donate(ctx context.Context, donateInfo models.Donate) (float32, error)
 	CheckIfCreator(ctx context.Context, userId uuid.UUID) (uuid.UUID, bool, error)
 	BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error)
 	Follow(ctx context.Context, userId, creatorId uuid.UUID) error
@@ -29,7 +29,7 @@ type UserRepo interface {
 	UpdateProfilePhoto(ctx context.Context, userID uuid.UUID, path uuid.UUID) error
 	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
 	UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error
-	Donate(ctx context.Context, donateInfo models.Donate) (int64, error)
+	Donate(ctx context.Context, donateInfo models.Donate) (float32, error)
 	CheckIfCreator(ctx context.Context, userId uuid.UUID) (uuid.UUID, bool, error)
 	BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error)
 	Follow(ctx context.Context, userId, creatorId uuid.UUID) error

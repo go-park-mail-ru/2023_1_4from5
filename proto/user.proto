@@ -48,7 +48,7 @@ message DonateMessage{
 }
 
 message DonateResponse{
-  int64 MoneyCount = 1;
+  float MoneyCount = 1;
   string Error = 2;
 }
 
