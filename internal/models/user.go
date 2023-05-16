@@ -100,7 +100,7 @@ type UpdateProfileInfo struct {
 
 type Donate struct {
 	CreatorID  uuid.UUID `json:"creator_id"`
-	MoneyCount int64     `json:"money_count"`
+	MoneyCount float32   `json:"money_count"`
 }
 
 func (creatorInfo *BecameCreatorInfo) IsValid() bool {

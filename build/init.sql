@@ -177,7 +177,7 @@ create table donation
     creator_id    uuid      not null
         constraint donation_creator_creator_id_fk
             references "creator" (creator_id),
-    money_count   int       not null,
+    money_count   decimal(10, 2)       not null,
     donation_date timestamp not null default now()
 );
 

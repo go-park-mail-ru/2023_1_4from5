@@ -13,7 +13,7 @@ message SubscriptionDetails{
   string Id = 1;
   string UserID = 2;
   int64 MonthCount = 3;
-  int64 Money = 4;
+  float Money = 4;
   string CreatorID = 5;
 }
 
@@ -44,7 +44,7 @@ message UpdateProfileInfoMessage{
 
 message DonateMessage{
   string CreatorID = 1;
-  int64 MoneyCount = 2;
+  float MoneyCount = 2;
 }
 
 message DonateResponse{

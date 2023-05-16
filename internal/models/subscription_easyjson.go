@@ -51,7 +51,7 @@ func easyjsonFfbd3743DecodeGithubComGoParkMailRu202314from5InternalModels(in *jl
 		case "month_count":
 			out.MonthCount = int64(in.Int64())
 		case "money":
-			out.Money = int64(in.Int64())
+			out.Money = float32(in.Float32())
 		default:
 			in.SkipRecursive()
 		}
@@ -89,7 +89,7 @@ func easyjsonFfbd3743EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 	if in.Money != 0 {
 		const prefix string = ",\"money\":"
 		out.RawString(prefix)
-		out.Int64(int64(in.Money))
+		out.Float32(float32(in.Money))
 	}
 	out.RawByte('}')
 }
@@ -288,7 +288,7 @@ func easyjsonFfbd3743DecodeGithubComGoParkMailRu202314from5InternalModels2(in *j
 		case "month_count":
 			out.MonthCount = int64(in.Int64())
 		case "money":
-			out.Money = int64(in.Int64())
+			out.Money = float32(in.Float32())
 		default:
 			in.SkipRecursive()
 		}
@@ -331,7 +331,7 @@ func easyjsonFfbd3743EncodeGithubComGoParkMailRu202314from5InternalModels2(out *
 	if in.Money != 0 {
 		const prefix string = ",\"money\":"
 		out.RawString(prefix)
-		out.Int64(int64(in.Money))
+		out.Float32(float32(in.Money))
 	}
 	out.RawByte('}')
 }

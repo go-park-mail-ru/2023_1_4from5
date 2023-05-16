@@ -728,11 +728,14 @@ func (h *UserHandler) Payment(w http.ResponseWriter, r *http.Request) {
 	paymentInfo.Operation = str[0]
 	paymentInfo.CreatorId, err = uuid.Parse(str[1])
 	paymentInfo.UserID = uuid.Nil
-	paymentInfo.Money, err = strconv.ParseInt(paymentStringMap["amount"], 10, 64)
-	if err != nil {
+	if tmp, err := strconv.ParseFloat(paymentStringMap["amount"], 32); err != nil {
+		fmt.Println("WRONG MONEY COUNT")
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
+	} else {
+		paymentInfo.Money = float32(tmp)
 	}
+
 	fmt.Println("money: ", paymentStringMap["amount"])
 	fmt.Println("Got:   ", paymentInfo)
 	if paymentInfo.Operation == "subscribe" {
