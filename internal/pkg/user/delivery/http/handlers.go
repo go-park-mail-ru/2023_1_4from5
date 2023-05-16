@@ -682,10 +682,10 @@ func (h *UserHandler) Payment(w http.ResponseWriter, r *http.Request) {
 
 	sha1Hash := ""
 	for key, value := range r.Form {
+		if key == "sha1_hash" {
+			sha1Hash = value[0]
+		}
 		if _, ok := paymentStringMap[key]; ok {
-			if key == "sha1_hash" {
-				sha1Hash = value[0]
-			}
 			paymentStringMap[key] = value[0]
 		}
 	}
