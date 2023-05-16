@@ -1,6 +1,8 @@
 package models
 
 import (
+	"fmt"
+	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	"github.com/google/uuid"
 	"html"
 	"time"
@@ -24,4 +26,39 @@ func (commentData *Comment) IsValid() bool {
 
 func (comment *Comment) Sanitize() {
 	comment.Text = html.EscapeString(comment.Text)
+}
+
+func (comment *Comment) CommentToModel(com *generatedCreator.Comment) error {
+	commentID, err := uuid.Parse(com.Id)
+	if err != nil {
+		return err
+	}
+	postID, err := uuid.Parse(com.PostID)
+	if err != nil {
+		return err
+	}
+	userPhoto, err := uuid.Parse(com.UserPhoto)
+	if err != nil {
+		return err
+	}
+
+	userID, err := uuid.Parse(com.UserId)
+	if err != nil {
+		return err
+	}
+
+	creation, err := time.Parse("2006-01-02 15:04:05 -0700 -0700", com.Creation)
+	if err != nil {
+		fmt.Println("date")
+		return err
+	}
+
+	comment.CommentID = commentID
+	comment.UserPhoto = userPhoto
+	comment.Creation = creation
+	comment.Text = com.Text
+	comment.LikesCount = com.LikesCount
+	comment.PostID = postID
+	comment.UserID = userID
+	return nil
 }

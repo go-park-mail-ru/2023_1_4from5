@@ -79,6 +79,22 @@ message Post{
   repeated common.Subscription Subscriptions = 13;
 };
 
+message Comment{
+  string Id = 1;
+  string UserId = 2;
+  string UserPhoto = 3;
+  string PostID = 4;
+  string  Text = 5;
+  string Creation = 6;
+  int64 LikesCount = 7;
+}
+
+message PostWithComments {
+  Post Post = 1;
+  repeated Comment Comments = 2;
+  string Error = 3;
+}
+
 message PostsMessage{
   repeated Post Posts = 1;
   string Error = 2;
@@ -146,10 +162,10 @@ service CreatorService {
   rpc CheckIfCreator(common.UUIDMessage) returns (common.UUIDResponse){}
 
   rpc CreatePost(PostCreationData) returns (common.Empty) {}
-  rpc GetPost(PostUserMessage) returns (PostMessage) {}
+  rpc GetPost(PostUserMessage) returns (PostWithComments) {}
   rpc DeletePost(common.UUIDMessage) returns (common.Empty) {}
   rpc IsPostOwner(PostUserMessage) returns (FlagMessage) {}
-  rpc IsCommentOwner(common.Comment) returns (FlagMessage) {}
+  rpc IsCommentOwner(Comment) returns (FlagMessage) {}
   rpc AddLike(PostUserMessage) returns (Like) {}
   rpc RemoveLike(PostUserMessage) returns (Like) {}
   rpc EditPost(PostEditData) returns (common.Empty) {}
@@ -168,11 +184,11 @@ service CreatorService {
   rpc DeleteSubscription(SubscriptionCreatorMessage) returns (common.Empty) {}
   rpc EditSubscription(common.Subscription) returns (common.Empty) {}
 
-  rpc CreateComment(common.Comment) returns (common.Empty) {}
-  rpc DeleteComment(common.Comment) returns (common.Empty) {}
-  rpc EditComment(common.Comment) returns (common.Empty) {}
-  rpc AddLikeComment(common.Comment) returns (common.Empty) {}
-  rpc RemoveLikeComment(common.Comment) returns (common.Empty) {}
+  rpc CreateComment(Comment) returns (common.Empty) {}
+  rpc DeleteComment(Comment) returns (common.Empty) {}
+  rpc EditComment(Comment) returns (common.Empty) {}
+  rpc AddLikeComment(Comment) returns (common.Empty) {}
+  rpc RemoveLikeComment(Comment) returns (common.Empty) {}
 
   rpc IsPostAvailable(PostUserMessage) returns (common.Empty) {}
 }

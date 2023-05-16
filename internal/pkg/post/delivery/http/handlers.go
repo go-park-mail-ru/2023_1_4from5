@@ -604,15 +604,15 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var post models.Post
-	err = post.PostToModel(postProto.Post)
+	var post models.PostWithComments
+	err = post.PostWithCommentsToModel(postProto)
 	if err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 
-	post.Sanitize()
+	post.Post.Sanitize()
 
 	utils.Response(w, http.StatusOK, post)
 }

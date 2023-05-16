@@ -2,7 +2,6 @@ package http
 
 import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
-	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
@@ -96,7 +95,7 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 
 	commentInfo.CommentID = uuid.New()
 
-	out, err = h.creatorClient.CreateComment(r.Context(), &generatedCommon.Comment{
+	out, err = h.creatorClient.CreateComment(r.Context(), &generatedCreator.Comment{
 		Id:     commentInfo.CommentID.String(),
 		PostID: commentInfo.PostID.String(),
 		UserId: userDataJWT.Id.String(),
@@ -172,7 +171,7 @@ func (h *CommentHandler) DeleteComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isCommentOwner, err := h.creatorClient.IsCommentOwner(r.Context(), &generatedCommon.Comment{
+	isCommentOwner, err := h.creatorClient.IsCommentOwner(r.Context(), &generatedCreator.Comment{
 		Id:     commentInfo.CommentID.String(),
 		UserId: userDataJWT.Id.String(),
 	})
@@ -198,7 +197,7 @@ func (h *CommentHandler) DeleteComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err := h.creatorClient.DeleteComment(r.Context(), &generatedCommon.Comment{
+	out, err := h.creatorClient.DeleteComment(r.Context(), &generatedCreator.Comment{
 		Id:     commentInfo.CommentID.String(),
 		PostID: commentInfo.PostID.String(),
 	})
@@ -282,7 +281,7 @@ func (h *CommentHandler) EditComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isCommentOwner, err := h.creatorClient.IsCommentOwner(r.Context(), &generatedCommon.Comment{
+	isCommentOwner, err := h.creatorClient.IsCommentOwner(r.Context(), &generatedCreator.Comment{
 		Id:     commentInfo.CommentID.String(),
 		UserId: userDataJWT.Id.String(),
 	})
@@ -308,7 +307,7 @@ func (h *CommentHandler) EditComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err := h.creatorClient.EditComment(r.Context(), &generatedCommon.Comment{
+	out, err := h.creatorClient.EditComment(r.Context(), &generatedCreator.Comment{
 		Id:   commentInfo.CommentID.String(),
 		Text: commentInfo.Text,
 	})
@@ -367,7 +366,7 @@ func (h *CommentHandler) AddLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err = h.creatorClient.AddLikeComment(r.Context(), &generatedCommon.Comment{
+	out, err = h.creatorClient.AddLikeComment(r.Context(), &generatedCreator.Comment{
 		Id:     commentInfo.CommentID.String(),
 		PostID: commentInfo.PostID.String(),
 		UserId: userDataJWT.Id.String(),
@@ -414,7 +413,7 @@ func (h *CommentHandler) RemoveLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err := h.creatorClient.RemoveLikeComment(r.Context(), &generatedCommon.Comment{
+	out, err := h.creatorClient.RemoveLikeComment(r.Context(), &generatedCreator.Comment{
 		Id:     commentInfo.CommentID.String(),
 		UserId: userDataJWT.Id.String(),
 	})

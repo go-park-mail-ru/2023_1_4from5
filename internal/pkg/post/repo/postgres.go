@@ -29,8 +29,9 @@ const (
 	IsPostAvailableWithSub     = `SELECT user_id FROM "user_subscription" INNER JOIN "post_subscription" p on "user_subscription".subscription_id = p.subscription_id WHERE user_id = $1 AND post_id = $2 AND expire_date > now()`
 	IsPostAvailableForEveryone = `SELECT post_id FROM post_subscription WHERE post_id = $1`
 	IsCreator                  = `SELECT user_id FROM "creator" WHERE creator_id = $1;`
-	GetPost                    = `SELECT "post".post_id, "post".creator_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE "post".post_id = $1 GROUP BY "post".post_id, creation_date, title, post_text;`
+	GetPost                    = `SELECT "post".post_id, "post".creator_id, creation_date, title, post_text, likes_count, "post".comments_count, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE "post".post_id = $1 GROUP BY "post".post_id, creation_date, title, post_text;`
 	GetSubInfo                 = `SELECT creator_id, month_cost, title, description FROM "subscription" WHERE subscription_id = $1;`
+	GetComments                = `SELECT comment_id, u.user_id, u.profile_photo, c.post_id, c.comment_text, c.creation_date, c.likes_count FROM comment c JOIN "user" u on c.user_id = u.user_id WHERE post_id = $1;`
 )
 
 type PostRepo struct {
@@ -151,7 +152,28 @@ func (r *PostRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]mod
 	return subsInfo, nil
 }
 
-func (r *PostRepo) GetPost(ctx context.Context, postID, userID uuid.UUID) (models.Post, error) {
+func (r *PostRepo) GetComments(ctx context.Context, postID uuid.UUID) ([]models.Comment, error) {
+	comments := make([]models.Comment, 0)
+	rows, err := r.db.QueryContext(ctx, GetComments, postID)
+	if err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
+		return nil, models.InternalError
+	}
+	defer rows.Close()
+	for rows.Next() {
+		comment := models.Comment{}
+		err = rows.Scan(&comment.CommentID, &comment.UserID, &comment.UserPhoto, &comment.PostID, &comment.Text, &comment.Creation, &comment.LikesCount)
+		if err != nil {
+			r.logger.Error(err)
+			return nil, models.InternalError
+		}
+
+		comments = append(comments, comment)
+	}
+	return comments, nil
+}
+
+func (r *PostRepo) GetPost(ctx context.Context, postID uuid.UUID) (models.Post, error) {
 	var post models.Post
 	var postTextTmp sql.NullString
 	attachs := make([]uuid.UUID, 0)
@@ -159,7 +181,7 @@ func (r *PostRepo) GetPost(ctx context.Context, postID, userID uuid.UUID) (model
 	subs := make([]uuid.UUID, 0)
 	row := r.db.QueryRowContext(ctx, GetPost, postID)
 	err := row.Scan(&post.Id, &post.Creator, &post.Creation, &post.Title,
-		&postTextTmp, pq.Array(&attachs), pq.Array(&types), pq.Array(&subs)) //подписки, при которыз пост доступен
+		&postTextTmp, &post.LikesCount, &post.CommentsCount, pq.Array(&attachs), pq.Array(&types), pq.Array(&subs)) //подписки, при которыз пост доступен
 	if err != nil && errors.Is(sql.ErrNoRows, err) {
 		return models.Post{}, models.WrongData
 	}
@@ -169,12 +191,17 @@ func (r *PostRepo) GetPost(ctx context.Context, postID, userID uuid.UUID) (model
 	}
 	post.Text = postTextTmp.String
 
-	post.Attachments = make([]models.Attachment, len(attachs))
 	for i, v := range attachs {
-		post.Attachments[i].Type = types[i].String
-		post.Attachments[i].Id = v
+		if v == uuid.Nil {
+			continue
+		}
+		post.Attachments = append(post.Attachments, models.Attachment{
+			Id:   v,
+			Type: types[i].String,
+		})
 	}
 	post.Subscriptions, err = r.GetSubsByID(ctx, subs...)
+
 	return post, err
 }
 

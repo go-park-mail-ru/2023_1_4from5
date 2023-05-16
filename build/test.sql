@@ -186,4 +186,11 @@ FROM (SELECT DISTINCT p.post_id,
       LIMIT 50) as t
          LEFT JOIN attachment a on a.post_id = t.post_id
 GROUP BY t.name, t.creator_id, creation_date, title, post_text, t.post_id, t.profile_photo, t.likes_count, t.comments_count
-ORDER BY creation_date DESC
+ORDER BY creation_date DESC;
+
+
+
+SELECT comment_id, u.user_id, u.profile_photo, c.post_id, c.comment_text, c.creation_date, c.likes_count
+FROM comment c
+JOIN "user" u on c.user_id = u.user_id
+WHERE post_id = $1;

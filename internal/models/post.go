@@ -26,6 +26,11 @@ type Post struct {
 	Subscriptions []Subscription `json:"subscriptions"`
 }
 
+type PostWithComments struct {
+	Post     Post      `json:"post"`
+	Comments []Comment `json:"comments"`
+}
+
 //easyjson:skip
 type PostCreationData struct {
 	Id                     uuid.UUID
@@ -52,6 +57,13 @@ func (post *Post) Sanitize() {
 	post.Text = html.EscapeString(post.Text)
 	for i := range post.Subscriptions {
 		post.Subscriptions[i].Sanitize()
+	}
+}
+
+func (post *PostWithComments) Sanitize() {
+	post.Post.Sanitize()
+	for i := range post.Comments {
+		post.Comments[i].Sanitize()
 	}
 }
 
@@ -104,5 +116,22 @@ func (post *Post) PostToModel(postInfo *generatedCreator.Post) error {
 		}
 		post.Attachments = append(post.Attachments, attachment)
 	}
+	return nil
+}
+
+func (post *PostWithComments) PostWithCommentsToModel(postInfo *generatedCreator.PostWithComments) error {
+	err := post.Post.PostToModel(postInfo.Post)
+	if err != nil {
+		return err
+	}
+	for _, com := range postInfo.Comments {
+		var comment Comment
+		err = comment.CommentToModel(com)
+		if err != nil {
+			return err
+		}
+		post.Comments = append(post.Comments, comment)
+	}
+
 	return nil
 }
