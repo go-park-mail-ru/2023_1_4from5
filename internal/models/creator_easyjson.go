@@ -404,9 +404,9 @@ func easyjson7c25d2a6DecodeGithubComGoParkMailRu202314from5InternalModels3(in *j
 		case "description":
 			out.Description = string(in.String())
 		case "money_needed":
-			out.MoneyNeeded = int64(in.Int64())
+			out.MoneyNeeded = float32(in.Float32())
 		case "money_got":
-			out.MoneyGot = int64(in.Int64())
+			out.MoneyGot = float32(in.Float32())
 		default:
 			in.SkipRecursive()
 		}
@@ -434,12 +434,12 @@ func easyjson7c25d2a6EncodeGithubComGoParkMailRu202314from5InternalModels3(out *
 	{
 		const prefix string = ",\"money_needed\":"
 		out.RawString(prefix)
-		out.Int64(int64(in.MoneyNeeded))
+		out.Float32(float32(in.MoneyNeeded))
 	}
 	{
 		const prefix string = ",\"money_got\":"
 		out.RawString(prefix)
-		out.Int64(int64(in.MoneyGot))
+		out.Float32(float32(in.MoneyGot))
 	}
 	out.RawByte('}')
 }

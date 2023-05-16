@@ -58,8 +58,8 @@ message CreatorPage{
 message Aim{
   string Creator = 1;
   string Description = 2;
-  int64 MoneyNeeded = 3;
-  int64 MoneyGot = 4;
+  float MoneyNeeded = 3;
+  float MoneyGot = 4;
 };
 
 

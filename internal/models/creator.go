@@ -31,8 +31,8 @@ type CreatorPage struct {
 type Aim struct {
 	Creator     uuid.UUID `json:"creator_id"`
 	Description string    `json:"description"`
-	MoneyNeeded int64     `json:"money_needed"`
-	MoneyGot    int64     `json:"money_got"`
+	MoneyNeeded float32   `json:"money_needed"`
+	MoneyGot    float32   `json:"money_got"`
 }
 
 type UpdateCreatorInfo struct {
