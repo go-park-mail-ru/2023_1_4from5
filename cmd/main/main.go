@@ -181,9 +181,9 @@ func run() error {
 	{
 		comment.HandleFunc("/create", commentHandler.CreateComment).Methods(http.MethodPost, http.MethodGet, http.MethodOptions)
 		comment.HandleFunc("/delete/{comment-uuid}", commentHandler.DeleteComment).Methods(http.MethodDelete, http.MethodGet, http.MethodOptions)
-		//comment.HandleFunc("/edit/{comment-uuid}", commentHandler.EditComment).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
-		//comment.HandleFunc("/addLike/{comment-uuid}", commentHandler.AddLike).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
-		//comment.HandleFunc("/removeLike/{comment-uuid}", commentHandler.RemoveLike).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
+		comment.HandleFunc("/edit/{comment-uuid}", commentHandler.EditComment).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
+		comment.HandleFunc("/addLike/{comment-uuid}", commentHandler.AddLike).Methods(http.MethodPut, http.MethodOptions)
+		comment.HandleFunc("/removeLike/{comment-uuid}", commentHandler.RemoveLike).Methods(http.MethodPut, http.MethodOptions)
 	}
 
 	http.Handle("/", r1)

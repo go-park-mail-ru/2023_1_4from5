@@ -715,6 +715,69 @@ func (h GrpcCreatorHandler) DeleteComment(ctx context.Context, in *generatedComm
 	return &generatedCommon.Empty{Error: ""}, nil
 }
 
+func (h GrpcCreatorHandler) EditComment(ctx context.Context, in *generatedCommon.Comment) (*generatedCommon.Empty, error) {
+	commentId, err := uuid.Parse(in.Id)
+	if err != nil {
+		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
+	}
+
+	err = h.cuc.EditComment(ctx, models.Comment{
+		CommentID: commentId,
+		Text:      in.Text,
+	})
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) AddLikeComment(ctx context.Context, in *generatedCommon.Comment) (*generatedCommon.Empty, error) {
+	commentId, err := uuid.Parse(in.Id)
+	if err != nil {
+		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
+	}
+	userId, err := uuid.Parse(in.UserId)
+	if err != nil {
+		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
+	}
+	postId, err := uuid.Parse(in.PostID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
+	}
+
+	err = h.cuc.AddLike(ctx, models.Comment{
+		CommentID: commentId,
+		UserID:    userId,
+		PostID:    postId,
+	})
+
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) RemoveLikeComment(ctx context.Context, in *generatedCommon.Comment) (*generatedCommon.Empty, error) {
+	commentId, err := uuid.Parse(in.Id)
+	if err != nil {
+		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
+	}
+	userId, err := uuid.Parse(in.UserId)
+	if err != nil {
+		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
+	}
+
+	err = h.cuc.RemoveLike(ctx, models.Comment{
+		CommentID: commentId,
+		UserID:    userId,
+	})
+
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
 func (h GrpcCreatorHandler) IsCommentOwner(ctx context.Context, in *generatedCommon.Comment) (*generatedCreator.FlagMessage, error) {
 	commentId, err := uuid.Parse(in.Id)
 	if err != nil {

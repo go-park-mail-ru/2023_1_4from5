@@ -11,11 +11,17 @@ import (
 
 const (
 	CreateComment      = `INSERT INTO "comment"(comment_id, post_id, user_id, comment_text) VALUES ($1, $2, $3, $4);`
+	EditComment        = `UPDATE "comment" SET comment_text = $1 WHERE comment_id = $2;`
 	IncCommentsCount   = `UPDATE "post" SET comments_count = post.comments_count + 1 WHERE post_id = $1 RETURNING comments_count;`
+	IncLikesCount      = `UPDATE "comment" SET likes_count = comment.likes_count + 1 WHERE comment_id = $1 AND post_id = $2 RETURNING likes_count;`
+	DecLikesCount      = `UPDATE "comment" SET likes_count = comment.likes_count - 1 WHERE comment_id = $1 RETURNING likes_count;`
 	DecCommentsCount   = `UPDATE "post" SET comments_count = post.comments_count - 1 WHERE post_id = $1;`
 	GetUserId          = `SELECT user_id FROM "comment" WHERE comment_id = $1;`
 	DeleteCommentLikes = `DELETE FROM "like_comment" WHERE comment_id = $1;`
 	DeleteComment      = `DELETE FROM "comment" WHERE comment_id = $1;`
+	IsLiked            = `SELECT comment_id FROM "like_comment" WHERE comment_id = $1 AND user_id = $2;`
+	AddLike            = `INSERT INTO "like_comment"(comment_id, user_id) VALUES($1, $2);`
+	DeleteLike         = `DELETE FROM "like_comment" WHERE comment_id = $1;`
 )
 
 type CommentRepo struct {
@@ -46,6 +52,15 @@ func (r *CommentRepo) CreateComment(ctx context.Context, commentInfo models.Comm
 		return models.WrongData
 	}
 
+	return nil
+}
+
+func (r *CommentRepo) EditComment(ctx context.Context, commentInfo models.Comment) error {
+	row := r.db.QueryRowContext(ctx, EditComment, commentInfo.Text, commentInfo.CommentID)
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		r.logger.Error(err)
+		return models.InternalError
+	}
 	return nil
 }
 
@@ -97,6 +112,77 @@ func (r *CommentRepo) DeleteComment(ctx context.Context, commentInfo models.Comm
 	return nil
 }
 
+func (r *CommentRepo) AddLike(ctx context.Context, commentInfo models.Comment) error {
+	var commentId = uuid.UUID{}
+	row := r.db.QueryRowContext(ctx, IsLiked, commentInfo.CommentID, commentInfo.UserID)
+	if err := row.Scan(&commentId); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
+		return models.InternalError
+	} else if err == nil {
+		return models.WrongData
+	}
+
+	isCommentOwner, err := r.IsCommentOwner(ctx, commentInfo)
+	if err != nil {
+		return err
+	}
+	if isCommentOwner {
+		return models.WrongData
+	}
+
+	var likesCountTmp int
+
+	row = r.db.QueryRowContext(ctx, IncLikesCount, commentInfo.CommentID, commentInfo.PostID)
+
+	if err := row.Scan(&likesCountTmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
+		return models.InternalError
+	} else if errors.Is(sql.ErrNoRows, err) {
+		return models.WrongData
+	}
+
+	row = r.db.QueryRowContext(ctx, AddLike, commentInfo.CommentID, commentInfo.UserID)
+
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		r.logger.Error(err)
+		return models.InternalError
+	}
+
+	return nil
+
+}
+
+func (r *CommentRepo) RemoveLike(ctx context.Context, commentInfo models.Comment) error {
+	var commentId = uuid.UUID{}
+	row := r.db.QueryRowContext(ctx, IsLiked, commentInfo.CommentID, commentInfo.UserID)
+	if err := row.Scan(&commentId); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
+		return models.InternalError
+	} else if errors.Is(sql.ErrNoRows, err) {
+		return models.WrongData
+	}
+
+	row = r.db.QueryRowContext(ctx, DecLikesCount, commentInfo.CommentID)
+
+	var likesCountTmp int
+
+	if err := row.Scan(&likesCountTmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
+		return models.InternalError
+	} else if errors.Is(sql.ErrNoRows, err) {
+		return models.WrongData
+	}
+
+	row = r.db.QueryRowContext(ctx, DeleteLike, commentInfo.CommentID)
+
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		r.logger.Error(err)
+		return models.InternalError
+	}
+
+	return nil
+
+}
 func (r *CommentRepo) IsCommentOwner(ctx context.Context, commentInfo models.Comment) (bool, error) {
 	row := r.db.QueryRowContext(ctx, GetUserId, commentInfo.CommentID)
 

@@ -27,6 +27,18 @@ func (uc *CommentUsecase) DeleteComment(ctx context.Context, commentInfo models.
 	return uc.repo.DeleteComment(ctx, commentInfo)
 }
 
+func (uc *CommentUsecase) EditComment(ctx context.Context, commentInfo models.Comment) error {
+	return uc.repo.EditComment(ctx, commentInfo)
+}
+
+func (uc *CommentUsecase) AddLike(ctx context.Context, commentInfo models.Comment) error {
+	return uc.repo.AddLike(ctx, commentInfo)
+}
+
+func (uc *CommentUsecase) RemoveLike(ctx context.Context, commentInfo models.Comment) error {
+	return uc.repo.RemoveLike(ctx, commentInfo)
+}
+
 func (uc *CommentUsecase) IsCommentOwner(ctx context.Context, commentInfo models.Comment) (bool, error) {
 	return uc.repo.IsCommentOwner(ctx, commentInfo)
 }

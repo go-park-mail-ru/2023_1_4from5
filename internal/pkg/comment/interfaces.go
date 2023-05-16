@@ -10,16 +10,16 @@ import (
 type CommentUsecase interface {
 	CreateComment(ctx context.Context, commentData models.Comment) error
 	DeleteComment(ctx context.Context, commentData models.Comment) error
+	EditComment(ctx context.Context, commentInfo models.Comment) error
 	IsCommentOwner(ctx context.Context, commentInfo models.Comment) (bool, error)
-	//EditComment(ctx context.Context, subscriptionInfo models.Subscription) error
-	//AddLike(ctx context.Context, subscriptionInfo models.Subscription) error
-	//RemoveLike(ctx context.Context, subscriptionInfo models.Subscription) error
+	AddLike(ctx context.Context, commentInfo models.Comment) error
+	RemoveLike(ctx context.Context, commentInfo models.Comment) error
 }
 type CommentRepo interface {
 	CreateComment(ctx context.Context, commentData models.Comment) error
 	DeleteComment(ctx context.Context, commentData models.Comment) error
+	EditComment(ctx context.Context, commentInfo models.Comment) error
 	IsCommentOwner(ctx context.Context, commentInfo models.Comment) (bool, error)
-	//EditComment(ctx context.Context, subscriptionInfo models.Subscription) error
-	//AddLike(ctx context.Context, subscriptionInfo models.Subscription) error
-	//RemoveLike(ctx context.Context, subscriptionInfo models.Subscription) error
+	AddLike(ctx context.Context, commentInfo models.Comment) error
+	RemoveLike(ctx context.Context, commentInfo models.Comment) error
 }
