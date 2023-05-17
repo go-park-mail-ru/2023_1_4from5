@@ -43,4 +43,5 @@ type UserRepo interface {
 	AddPaymentInfo(ctx context.Context, subscription models.SubscriptionDetails) error
 	CheckPaymentInfo(ctx context.Context, paymentInfo uuid.UUID) (models.SubscriptionDetails, error)
 	UpdatePaymentInfo(ctx context.Context, money float32, paymentInfo uuid.UUID) error
+	GetCreatorID(ctx context.Context, subscriptionID uuid.UUID) (uuid.UUID, error)
 }

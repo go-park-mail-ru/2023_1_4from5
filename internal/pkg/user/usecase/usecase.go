@@ -47,6 +47,10 @@ func (uc *UserUsecase) Subscribe(ctx context.Context, paymentInfo uuid.UUID, mon
 	if err != nil {
 		return err
 	}
+	subscription.CreatorId, err = uc.repo.GetCreatorID(ctx, subscription.Id)
+	if err != nil {
+		return err
+	}
 	err = uc.repo.UpdatePaymentInfo(ctx, money, paymentInfo)
 	if isFollowing, err := uc.repo.CheckIfFollow(ctx, subscription.UserID, subscription.CreatorId); err == models.InternalError {
 		return err

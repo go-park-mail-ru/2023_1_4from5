@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -28,9 +27,10 @@ const (
 	CheckIfSubExists     = `SELECT subscription_id FROM subscription WHERE subscription_id = $1;`
 	AddPaymentInfo       = `INSERT INTO "user_payments" (user_id, subscription_id, payment_timestamp, month_count, payment_info, money) VALUES ($1, $2, now(), $3, $4, 0);`
 	CheckPaymentInfo     = `SELECT user_id, subscription_id, month_count FROM "user_payments" WHERE payment_info = $1;`
-	UpdatePaymentInfo    = `UPDATE "user_payments" SET money = $1 WHERE payment_info = $1`
+	UpdatePaymentInfo    = `UPDATE "user_payments" SET money = $1 WHERE payment_info = $2`
 	UserSubscriptions    = `SELECT us.subscription_id, c.creator_id, name, profile_photo, month_cost, title, subscription.description FROM "subscription" join user_subscription us on subscription.subscription_id = us.subscription_id join creator c on c.creator_id = subscription.creator_id WHERE us.user_id = $1;`
 	DeletePhoto          = `UPDATE "user" SET profile_photo = null WHERE user_id = $1`
+	GetCreatorIDFromSub  = `SELECT creator_id FROM subscription WHERE subscription_id = $1 `
 	FollowsList          = `SELECT c.creator_id, name, profile_photo, description FROM "follow" join creator c on c.creator_id = follow.creator_id WHERE follow.user_id = $1;`
 )
 
@@ -126,13 +126,22 @@ func (ur *UserRepo) Unfollow(ctx context.Context, userId, creatorId uuid.UUID) e
 }
 
 func (ur *UserRepo) AddPaymentInfo(ctx context.Context, subscription models.SubscriptionDetails) error {
-	fmt.Println("2", subscription)
 	row := ur.db.QueryRowContext(ctx, AddPaymentInfo, subscription.UserID, subscription.Id, subscription.MonthCount, subscription.PaymentInfo)
 	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		ur.logger.Error(err)
 		return models.InternalError
 	}
 	return nil
+}
+
+func (ur *UserRepo) GetCreatorID(ctx context.Context, subscriptionID uuid.UUID) (uuid.UUID, error) {
+	var creatorID uuid.UUID
+	row := ur.db.QueryRowContext(ctx, GetCreatorIDFromSub, subscriptionID)
+	if err := row.Scan(&creatorID); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		ur.logger.Error(err)
+		return uuid.Nil, models.InternalError
+	}
+	return creatorID, nil
 }
 
 func (ur *UserRepo) CheckPaymentInfo(ctx context.Context, paymentInfo uuid.UUID) (models.SubscriptionDetails, error) {
