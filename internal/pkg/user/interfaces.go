@@ -18,10 +18,11 @@ type UserUsecase interface {
 	CheckIfCreator(ctx context.Context, userId uuid.UUID) (uuid.UUID, bool, error)
 	BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error)
 	Follow(ctx context.Context, userId, creatorId uuid.UUID) error
-	Subscribe(ctx context.Context, subscription models.SubscriptionDetails) error
+	Subscribe(ctx context.Context, paymentInfo uuid.UUID, money float32) error
 	Unfollow(ctx context.Context, userId, creatorId uuid.UUID) error
 	UserSubscriptions(ctx context.Context, userId uuid.UUID) ([]models.Subscription, error)
 	UserFollows(ctx context.Context, userId uuid.UUID) ([]models.Follow, error)
+	AddPaymentInfo(ctx context.Context, subscription models.SubscriptionDetails) error
 }
 
 type UserRepo interface {
@@ -39,4 +40,7 @@ type UserRepo interface {
 	UserSubscriptions(ctx context.Context, userId uuid.UUID) ([]models.Subscription, error)
 	DeletePhoto(ctx context.Context, userId uuid.UUID) error
 	UserFollows(ctx context.Context, userId uuid.UUID) ([]models.Follow, error)
+	AddPaymentInfo(ctx context.Context, subscription models.SubscriptionDetails) error
+	CheckPaymentInfo(ctx context.Context, paymentInfo uuid.UUID) (models.SubscriptionDetails, error)
+	UpdatePaymentInfo(ctx context.Context, money float32, paymentInfo uuid.UUID) error
 }

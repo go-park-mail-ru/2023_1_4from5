@@ -727,7 +727,6 @@ func (h *UserHandler) Payment(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("creatorID:", str[1])
 	paymentInfo.Operation = str[0]
 	paymentInfo.CreatorId, err = uuid.Parse(str[1])
-	paymentInfo.UserID = uuid.Nil
 	if tmp, err := strconv.ParseFloat(paymentStringMap["amount"], 32); err != nil {
 		fmt.Println("WRONG MONEY COUNT")
 		utils.Response(w, http.StatusBadRequest, nil)
@@ -740,12 +739,8 @@ func (h *UserHandler) Payment(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Got:   ", paymentInfo)
 	if paymentInfo.Operation == "subscribe" {
 
-		out, err := h.userClient.Subscribe(r.Context(), &generatedUser.SubscriptionDetails{
-			CreatorID:  paymentInfo.CreatorId.String(),
-			UserID:     paymentInfo.UserID.String(),
-			Id:         paymentInfo.Id.String(),
-			MonthCount: paymentInfo.MonthCount,
-			Money:      paymentInfo.Money})
+		out, err := h.userClient.Subscribe(r.Context(), &generatedUser.PaymentInfo{PaymentID: paymentInfo.CreatorId.String(),
+			Money: paymentInfo.Money})
 
 		if err != nil {
 			h.logger.Error(err)
@@ -793,7 +788,7 @@ func (h *UserHandler) Payment(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *UserHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) AddPaymentInfo(w http.ResponseWriter, r *http.Request) {
 	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
 
 	//TODO: проверить соответствие количества денег(и вообще в идеале не класть его и считать из month_count, и вообще должен лететь токен киви какой-нибудь)
@@ -832,6 +827,7 @@ func (h *UserHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
+	//////////////////////////////////////////////////////////////
 
 	subUUID, ok := mux.Vars(r)["sub-uuid"]
 	if !ok {
@@ -848,6 +844,7 @@ func (h *UserHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 	subscription := models.SubscriptionDetails{}
 
 	err = easyjson.UnmarshalFromReader(r.Body, &subscription)
+
 	if err != nil {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
@@ -858,12 +855,14 @@ func (h *UserHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err := h.userClient.Subscribe(r.Context(), &generatedUser.SubscriptionDetails{
-		CreatorID:  subscription.CreatorId.String(),
-		UserID:     userDataJWT.Id.String(),
-		Id:         subUUID,
-		MonthCount: subscription.MonthCount,
-		Money:      subscription.Money})
+	subscription.PaymentInfo = uuid.New()
+	fmt.Println(subscription)
+	out, err := h.userClient.AddPaymentInfo(r.Context(), &generatedUser.SubscriptionDetails{
+		CreatorID:   subscription.CreatorId.String(),
+		UserID:      userDataJWT.Id.String(),
+		Id:          subUUID,
+		MonthCount:  subscription.MonthCount,
+		PaymentInfo: subscription.PaymentInfo.String()})
 
 	if err != nil {
 		h.logger.Error(err)

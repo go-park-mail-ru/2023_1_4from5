@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -25,7 +26,9 @@ const (
 	UpdateSubscription   = `UPDATE "user_subscription" SET expire_date = expire_date + $1 * INTERVAL '1 MONTH' WHERE user_id = $2 AND subscription_id = $3 RETURNING user_id;`
 	Subscribe            = `INSERT INTO "user_subscription" VALUES ($1, $2, now() + $3 * INTERVAL '1 MONTH');`
 	CheckIfSubExists     = `SELECT subscription_id FROM subscription WHERE subscription_id = $1;`
-	AddPaymentInfo       = `INSERT INTO "user_payments" (user_id, subscription_id, payment_timestamp, money) VALUES ($1, $2, now(), $3);`
+	AddPaymentInfo       = `INSERT INTO "user_payments" (user_id, subscription_id, payment_timestamp, month_count, payment_info, money) VALUES ($1, $2, now(), $3, $4, 0);`
+	CheckPaymentInfo     = `SELECT user_id, subscription_id, month_count FROM "user_payments" WHERE payment_info = $1;`
+	UpdatePaymentInfo    = `UPDATE "user_payments" SET money = $1 WHERE payment_info = $1`
 	UserSubscriptions    = `SELECT us.subscription_id, c.creator_id, name, profile_photo, month_cost, title, subscription.description FROM "subscription" join user_subscription us on subscription.subscription_id = us.subscription_id join creator c on c.creator_id = subscription.creator_id WHERE us.user_id = $1;`
 	DeletePhoto          = `UPDATE "user" SET profile_photo = null WHERE user_id = $1`
 	FollowsList          = `SELECT c.creator_id, name, profile_photo, description FROM "follow" join creator c on c.creator_id = follow.creator_id WHERE follow.user_id = $1;`
@@ -122,6 +125,37 @@ func (ur *UserRepo) Unfollow(ctx context.Context, userId, creatorId uuid.UUID) e
 	return nil
 }
 
+func (ur *UserRepo) AddPaymentInfo(ctx context.Context, subscription models.SubscriptionDetails) error {
+	fmt.Println("2", subscription)
+	row := ur.db.QueryRowContext(ctx, AddPaymentInfo, subscription.UserID, subscription.Id, subscription.MonthCount, subscription.PaymentInfo)
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		ur.logger.Error(err)
+		return models.InternalError
+	}
+	return nil
+}
+
+func (ur *UserRepo) CheckPaymentInfo(ctx context.Context, paymentInfo uuid.UUID) (models.SubscriptionDetails, error) {
+	var subscription models.SubscriptionDetails
+	row := ur.db.QueryRowContext(ctx, CheckPaymentInfo, paymentInfo)
+	if err := row.Scan(&subscription.UserID, &subscription.Id, &subscription.MonthCount); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		ur.logger.Error(err)
+		return models.SubscriptionDetails{}, models.InternalError
+	} else if errors.Is(err, sql.ErrNoRows) {
+		return models.SubscriptionDetails{}, models.NotFound
+	}
+	return subscription, nil
+}
+
+func (ur *UserRepo) UpdatePaymentInfo(ctx context.Context, money float32, paymentInfo uuid.UUID) error {
+	row := ur.db.QueryRowContext(ctx, UpdatePaymentInfo, money, paymentInfo)
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		ur.logger.Error(err)
+		return models.InternalError
+	}
+	return nil
+}
+
 func (ur *UserRepo) Subscribe(ctx context.Context, subscription models.SubscriptionDetails) error {
 	tx, err := ur.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -129,7 +163,6 @@ func (ur *UserRepo) Subscribe(ctx context.Context, subscription models.Subscript
 		return models.InternalError
 	}
 	// если подписка уже есть обновляем expire date
-
 	row := ur.db.QueryRowContext(ctx, UpdateSubscription, subscription.MonthCount, subscription.UserID, subscription.Id)
 	var userIDtmp uuid.UUID
 	if err := row.Scan(&userIDtmp); err != nil && !errors.Is(err, sql.ErrNoRows) {
@@ -153,13 +186,6 @@ func (ur *UserRepo) Subscribe(ctx context.Context, subscription models.Subscript
 			_ = tx.Rollback()
 			return models.InternalError
 		}
-	}
-
-	row = ur.db.QueryRowContext(ctx, AddPaymentInfo, subscription.UserID, subscription.Id, subscription.Money)
-	if err = row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
-		ur.logger.Error(err)
-		_ = tx.Rollback()
-		return models.InternalError
 	}
 
 	if err = tx.Commit(); err != nil {

@@ -49,7 +49,7 @@ func (h GrpcUserHandler) Unfollow(ctx context.Context, in *generatedUser.FollowM
 	return &generatedCommon.Empty{Error: ""}, nil
 }
 
-func (h GrpcUserHandler) Subscribe(ctx context.Context, in *generatedUser.SubscriptionDetails) (*generatedCommon.Empty, error) {
+func (h GrpcUserHandler) AddPaymentInfo(ctx context.Context, in *generatedUser.SubscriptionDetails) (*generatedCommon.Empty, error) {
 	userId, err := uuid.Parse(in.UserID)
 	if err != nil {
 		return &generatedCommon.Empty{Error: err.Error()}, nil
@@ -62,13 +62,30 @@ func (h GrpcUserHandler) Subscribe(ctx context.Context, in *generatedUser.Subscr
 	if err != nil {
 		return &generatedCommon.Empty{Error: err.Error()}, nil
 	}
-	err = h.uc.Subscribe(ctx, models.SubscriptionDetails{
-		Id:         subId,
-		UserID:     userId,
-		CreatorId:  creatorId,
-		Money:      in.Money,
-		MonthCount: in.MonthCount,
+	paymentInfo, err := uuid.Parse(in.PaymentInfo)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	err = h.uc.AddPaymentInfo(ctx, models.SubscriptionDetails{
+		Id:          subId,
+		UserID:      userId,
+		CreatorId:   creatorId,
+		MonthCount:  in.MonthCount,
+		PaymentInfo: paymentInfo,
 	})
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcUserHandler) Subscribe(ctx context.Context, in *generatedUser.PaymentInfo) (*generatedCommon.Empty, error) {
+	paymentInfo, err := uuid.Parse(in.PaymentID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+
+	err = h.uc.Subscribe(ctx, paymentInfo, in.Money)
 	if err != nil {
 		return &generatedCommon.Empty{Error: err.Error()}, nil
 	}

@@ -67,8 +67,8 @@ func run() error {
 	}
 
 	authConn, err := grpc.Dial(
-		"auth:8010",
-		//":8010",
+		//"auth:8010",
+		":8010",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -77,8 +77,8 @@ func run() error {
 	}
 
 	userConn, err := grpc.Dial(
-		"user:8020",
-		//":8020",
+		//"user:8020",
+		":8020",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -87,8 +87,8 @@ func run() error {
 	}
 
 	creatorConn, err := grpc.Dial(
-		"creator:8030",
-		//":8030",
+		//"creator:8030",
+		":8030",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -132,7 +132,6 @@ func run() error {
 
 	user := r.PathPrefix("/user").Subrouter()
 	{
-		user.HandleFunc("/pay", userHandler.GetID).Methods(http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/profile", userHandler.GetProfile).Methods(http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/donate", userHandler.Donate).Methods(http.MethodPost, http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/updatePassword", userHandler.UpdatePassword).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
@@ -143,7 +142,7 @@ func run() error {
 		user.HandleFunc("/becameCreator", userHandler.BecomeCreator).Methods(http.MethodPost, http.MethodOptions, http.MethodGet)
 		user.HandleFunc("/follow/{creator-uuid}", userHandler.Follow).Methods(http.MethodPost, http.MethodOptions)
 		user.HandleFunc("/unfollow/{creator-uuid}", userHandler.Unfollow).Methods(http.MethodPut, http.MethodOptions)
-		user.HandleFunc("/subscribe/{sub-uuid}", userHandler.Subscribe).Methods(http.MethodPost, http.MethodOptions, http.MethodGet)
+		user.HandleFunc("/subscribe/{sub-uuid}", userHandler.AddPaymentInfo).Methods(http.MethodPost, http.MethodOptions, http.MethodGet)
 		user.HandleFunc("/subscriptions", userHandler.UserSubscriptions).Methods(http.MethodOptions, http.MethodGet)
 		user.HandleFunc("/follows", userHandler.UserFollows).Methods(http.MethodOptions, http.MethodGet)
 	}

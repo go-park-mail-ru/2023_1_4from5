@@ -42,7 +42,12 @@ func (uc *UserUsecase) Unfollow(ctx context.Context, userId, creatorId uuid.UUID
 	return uc.repo.Unfollow(ctx, userId, creatorId)
 }
 
-func (uc *UserUsecase) Subscribe(ctx context.Context, subscription models.SubscriptionDetails) error {
+func (uc *UserUsecase) Subscribe(ctx context.Context, paymentInfo uuid.UUID, money float32) error {
+	subscription, err := uc.repo.CheckPaymentInfo(ctx, paymentInfo)
+	if err != nil {
+		return err
+	}
+	err = uc.repo.UpdatePaymentInfo(ctx, money, paymentInfo)
 	if isFollowing, err := uc.repo.CheckIfFollow(ctx, subscription.UserID, subscription.CreatorId); err == models.InternalError {
 		return err
 	} else if isFollowing == false {
@@ -52,6 +57,10 @@ func (uc *UserUsecase) Subscribe(ctx context.Context, subscription models.Subscr
 		}
 	}
 	return uc.repo.Subscribe(ctx, subscription)
+}
+
+func (uc *UserUsecase) AddPaymentInfo(ctx context.Context, subscription models.SubscriptionDetails) error {
+	return uc.repo.AddPaymentInfo(ctx, subscription)
 }
 
 func (uc *UserUsecase) GetProfile(ctx context.Context, userId uuid.UUID) (models.UserProfile, error) {
