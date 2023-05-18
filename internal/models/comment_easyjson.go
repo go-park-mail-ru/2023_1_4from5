@@ -44,6 +44,8 @@ func easyjsonE9abebc9DecodeGithubComGoParkMailRu202314from5InternalModels(in *jl
 			if data := in.UnsafeBytes(); in.Ok() {
 				in.AddError((out.UserID).UnmarshalText(data))
 			}
+		case "username":
+			out.Username = string(in.String())
 		case "user_photo":
 			if data := in.UnsafeBytes(); in.Ok() {
 				in.AddError((out.UserPhoto).UnmarshalText(data))
@@ -90,6 +92,16 @@ func easyjsonE9abebc9EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 		}
 		out.RawText((in.UserID).MarshalText())
 	}
+	if in.Username != "" {
+		const prefix string = ",\"username\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.String(string(in.Username))
+	}
 	if true {
 		const prefix string = ",\"user_photo\":"
 		if first {
@@ -100,7 +112,7 @@ func easyjsonE9abebc9EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 		}
 		out.RawText((in.UserPhoto).MarshalText())
 	}
-	{
+	if true {
 		const prefix string = ",\"post_id\":"
 		if first {
 			first = false
@@ -112,17 +124,32 @@ func easyjsonE9abebc9EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 	}
 	if in.Text != "" {
 		const prefix string = ",\"text\":"
-		out.RawString(prefix)
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
 		out.String(string(in.Text))
 	}
 	if true {
 		const prefix string = ",\"creation\":"
-		out.RawString(prefix)
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
 		out.Raw((in.Creation).MarshalJSON())
 	}
 	if in.LikesCount != 0 {
 		const prefix string = ",\"likes_count\":"
-		out.RawString(prefix)
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
 		out.Int64(int64(in.LikesCount))
 	}
 	out.RawByte('}')

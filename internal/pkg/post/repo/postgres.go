@@ -31,7 +31,7 @@ const (
 	IsCreator                  = `SELECT user_id FROM "creator" WHERE creator_id = $1;`
 	GetPost                    = `SELECT "post".post_id, "post".creator_id, creation_date, title, post_text, likes_count, "post".comments_count, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE "post".post_id = $1 GROUP BY "post".post_id, creation_date, title, post_text;`
 	GetSubInfo                 = `SELECT creator_id, month_cost, title, description FROM "subscription" WHERE subscription_id = $1;`
-	GetComments                = `SELECT comment_id, u.user_id, u.profile_photo, c.post_id, c.comment_text, c.creation_date, c.likes_count FROM comment c JOIN "user" u on c.user_id = u.user_id WHERE post_id = $1;`
+	GetComments                = `SELECT comment_id, u.user_id, u.display_name, u.profile_photo, c.post_id, c.comment_text, c.creation_date, c.likes_count FROM comment c JOIN "user" u on c.user_id = u.user_id WHERE post_id = $1;`
 )
 
 type PostRepo struct {
@@ -150,7 +150,7 @@ func (r *PostRepo) GetComments(ctx context.Context, postID uuid.UUID) ([]models.
 	defer rows.Close()
 	for rows.Next() {
 		comment := models.Comment{}
-		err = rows.Scan(&comment.CommentID, &comment.UserID, &comment.UserPhoto, &comment.PostID, &comment.Text, &comment.Creation, &comment.LikesCount)
+		err = rows.Scan(&comment.CommentID, &comment.UserID, &comment.Username, &comment.UserPhoto, &comment.PostID, &comment.Text, &comment.Creation, &comment.LikesCount)
 		if err != nil {
 			r.logger.Error(err)
 			return nil, models.InternalError

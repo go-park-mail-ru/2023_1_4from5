@@ -13,6 +13,7 @@ import (
 type Comment struct {
 	CommentID  uuid.UUID `json:"comment_id,omitempty"`
 	UserID     uuid.UUID `json:"user_id,omitempty"`
+	Username   string    `json:"username,omitempty"`
 	UserPhoto  uuid.UUID `json:"user_photo,omitempty"`
 	PostID     uuid.UUID `json:"post_id,omitempty"`
 	Text       string    `json:"text,omitempty"`
@@ -26,6 +27,7 @@ func (commentData *Comment) IsValid() bool {
 
 func (comment *Comment) Sanitize() {
 	comment.Text = html.EscapeString(comment.Text)
+	comment.Username = html.EscapeString(comment.Username)
 }
 
 func (comment *Comment) CommentToModel(com *generatedCreator.Comment) error {
@@ -60,5 +62,6 @@ func (comment *Comment) CommentToModel(com *generatedCreator.Comment) error {
 	comment.LikesCount = com.LikesCount
 	comment.PostID = postID
 	comment.UserID = userID
+	comment.Username = com.Username
 	return nil
 }

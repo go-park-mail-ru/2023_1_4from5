@@ -477,6 +477,7 @@ func (h GrpcCreatorHandler) GetPost(ctx context.Context, in *generatedCreator.Po
 		comments = append(comments, &generatedCreator.Comment{
 			Id:         v.CommentID.String(),
 			UserId:     v.UserID.String(),
+			Username:   v.Username,
 			UserPhoto:  v.UserPhoto.String(),
 			PostID:     v.PostID.String(),
 			Text:       v.Text,

@@ -87,6 +87,7 @@ message Comment{
   string  Text = 5;
   string Creation = 6;
   int64 LikesCount = 7;
+  string Username = 8;
 }
 
 message PostWithComments {
