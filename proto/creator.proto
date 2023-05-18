@@ -188,8 +188,8 @@ service CreatorService {
   rpc CreateComment(Comment) returns (common.Empty) {}
   rpc DeleteComment(Comment) returns (common.Empty) {}
   rpc EditComment(Comment) returns (common.Empty) {}
-  rpc AddLikeComment(Comment) returns (common.Empty) {}
-  rpc RemoveLikeComment(Comment) returns (common.Empty) {}
+  rpc AddLikeComment(Comment) returns (Like) {}
+  rpc RemoveLikeComment(Comment) returns (Like) {}
 
   rpc IsPostAvailable(PostUserMessage) returns (common.Empty) {}
 }

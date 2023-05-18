@@ -91,8 +91,8 @@ type CreatorServiceClient interface {
 	CreateComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*proto.Empty, error)
 	DeleteComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*proto.Empty, error)
 	EditComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*proto.Empty, error)
-	AddLikeComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*proto.Empty, error)
-	RemoveLikeComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*proto.Empty, error)
+	AddLikeComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*Like, error)
+	RemoveLikeComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*Like, error)
 	IsPostAvailable(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*proto.Empty, error)
 }
 
@@ -383,8 +383,8 @@ func (c *creatorServiceClient) EditComment(ctx context.Context, in *Comment, opt
 	return out, nil
 }
 
-func (c *creatorServiceClient) AddLikeComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*proto.Empty, error) {
-	out := new(proto.Empty)
+func (c *creatorServiceClient) AddLikeComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*Like, error) {
+	out := new(Like)
 	err := c.cc.Invoke(ctx, CreatorService_AddLikeComment_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -392,8 +392,8 @@ func (c *creatorServiceClient) AddLikeComment(ctx context.Context, in *Comment, 
 	return out, nil
 }
 
-func (c *creatorServiceClient) RemoveLikeComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*proto.Empty, error) {
-	out := new(proto.Empty)
+func (c *creatorServiceClient) RemoveLikeComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*Like, error) {
+	out := new(Like)
 	err := c.cc.Invoke(ctx, CreatorService_RemoveLikeComment_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -445,8 +445,8 @@ type CreatorServiceServer interface {
 	CreateComment(context.Context, *Comment) (*proto.Empty, error)
 	DeleteComment(context.Context, *Comment) (*proto.Empty, error)
 	EditComment(context.Context, *Comment) (*proto.Empty, error)
-	AddLikeComment(context.Context, *Comment) (*proto.Empty, error)
-	RemoveLikeComment(context.Context, *Comment) (*proto.Empty, error)
+	AddLikeComment(context.Context, *Comment) (*Like, error)
+	RemoveLikeComment(context.Context, *Comment) (*Like, error)
 	IsPostAvailable(context.Context, *PostUserMessage) (*proto.Empty, error)
 	mustEmbedUnimplementedCreatorServiceServer()
 }
@@ -548,10 +548,10 @@ func (UnimplementedCreatorServiceServer) DeleteComment(context.Context, *Comment
 func (UnimplementedCreatorServiceServer) EditComment(context.Context, *Comment) (*proto.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EditComment not implemented")
 }
-func (UnimplementedCreatorServiceServer) AddLikeComment(context.Context, *Comment) (*proto.Empty, error) {
+func (UnimplementedCreatorServiceServer) AddLikeComment(context.Context, *Comment) (*Like, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddLikeComment not implemented")
 }
-func (UnimplementedCreatorServiceServer) RemoveLikeComment(context.Context, *Comment) (*proto.Empty, error) {
+func (UnimplementedCreatorServiceServer) RemoveLikeComment(context.Context, *Comment) (*Like, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveLikeComment not implemented")
 }
 func (UnimplementedCreatorServiceServer) IsPostAvailable(context.Context, *PostUserMessage) (*proto.Empty, error) {

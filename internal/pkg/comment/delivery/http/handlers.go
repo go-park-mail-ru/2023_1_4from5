@@ -366,7 +366,7 @@ func (h *CommentHandler) AddLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err = h.creatorClient.AddLikeComment(r.Context(), &generatedCreator.Comment{
+	outLike, err := h.creatorClient.AddLikeComment(r.Context(), &generatedCreator.Comment{
 		Id:     commentInfo.CommentID.String(),
 		PostID: commentInfo.PostID.String(),
 		UserId: userDataJWT.Id.String(),
@@ -378,17 +378,17 @@ func (h *CommentHandler) AddLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if out.Error == models.WrongData.Error() {
-		utils.Response(w, http.StatusBadRequest, out.Error)
+	if outLike.Error == models.WrongData.Error() {
+		utils.Response(w, http.StatusBadRequest, outLike.Error)
 		return
 	}
 
-	if out.Error != "" {
-		utils.Response(w, http.StatusInternalServerError, out.Error)
+	if outLike.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, outLike.Error)
 		return
 	}
 
-	utils.Response(w, http.StatusOK, nil)
+	utils.Response(w, http.StatusOK, outLike.LikesCount)
 }
 
 func (h *CommentHandler) RemoveLike(w http.ResponseWriter, r *http.Request) {
@@ -413,7 +413,7 @@ func (h *CommentHandler) RemoveLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err := h.creatorClient.RemoveLikeComment(r.Context(), &generatedCreator.Comment{
+	outLike, err := h.creatorClient.RemoveLikeComment(r.Context(), &generatedCreator.Comment{
 		Id:     commentInfo.CommentID.String(),
 		UserId: userDataJWT.Id.String(),
 	})
@@ -424,15 +424,15 @@ func (h *CommentHandler) RemoveLike(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if out.Error == models.WrongData.Error() {
-		utils.Response(w, http.StatusBadRequest, out.Error)
+	if outLike.Error == models.WrongData.Error() {
+		utils.Response(w, http.StatusBadRequest, outLike.Error)
 		return
 	}
 
-	if out.Error != "" {
-		utils.Response(w, http.StatusInternalServerError, out.Error)
+	if outLike.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, outLike.Error)
 		return
 	}
 
-	utils.Response(w, http.StatusOK, nil)
+	utils.Response(w, http.StatusOK, outLike.LikesCount)
 }

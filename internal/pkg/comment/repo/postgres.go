@@ -100,75 +100,75 @@ func (r *CommentRepo) DeleteComment(ctx context.Context, commentInfo models.Comm
 	return nil
 }
 
-func (r *CommentRepo) AddLike(ctx context.Context, commentInfo models.Comment) error {
+func (r *CommentRepo) AddLike(ctx context.Context, commentInfo models.Comment) (int64, error) {
 	var commentId = uuid.UUID{}
 	row := r.db.QueryRowContext(ctx, IsLiked, commentInfo.CommentID, commentInfo.UserID)
 	if err := row.Scan(&commentId); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		r.logger.Error(err)
-		return models.InternalError
+		return 0, models.InternalError
 	} else if err == nil {
-		return models.WrongData
+		return 0, models.WrongData
 	}
 
 	isCommentOwner, err := r.IsCommentOwner(ctx, commentInfo)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	if isCommentOwner {
-		return models.WrongData
+		return 0, models.WrongData
 	}
 
-	var likesCountTmp int
+	var likesCountTmp int64
 
 	row = r.db.QueryRowContext(ctx, IncLikesCount, commentInfo.CommentID, commentInfo.PostID)
 
 	if err := row.Scan(&likesCountTmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		r.logger.Error(err)
-		return models.InternalError
+		return 0, models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
-		return models.WrongData
+		return 0, models.WrongData
 	}
 
 	row = r.db.QueryRowContext(ctx, AddLike, commentInfo.CommentID, commentInfo.UserID)
 
 	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		r.logger.Error(err)
-		return models.InternalError
+		return 0, models.InternalError
 	}
 
-	return nil
+	return likesCountTmp, nil
 
 }
 
-func (r *CommentRepo) RemoveLike(ctx context.Context, commentInfo models.Comment) error {
+func (r *CommentRepo) RemoveLike(ctx context.Context, commentInfo models.Comment) (int64, error) {
 	var commentId = uuid.UUID{}
 	row := r.db.QueryRowContext(ctx, IsLiked, commentInfo.CommentID, commentInfo.UserID)
 	if err := row.Scan(&commentId); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		r.logger.Error(err)
-		return models.InternalError
+		return 0, models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
-		return models.WrongData
+		return 0, models.WrongData
 	}
 
 	row = r.db.QueryRowContext(ctx, DecLikesCount, commentInfo.CommentID)
 
-	var likesCountTmp int
+	var likesCountTmp int64
 
 	if err := row.Scan(&likesCountTmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
 		r.logger.Error(err)
-		return models.InternalError
+		return 0, models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
-		return models.WrongData
+		return 0, models.WrongData
 	}
 
 	row = r.db.QueryRowContext(ctx, DeleteLike, commentInfo.CommentID)
 
 	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		r.logger.Error(err)
-		return models.InternalError
+		return 0, models.InternalError
 	}
 
-	return nil
+	return likesCountTmp, nil
 
 }
 func (r *CommentRepo) IsCommentOwner(ctx context.Context, commentInfo models.Comment) (bool, error) {

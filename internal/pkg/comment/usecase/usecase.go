@@ -31,11 +31,11 @@ func (uc *CommentUsecase) EditComment(ctx context.Context, commentInfo models.Co
 	return uc.repo.EditComment(ctx, commentInfo)
 }
 
-func (uc *CommentUsecase) AddLike(ctx context.Context, commentInfo models.Comment) error {
+func (uc *CommentUsecase) AddLike(ctx context.Context, commentInfo models.Comment) (int64, error) {
 	return uc.repo.AddLike(ctx, commentInfo)
 }
 
-func (uc *CommentUsecase) RemoveLike(ctx context.Context, commentInfo models.Comment) error {
+func (uc *CommentUsecase) RemoveLike(ctx context.Context, commentInfo models.Comment) (int64, error) {
 	return uc.repo.RemoveLike(ctx, commentInfo)
 }
 
