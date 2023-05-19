@@ -13,6 +13,8 @@ drop table if exists "post" CASCADE;
 drop table if exists "subscription" CASCADE;
 drop table if exists "tag" CASCADE;
 drop table if exists "follow" CASCADE;
+drop table if exists "statistics" CASCADE;
+
 
 
 create table "user"
@@ -75,28 +77,28 @@ create table user_subscription
 
 create table user_payments
 (
-    user_id           uuid      not null
+    user_id           uuid           not null
         constraint user_payments_user_user_id_fk references "user" (user_id),
-    subscription_id   uuid      not null
+    subscription_id   uuid           not null
         constraint user_payments_subscription_subscription_id_fk references subscription (subscription_id),
-    payment_timestamp timestamp not null default now(),
+    payment_timestamp timestamp      not null default now(),
     payment_info      text, ---что-то, номер кошелька, что угодно
-    money             decimal(10, 2)       not null
+    money             decimal(10, 2) not null
 );
 
 create table post
 (
-    post_id       uuid not null
+    post_id        uuid not null
         constraint post_pk
             primary key,
-    creator_id    uuid not null
+    creator_id     uuid not null
         constraint post_creator_creator_id_fk
             references creator (creator_id),
-    creation_date timestamp     default now() not null,
-    title         varchar(40),
-    post_text     varchar(4000),
-    likes_count   int  not null default 0,
-    comments_count   int  not null default 0
+    creation_date  timestamp     default now() not null,
+    title          varchar(40),
+    post_text      varchar(4000),
+    likes_count    int  not null default 0,
+    comments_count int  not null default 0
 );
 
 create table post_subscription
@@ -109,18 +111,18 @@ create table post_subscription
 
 create table comment
 (
-    comment_id    uuid not null
+    comment_id    uuid         not null
         constraint comment_pk
             primary key,
-    post_id       uuid not null
+    post_id       uuid         not null
         constraint comment_post_post_id_fk
             references post (post_id),
-    user_id       uuid not null
+    user_id       uuid         not null
         constraint comment_user_user_id_fk
             references "user" (user_id),
     comment_text  varchar(400) not null,
-    creation_date date          default now() not null,
-    likes_count   int  not null default 0
+    creation_date date                  default now() not null,
+    likes_count   int          not null default 0
 
 );
 
@@ -171,14 +173,14 @@ create table like_comment
 );
 create table donation
 (
-    user_id       uuid      not null
+    user_id       uuid           not null
         constraint donation_user_user_id_fk
             references "user" (user_id),
-    creator_id    uuid      not null
+    creator_id    uuid           not null
         constraint donation_creator_creator_id_fk
             references "creator" (creator_id),
-    money_count   decimal(10, 2)       not null,
-    donation_date timestamp not null default now()
+    money_count   decimal(10, 2) not null,
+    donation_date timestamp      not null default now()
 );
 
 create table follow
@@ -229,3 +231,170 @@ BEGIN
 END
 $$ LANGUAGE 'plpgsql' IMMUTABLE;
 
+--Statistics
+CREATE TABLE "statistics"
+(
+    id                       uuid not null  default gen_random_uuid(),
+    creator_id               uuid not null,
+    posts_per_month          int            default 0,
+    subscriptions_bought     int            default 0,
+    donations_count          int            default 0,
+    money_from_donations     decimal(10, 2) default 0,
+    money_from_subscriptions decimal(10, 2) default 0,
+    new_followers            int            default 0,
+    likes_count              int            default 0,
+    comments_count           int            default 0,
+    month                    timestamp      default now()
+);
+
+alter table "statistics"
+    add constraint unique_bucket unique (creator_id, month);
+--likes
+CREATE OR REPLACE FUNCTION update_likes_count_statistics() RETURNS TRIGGER AS
+$likes_count_statistics$
+BEGIN
+    IF (TG_OP = 'DELETE') THEN
+        UPDATE public."statistics"
+        SET likes_count = likes_count - 1
+        WHERE creator_id IN (SELECT creator_id FROM post WHERE post.post_id = OLD.post_id)
+          AND date_trunc('month', month)::date = date_trunc('month', now())::date;
+        RETURN OLD;
+    ELSIF (TG_OP = 'INSERT') THEN
+        UPDATE public."statistics"
+        SET likes_count = likes_count + 1
+        WHERE creator_id IN (SELECT creator_id FROM post WHERE post.post_id = NEW.post_id)
+          AND date_trunc('month', month)::date = date_trunc('month', now())::date;
+        RETURN NEW;
+    END IF;
+    RETURN NULL;
+END;
+$likes_count_statistics$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS likes_count_statistic ON like_post;
+
+CREATE TRIGGER likes_count_statistic
+    BEFORE INSERT OR DELETE
+    ON like_post
+    FOR EACH ROW
+EXECUTE PROCEDURE update_likes_count_statistics();
+
+--comments
+
+CREATE OR REPLACE FUNCTION update_comments_count_statistics() RETURNS TRIGGER AS
+$comments_count_statistics$
+BEGIN
+    IF (TG_OP = 'DELETE') THEN
+        UPDATE public."statistics"
+        SET comments_count = comments_count - 1
+        WHERE creator_id IN (SELECT creator_id FROM post WHERE post.post_id = OLD.post_id)
+          AND date_trunc('month', month)::date = date_trunc('month', now())::date;
+        RETURN OLD;
+    ELSIF (TG_OP = 'INSERT') THEN
+        UPDATE public."statistics"
+        SET comments_count = comments_count + 1
+        WHERE creator_id IN (SELECT creator_id FROM post WHERE post.post_id = NEW.post_id)
+          AND date_trunc('month', month)::date = date_trunc('month', now())::date;
+        RETURN NEW;
+    END IF;
+    RETURN NULL;
+END;
+$comments_count_statistics$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS comments_count_statistic ON comment;
+
+CREATE TRIGGER comments_count_statistic
+    BEFORE INSERT OR DELETE
+    ON comment
+    FOR EACH ROW
+EXECUTE PROCEDURE update_comments_count_statistics();
+
+--Followers
+CREATE OR REPLACE FUNCTION update_followers_count_statistics() RETURNS TRIGGER AS
+$followers_count_statistics$
+BEGIN
+    UPDATE "statistics"
+    SET new_followers = new_followers + 1
+    WHERE creator_id = NEW.creator_id
+      AND date_trunc('month', month)::date = date_trunc('month', now())::date;
+    RETURN NEW;
+END;
+$followers_count_statistics$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS followers_count_statistic ON follow;
+
+CREATE TRIGGER followers_count_statistic
+    BEFORE INSERT
+    ON follow
+    FOR EACH ROW
+EXECUTE PROCEDURE update_followers_count_statistics();
+
+--Subscriptions
+CREATE OR REPLACE FUNCTION subs_statistics() RETURNS TRIGGER AS
+$subs_statistics$
+BEGIN
+    UPDATE "statistics"
+    SET money_from_subscriptions = money_from_subscriptions + NEW.money,
+        subscriptions_bought     = subscriptions_bought + 1
+    WHERE creator_id IN (SELECT creator_id FROM subscription WHERE subscription.subscription_id = NEW.subscription_id)
+      AND date_trunc('month', month)::date = date_trunc('month', now())::date;
+    RETURN NEW;
+END;
+$subs_statistics$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS subs_statistic ON user_payments;
+
+CREATE TRIGGER subs_statistic
+    AFTER UPDATE
+    ON user_payments
+    FOR EACH ROW
+EXECUTE PROCEDURE subs_statistics();
+
+--Donations
+CREATE OR REPLACE FUNCTION donations_statistics() RETURNS TRIGGER AS
+$donations_statistics$
+BEGIN
+    UPDATE "statistics"
+    SET money_from_donations = money_from_donations + NEW.money_count,
+        donations_count      = donations_count + 1
+    WHERE creator_id = NEW.creator_id
+      AND date_trunc('month', month)::date = date_trunc('month', now())::date;
+    RETURN NEW;
+END;
+$donations_statistics$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS donations_statistic ON donation;
+
+CREATE TRIGGER donations_statistic
+    AFTER INSERT
+    ON donation
+    FOR EACH ROW
+EXECUTE PROCEDURE donations_statistics();
+
+--Posts
+CREATE OR REPLACE FUNCTION update_posts_count_statistics() RETURNS TRIGGER AS
+$update_posts_count_statistics$
+BEGIN
+    IF (TG_OP = 'DELETE') THEN
+        UPDATE public."statistics"
+        SET posts_per_month = posts_per_month - 1
+        WHERE creator_id = OLD.creator_id
+          AND date_trunc('month', month)::date = date_trunc('month', OLD.creation_date)::date;
+        RETURN OLD;
+    ELSIF (TG_OP = 'INSERT') THEN
+        UPDATE public."statistics"
+        SET posts_per_month = posts_per_month + 1
+        WHERE creator_id = NEW.creator_id
+          AND date_trunc('month', month)::date = date_trunc('month', now())::date;
+        RETURN NEW;
+    END IF;
+    RETURN NULL;
+END;
+$update_posts_count_statistics$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS update_posts_count_statistic ON post;
+
+CREATE TRIGGER update_posts_count_statistic
+    BEFORE INSERT OR DELETE
+    ON post
+    FOR EACH ROW
+EXECUTE PROCEDURE update_posts_count_statistics();
