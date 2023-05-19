@@ -413,3 +413,6 @@ EXECUTE PROCEDURE update_posts_count_statistics();
 INSERT INTO post (post_id, creator_id, creation_date, title, post_text, likes_count, comments_count)
 VALUES (gen_random_uuid(), '10b0d1b8-0e67-4e7e-9f08-124b3e32cce4',
         now(), 'ttt', 'yyyyy', 1, 2);
+
+INSERT INTO subscription (subscription_id, creator_id, month_cost, title, description)  VALUES (gen_random_uuid(), '83b1f4df-a232-400e-b71c-5d45b9111f8d',
+                                                                                                111.34, 'tesd', 'vsjhw');

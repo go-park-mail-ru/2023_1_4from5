@@ -59,7 +59,7 @@ create table subscription
     creator_id      uuid        not null
         constraint subscription_creator_creator_id_fk
             references creator (creator_id),
-    month_cost      int         not null,
+    month_cost      money         not null,
     title           varchar(40) not null,
     description     varchar(200),
     is_available    bool default true
@@ -83,7 +83,7 @@ create table user_payments
         constraint user_payments_subscription_subscription_id_fk references subscription (subscription_id),
     payment_timestamp timestamp      not null default now(),
     payment_info      text, ---что-то, номер кошелька, что угодно
-    money             decimal(10, 2) not null
+    money             money not null
 );
 
 create table post
@@ -179,7 +179,7 @@ create table donation
     creator_id    uuid           not null
         constraint donation_creator_creator_id_fk
             references "creator" (creator_id),
-    money_count   decimal(10, 2) not null,
+    money_count   money not null,
     donation_date timestamp      not null default now()
 );
 
@@ -239,8 +239,8 @@ CREATE TABLE "statistics"
     posts_per_month          int            default 0,
     subscriptions_bought     int            default 0,
     donations_count          int            default 0,
-    money_from_donations     decimal(10, 2) default 0,
-    money_from_subscriptions decimal(10, 2) default 0,
+    money_from_donations     money default 0,
+    money_from_subscriptions money default 0,
     new_followers            int            default 0,
     likes_count              int            default 0,
     comments_count           int            default 0,
