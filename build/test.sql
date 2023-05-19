@@ -196,6 +196,18 @@ FROM comment c
          JOIN "user" u on c.user_id = u.user_id
 WHERE post_id = $1;
 
+SELECT comment_id,
+       u.user_id,
+       u.display_name,
+       u.profile_photo,
+       c.post_id,
+       c.comment_text,
+       c.creation_date,
+       c.likes_count
+FROM comment c
+         JOIN "user" u on c.user_id = u.user_id
+WHERE post_id = '2f17a174-4ef6-4b31-aa6d-49e0cefd834a'
+
 
 
 DROP TABLE IF EXISTS "statistics";

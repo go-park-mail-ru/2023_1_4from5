@@ -12,14 +12,14 @@ type CommentUsecase interface {
 	DeleteComment(ctx context.Context, commentData models.Comment) error
 	EditComment(ctx context.Context, commentInfo models.Comment) error
 	IsCommentOwner(ctx context.Context, commentInfo models.Comment) (bool, error)
-	AddLike(ctx context.Context, commentInfo models.Comment) error
-	RemoveLike(ctx context.Context, commentInfo models.Comment) error
+	AddLike(ctx context.Context, commentInfo models.Comment) (int64, error)
+	RemoveLike(ctx context.Context, commentInfo models.Comment) (int64, error)
 }
 type CommentRepo interface {
 	CreateComment(ctx context.Context, commentData models.Comment) error
 	DeleteComment(ctx context.Context, commentData models.Comment) error
 	EditComment(ctx context.Context, commentInfo models.Comment) error
 	IsCommentOwner(ctx context.Context, commentInfo models.Comment) (bool, error)
-	AddLike(ctx context.Context, commentInfo models.Comment) error
-	RemoveLike(ctx context.Context, commentInfo models.Comment) error
+	AddLike(ctx context.Context, commentInfo models.Comment) (int64, error)
+	RemoveLike(ctx context.Context, commentInfo models.Comment) (int64, error)
 }

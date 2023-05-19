@@ -477,6 +477,7 @@ func (h GrpcCreatorHandler) GetPost(ctx context.Context, in *generatedCreator.Po
 		comments = append(comments, &generatedCreator.Comment{
 			Id:         v.CommentID.String(),
 			UserId:     v.UserID.String(),
+			Username:   v.Username,
 			UserPhoto:  v.UserPhoto.String(),
 			PostID:     v.PostID.String(),
 			Text:       v.Text,
@@ -745,51 +746,51 @@ func (h GrpcCreatorHandler) EditComment(ctx context.Context, in *generatedCreato
 	return &generatedCommon.Empty{Error: ""}, nil
 }
 
-func (h GrpcCreatorHandler) AddLikeComment(ctx context.Context, in *generatedCreator.Comment) (*generatedCommon.Empty, error) {
+func (h GrpcCreatorHandler) AddLikeComment(ctx context.Context, in *generatedCreator.Comment) (*generatedCreator.Like, error) {
 	commentId, err := uuid.Parse(in.Id)
 	if err != nil {
-		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
+		return &generatedCreator.Like{Error: models.WrongData.Error()}, nil
 	}
 	userId, err := uuid.Parse(in.UserId)
 	if err != nil {
-		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
+		return &generatedCreator.Like{Error: models.WrongData.Error()}, nil
 	}
 	postId, err := uuid.Parse(in.PostID)
 	if err != nil {
-		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
+		return &generatedCreator.Like{Error: models.WrongData.Error()}, nil
 	}
 
-	err = h.cuc.AddLike(ctx, models.Comment{
+	likesCount, err := h.cuc.AddLike(ctx, models.Comment{
 		CommentID: commentId,
 		UserID:    userId,
 		PostID:    postId,
 	})
 
 	if err != nil {
-		return &generatedCommon.Empty{Error: err.Error()}, nil
+		return &generatedCreator.Like{Error: err.Error()}, nil
 	}
-	return &generatedCommon.Empty{Error: ""}, nil
+	return &generatedCreator.Like{Error: "", LikesCount: likesCount}, nil
 }
 
-func (h GrpcCreatorHandler) RemoveLikeComment(ctx context.Context, in *generatedCreator.Comment) (*generatedCommon.Empty, error) {
+func (h GrpcCreatorHandler) RemoveLikeComment(ctx context.Context, in *generatedCreator.Comment) (*generatedCreator.Like, error) {
 	commentId, err := uuid.Parse(in.Id)
 	if err != nil {
-		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
+		return &generatedCreator.Like{Error: models.WrongData.Error()}, nil
 	}
 	userId, err := uuid.Parse(in.UserId)
 	if err != nil {
-		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
+		return &generatedCreator.Like{Error: models.WrongData.Error()}, nil
 	}
 
-	err = h.cuc.RemoveLike(ctx, models.Comment{
+	likesCount, err := h.cuc.RemoveLike(ctx, models.Comment{
 		CommentID: commentId,
 		UserID:    userId,
 	})
 
 	if err != nil {
-		return &generatedCommon.Empty{Error: err.Error()}, nil
+		return &generatedCreator.Like{Error: err.Error()}, nil
 	}
-	return &generatedCommon.Empty{Error: ""}, nil
+	return &generatedCreator.Like{Error: "", LikesCount: likesCount}, nil
 }
 
 func (h GrpcCreatorHandler) IsCommentOwner(ctx context.Context, in *generatedCreator.Comment) (*generatedCreator.FlagMessage, error) {
