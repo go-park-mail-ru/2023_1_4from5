@@ -93,16 +93,17 @@ func (h GrpcCreatorHandler) GetFeed(ctx context.Context, in *generatedCommon.UUI
 	var postsProto generatedCreator.PostsMessage
 	for i, post := range feed {
 		postsProto.Posts = append(postsProto.Posts, &generatedCreator.Post{
-			Id:           post.Id.String(),
-			CreatorID:    post.Creator.String(),
-			Creation:     post.Creation.String(),
-			CreatorName:  post.CreatorName,
-			LikesCount:   post.LikesCount,
-			CreatorPhoto: post.CreatorPhoto.String(),
-			Title:        post.Title,
-			Text:         post.Text,
-			IsAvailable:  true,
-			IsLiked:      post.IsLiked,
+			Id:            post.Id.String(),
+			CreatorID:     post.Creator.String(),
+			Creation:      post.Creation.String(),
+			CreatorName:   post.CreatorName,
+			LikesCount:    post.LikesCount,
+			CommentsCount: post.CommentsCount,
+			CreatorPhoto:  post.CreatorPhoto.String(),
+			Title:         post.Title,
+			Text:          post.Text,
+			IsAvailable:   true,
+			IsLiked:       post.IsLiked,
 		})
 
 		for _, attach := range post.Attachments {
@@ -169,16 +170,17 @@ func (h GrpcCreatorHandler) GetPage(ctx context.Context, in *generatedCreator.Us
 	}
 	for i, post := range page.Posts {
 		creatorPage.Posts = append(creatorPage.Posts, &generatedCreator.Post{
-			Id:           post.Id.String(),
-			CreatorID:    post.Creator.String(),
-			Creation:     post.Creation.String(),
-			CreatorName:  post.CreatorName,
-			LikesCount:   post.LikesCount,
-			CreatorPhoto: post.CreatorPhoto.String(),
-			Title:        post.Title,
-			Text:         post.Text,
-			IsAvailable:  post.IsAvailable,
-			IsLiked:      post.IsLiked,
+			Id:            post.Id.String(),
+			CreatorID:     post.Creator.String(),
+			Creation:      post.Creation.String(),
+			CreatorName:   post.CreatorName,
+			LikesCount:    post.LikesCount,
+			CommentsCount: post.CommentsCount,
+			CreatorPhoto:  post.CreatorPhoto.String(),
+			Title:         post.Title,
+			Text:          post.Text,
+			IsAvailable:   post.IsAvailable,
+			IsLiked:       post.IsLiked,
 		})
 
 		for _, attach := range post.Attachments {
@@ -483,6 +485,8 @@ func (h GrpcCreatorHandler) GetPost(ctx context.Context, in *generatedCreator.Po
 			Text:       v.Text,
 			Creation:   v.Creation.String(),
 			LikesCount: v.LikesCount,
+			IsOwner:    v.IsOwner,
+			IsLiked:    v.IsLiked,
 		})
 	}
 

@@ -19,6 +19,8 @@ type Comment struct {
 	Text       string    `json:"text,omitempty"`
 	Creation   time.Time `json:"creation,omitempty"`
 	LikesCount int64     `json:"likes_count,omitempty"`
+	IsLiked    bool      `json:"is_liked"`
+	IsOwner    bool      `json:"is_owner"`
 }
 
 func (commentData *Comment) IsValid() bool {
@@ -63,5 +65,7 @@ func (comment *Comment) CommentToModel(com *generatedCreator.Comment) error {
 	comment.PostID = postID
 	comment.UserID = userID
 	comment.Username = com.Username
+	comment.IsLiked = com.IsLiked
+	comment.IsOwner = com.IsOwner
 	return nil
 }

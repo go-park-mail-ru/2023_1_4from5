@@ -416,3 +416,8 @@ VALUES (gen_random_uuid(), '10b0d1b8-0e67-4e7e-9f08-124b3e32cce4',
 
 INSERT INTO subscription (subscription_id, creator_id, month_cost, title, description)  VALUES (gen_random_uuid(), '83b1f4df-a232-400e-b71c-5d45b9111f8d',
                                                                                                 111.34, 'tesd', 'vsjhw');
+
+
+alter table "subscription"
+    alter column month_cost type integer using month_cost::integer
+

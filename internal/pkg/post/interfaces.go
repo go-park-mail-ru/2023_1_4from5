@@ -30,5 +30,5 @@ type PostRepo interface {
 	IsCreator(ctx context.Context, userID uuid.UUID, creatorID uuid.UUID) (bool, error)
 	IsPostAvailable(ctx context.Context, userID, postID uuid.UUID) error
 	EditPost(ctx context.Context, postData models.PostEditData) error
-	GetComments(ctx context.Context, postID uuid.UUID) ([]models.Comment, error)
+	GetComments(ctx context.Context, postID, userID uuid.UUID) ([]models.Comment, error)
 }

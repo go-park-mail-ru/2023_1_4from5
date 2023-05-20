@@ -88,6 +88,8 @@ message Comment{
   string Creation = 6;
   int64 LikesCount = 7;
   string Username = 8;
+  bool IsOwner = 9;
+  bool IsLiked = 10;
 }
 
 message PostWithComments {
