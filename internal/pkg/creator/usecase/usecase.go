@@ -73,3 +73,6 @@ func (uc *CreatorUsecase) DeleteCoverPhoto(ctx context.Context, creatorId uuid.U
 func (uc *CreatorUsecase) DeleteProfilePhoto(ctx context.Context, creatorId uuid.UUID) error {
 	return uc.repo.DeleteProfilePhoto(ctx, creatorId)
 }
+func (uc *CreatorUsecase) Statistics(ctx context.Context, statsInput models.StatisticsDates) (models.Statistics, error) {
+	return uc.repo.Statistics(ctx, statsInput)
+}

@@ -414,10 +414,9 @@ INSERT INTO post (post_id, creator_id, creation_date, title, post_text, likes_co
 VALUES (gen_random_uuid(), '10b0d1b8-0e67-4e7e-9f08-124b3e32cce4',
         now(), 'ttt', 'yyyyy', 1, 2);
 
-INSERT INTO subscription (subscription_id, creator_id, month_cost, title, description)  VALUES (gen_random_uuid(), '83b1f4df-a232-400e-b71c-5d45b9111f8d',
-                                                                                                111.34, 'tesd', 'vsjhw');
+INSERT INTO subscription (subscription_id, creator_id, month_cost, title, description)
+VALUES (gen_random_uuid(), '83b1f4df-a232-400e-b71c-5d45b9111f8d',
+        111.34, 'tesd', 'vsjhw');
 
-
-alter table "subscription"
-    alter column month_cost type integer using month_cost::integer
+SELECT (sum(posts_per_month), sum(subscriptions_bought), sum(donations_count), sum(money_from_donations), sum(money_from_subscriptions), sum(new_followers), sum(likes_count), sum(comments_count)) FROM "statistics" WHERE creator_id = $1 AND  date_trunc('month', month)::date BETWEEN date_trunc('month', $2) AND  date_trunc('month', $3)
 

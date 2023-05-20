@@ -849,3 +849,61 @@ func (h *CreatorHandler) DeleteProfilePhoto(w http.ResponseWriter, r *http.Reque
 
 	utils.Response(w, http.StatusOK, nil)
 }
+
+func (h *CreatorHandler) Statistics(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	monthGap := models.StatisticsDates{}
+	err = easyjson.UnmarshalFromReader(r.Body, &monthGap)
+	if err != nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	if monthGap.FirstMonth.Unix() > monthGap.SecondMonth.Unix() {
+		utils.Response(w, http.StatusBadRequest, "First month can't be bigger than second")
+		return
+	}
+
+	creatorID, err := h.creatorClient.CheckIfCreator(r.Context(), &generatedCommon.UUIDMessage{Value: userDataJWT.Id.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if creatorID.Error == models.NotFound.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if creatorID.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	stat, err := h.creatorClient.Statistics(r.Context(), &generatedCreator.StatisticsInput{
+		CreatorId:  creatorID.Value,
+		FirstDate:  monthGap.FirstMonth.String(),
+		SecondDate: monthGap.SecondMonth.String(),
+	})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if stat.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	var statistics models.Statistics
+
+	err = statistics.StatToModel(stat)
+
+	utils.Response(w, http.StatusOK, statistics)
+}

@@ -11,6 +11,7 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription"
 	"github.com/google/uuid"
 	"golang.org/x/net/context"
+	"time"
 )
 
 //go:generate mockgen -source=./generated/creator_grpc.pb.go -destination=../../mocks/creator_grpc.go -package=mock
@@ -826,5 +827,39 @@ func (h GrpcCreatorHandler) IsCommentOwner(ctx context.Context, in *generatedCre
 	return &generatedCreator.FlagMessage{
 		Flag:  flag,
 		Error: "",
+	}, nil
+}
+
+func (h GrpcCreatorHandler) Statistics(ctx context.Context, in *generatedCreator.StatisticsInput) (*generatedCreator.Stat, error) {
+	creatorId, err := uuid.Parse(in.CreatorId)
+	if err != nil {
+		return &generatedCreator.Stat{Error: models.WrongData.Error()}, nil
+	}
+
+	firstDate, err := time.Parse("2006-01-02 15:04:05 -0700 -0700", in.FirstDate)
+	secondDate, err := time.Parse("2006-01-02 15:04:05 -0700 -0700", in.SecondDate)
+	if err != nil {
+		return &generatedCreator.Stat{Error: models.WrongData.Error()}, nil
+	}
+
+	stat, err := h.uc.Statistics(ctx, models.StatisticsDates{
+		CreatorId:   creatorId,
+		FirstMonth:  firstDate,
+		SecondMonth: secondDate,
+	})
+
+	if err != nil {
+		return &generatedCreator.Stat{Error: err.Error()}, nil
+	}
+	return &generatedCreator.Stat{
+		CreatorId:              stat.CreatorId.String(),
+		PostsPerMonth:          stat.PostsPerMonth,
+		SubscriptionsBought:    stat.SubscriptionsBought,
+		DonationsCount:         stat.DonationsCount,
+		MoneyFromDonations:     stat.MoneyFromDonations,
+		MoneyFromSubscriptions: stat.MoneyFromSubscriptions,
+		NewFollowers:           stat.NewFollowers,
+		LikesCount:             stat.LikesCount,
+		Error:                  "",
 	}, nil
 }

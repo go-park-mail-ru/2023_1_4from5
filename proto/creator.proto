@@ -8,6 +8,25 @@ message KeywordMessage {
   string Keyword = 1;
 };
 
+message StatisticsInput{
+  string CreatorId = 1;
+  string FirstDate = 2;
+  string SecondDate = 3;
+};
+
+message Stat{
+  string CreatorId = 1;
+  int64 PostsPerMonth = 2;
+  int64 SubscriptionsBought = 3;
+  int64 DonationsCount = 4;
+  double MoneyFromDonations = 5;
+  double MoneyFromSubscriptions = 6;
+  int64 NewFollowers = 7;
+  int64 LikesCount = 8;
+  int64 CommentsCount = 9;
+  string Error = 10;
+};
+
 message Creator{
   string Id = 1;
   string UserID = 2;
@@ -194,5 +213,7 @@ service CreatorService {
   rpc RemoveLikeComment(Comment) returns (Like) {}
 
   rpc IsPostAvailable(PostUserMessage) returns (common.Empty) {}
+
+  rpc Statistics(StatisticsInput) returns (Stat) {}
 }
 
