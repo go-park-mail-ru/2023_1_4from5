@@ -21,7 +21,7 @@ type Statistics struct {
 }
 
 type StatisticsDates struct {
-	CreatorId   uuid.UUID `json:"creator_id"`
+	CreatorId   uuid.UUID `json:"creator_id,omitempty"`
 	FirstMonth  time.Time `json:"first_month"`
 	SecondMonth time.Time `json:"second_month"`
 }

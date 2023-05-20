@@ -418,5 +418,8 @@ INSERT INTO subscription (subscription_id, creator_id, month_cost, title, descri
 VALUES (gen_random_uuid(), '83b1f4df-a232-400e-b71c-5d45b9111f8d',
         111.34, 'tesd', 'vsjhw');
 
-SELECT (sum(posts_per_month), sum(subscriptions_bought), sum(donations_count), sum(money_from_donations), sum(money_from_subscriptions), sum(new_followers), sum(likes_count), sum(comments_count)) FROM "statistics" WHERE creator_id = $1 AND  date_trunc('month', month)::date BETWEEN date_trunc('month', $2) AND  date_trunc('month', $3)
-
+SELECT (sum(posts_per_month), sum(subscriptions_bought), sum(donations_count), sum(money_from_donations),
+        sum(money_from_subscriptions), sum(new_followers), sum(likes_count), sum(comments_count))
+FROM "statistics" AS s
+WHERE creator_id = $1
+  AND date_trunc('month'::text, s.month::date)::date BETWEEN date_trunc('month'::text, $2::date)::date AND date_trunc('month'::text, $3)::date;

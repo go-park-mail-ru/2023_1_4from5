@@ -900,10 +900,11 @@ func (h *CreatorHandler) Statistics(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
-
 	var statistics models.Statistics
 
 	err = statistics.StatToModel(stat)
+
+	statistics.CreatorId, _ = uuid.Parse(creatorID.Value)
 
 	utils.Response(w, http.StatusOK, statistics)
 }

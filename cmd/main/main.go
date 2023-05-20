@@ -67,8 +67,8 @@ func run() error {
 	}
 
 	authConn, err := grpc.Dial(
-		"auth:8010",
-		//":8010",
+		//"auth:8010",
+		":8010",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -77,8 +77,8 @@ func run() error {
 	}
 
 	userConn, err := grpc.Dial(
-		"user:8020",
-		//":8020",
+		//"user:8020",
+		":8020",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -87,8 +87,8 @@ func run() error {
 	}
 
 	creatorConn, err := grpc.Dial(
-		"creator:8030",
-		//":8030",
+		//"creator:8030",
+		":8030",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -158,7 +158,7 @@ func run() error {
 		creator.HandleFunc("/deleteProfilePhoto/{image-uuid}", creatorHandler.DeleteProfilePhoto).Methods(http.MethodDelete, http.MethodOptions, http.MethodGet)
 		creator.HandleFunc("/deleteCoverPhoto/{image-uuid}", creatorHandler.DeleteCoverPhoto).Methods(http.MethodDelete, http.MethodOptions, http.MethodGet)
 		creator.HandleFunc("/updateCoverPhoto", creatorHandler.UpdateCoverPhoto).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
-		creator.HandleFunc("/statistics", creatorHandler.Statistics).Methods(http.MethodGet, http.MethodOptions)
+		creator.HandleFunc("/statistics", creatorHandler.Statistics).Methods(http.MethodPost, http.MethodOptions)
 
 	}
 

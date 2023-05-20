@@ -836,8 +836,8 @@ func (h GrpcCreatorHandler) Statistics(ctx context.Context, in *generatedCreator
 		return &generatedCreator.Stat{Error: models.WrongData.Error()}, nil
 	}
 
-	firstDate, err := time.Parse("2006-01-02 15:04:05 -0700 -0700", in.FirstDate)
-	secondDate, err := time.Parse("2006-01-02 15:04:05 -0700 -0700", in.SecondDate)
+	firstDate, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", in.FirstDate)
+	secondDate, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", in.SecondDate)
 	if err != nil {
 		return &generatedCreator.Stat{Error: models.WrongData.Error()}, nil
 	}
