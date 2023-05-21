@@ -8,6 +8,11 @@ import (
 
 // easyjson -all ./internal/models/creator.go
 
+const (
+	RequestPaymentURL = "https://yoomoney.ru/api/request-payment"
+	ProcessPaymentURL = "https://yoomoney.ru/api/process-payment"
+)
+
 type Creator struct {
 	Id             uuid.UUID `json:"creator_id"`
 	UserId         uuid.UUID `json:"user_id"`
@@ -17,6 +22,10 @@ type Creator struct {
 	FollowersCount int64     `json:"followers_count"`
 	Description    string    `json:"description"`
 	PostsCount     int64     `json:"posts_count"`
+}
+
+type PaymentResponse struct {
+	RequestID string `json:"request_id"`
 }
 
 type CreatorPage struct {
@@ -39,6 +48,12 @@ type UpdateCreatorInfo struct {
 	Description string    `json:"description"`
 	CreatorName string    `json:"creator_name"`
 	CreatorID   uuid.UUID `json:"-"`
+}
+
+type CreatorTransfer struct {
+	Money       float32   `json:"money"`
+	CreatorID   uuid.UUID `json:"-"`
+	PhoneNumber string    `json:"phone_number"`
 }
 
 func (creator *Creator) Sanitize() {

@@ -70,6 +70,11 @@ message UpdateCreatorInfo {
   string CreatorID = 3;
 }
 
+message CreatorTransfer{
+  string creatorID = 1;
+  float Money = 2;
+}
+
 message CreatorPage{
   Creator CreatorInfo = 1;
   Aim AimInfo = 2;
@@ -132,6 +137,11 @@ message PostMessage{
   Post Post = 1;
   string Error = 2;
 };
+
+message CreatorBalance {
+  float Balance = 1;
+  string Error = 2;
+}
 
 message Attachment{
   string ID = 1;
@@ -228,5 +238,7 @@ service CreatorService {
 
   rpc Statistics(StatisticsInput) returns (Stat) {}
   rpc StatisticsFirstDate(common.UUIDMessage) returns (FirstDate) {}
+  rpc GetCreatorBalance(common.UUIDMessage) returns (CreatorBalance) {}
+  rpc UpdateBalance(CreatorTransfer) returns (CreatorBalance) {}
 }
 

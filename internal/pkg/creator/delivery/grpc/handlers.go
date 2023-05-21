@@ -477,6 +477,36 @@ func (h GrpcCreatorHandler) DeletePost(ctx context.Context, in *generatedCommon.
 	return &generatedCommon.Empty{Error: ""}, nil
 }
 
+func (h GrpcCreatorHandler) GetCreatorBalance(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedCreator.CreatorBalance, error) {
+	creatorID, err := uuid.Parse(in.Value)
+	if err != nil {
+		return &generatedCreator.CreatorBalance{Error: err.Error()}, nil
+	}
+
+	balance, err := h.uc.GetCreatorBalance(ctx, creatorID)
+	if err != nil {
+		return &generatedCreator.CreatorBalance{Error: err.Error()}, nil
+	}
+	return &generatedCreator.CreatorBalance{Error: "", Balance: balance}, nil
+}
+
+func (h GrpcCreatorHandler) UpdateBalance(ctx context.Context, in *generatedCreator.CreatorTransfer) (*generatedCreator.CreatorBalance, error) {
+	creatorID, err := uuid.Parse(in.CreatorID)
+	if err != nil {
+		return &generatedCreator.CreatorBalance{Error: err.Error()}, nil
+	}
+
+	balance, err := h.uc.UpdateBalance(ctx, models.CreatorTransfer{
+		Money:       in.Money,
+		CreatorID:   creatorID,
+		PhoneNumber: "",
+	})
+	if err != nil {
+		return &generatedCreator.CreatorBalance{Error: err.Error()}, nil
+	}
+	return &generatedCreator.CreatorBalance{Error: "", Balance: balance}, nil
+}
+
 func (h GrpcCreatorHandler) GetPost(ctx context.Context, in *generatedCreator.PostUserMessage) (*generatedCreator.PostWithComments, error) {
 	postID, err := uuid.Parse(in.PostID)
 	if err != nil {

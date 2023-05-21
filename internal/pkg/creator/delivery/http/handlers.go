@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
@@ -18,6 +19,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type CreatorHandler struct {
@@ -36,6 +38,148 @@ func NewCreatorHandler(creatorClient generatedCreator.CreatorServiceClient, auth
 	}
 }
 
+func (h *CreatorHandler) TransferMoney(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	creatorID, err := h.creatorClient.CheckIfCreator(r.Context(), &generatedCommon.UUIDMessage{Value: userDataJWT.Id.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if creatorID.Error == models.NotFound.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if creatorID.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	transfer := models.CreatorTransfer{}
+	err = easyjson.UnmarshalFromReader(r.Body, &transfer)
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	balance, err := h.creatorClient.GetCreatorBalance(r.Context(), &generatedCommon.UUIDMessage{Value: creatorID.Value})
+
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if balance.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if balance.Balance < transfer.Money {
+		fmt.Println(balance.Balance, transfer.Money)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	reqID, err := h.requestPayment(transfer)
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if err = h.processPayment(reqID); err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	balance, err = h.creatorClient.UpdateBalance(r.Context(), &generatedCreator.CreatorTransfer{
+		CreatorID: creatorID.Value,
+		Money:     transfer.Money,
+	})
+
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if balance.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, balance)
+}
+
+func (h *CreatorHandler) requestPayment(transfer models.CreatorTransfer) (models.PaymentResponse, error) {
+	paymentToken, flag := os.LookupEnv("PAYMENT_TOKEN")
+	if !flag {
+		return models.PaymentResponse{}, errors.New("no payment token")
+	}
+
+	method := "POST"
+	payload := strings.NewReader("pattern_id=p2p&to=" + transfer.PhoneNumber + "&identifier_type=phone" + "&amount=" + fmt.Sprintf("%f", transfer.Money) + "&comment=Payment%20to%20authorID%3D%3CUUID%3E&message=Payment%20from%20SubMe")
+
+	client := &http.Client{}
+	req, err := http.NewRequest(method, models.RequestPaymentURL, payload)
+
+	if err != nil {
+		h.logger.Error(err)
+		return models.PaymentResponse{}, err
+	}
+	req.Header.Add("Authorization", "Bearer "+paymentToken)
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	res, err := client.Do(req)
+	if err != nil {
+		h.logger.Error(err)
+		return models.PaymentResponse{}, err
+	}
+
+	var reqID models.PaymentResponse
+	err = easyjson.UnmarshalFromReader(res.Body, &reqID)
+	if err != nil {
+		h.logger.Error(err)
+		return models.PaymentResponse{}, err
+	}
+	return reqID, nil
+}
+
+func (h *CreatorHandler) processPayment(reqID models.PaymentResponse) error {
+	method := "POST"
+	paymentToken, flag := os.LookupEnv("PAYMENT_TOKEN")
+	if !flag {
+		return errors.New("no payment token")
+	}
+
+	payload2 := strings.NewReader(fmt.Sprintf("request_id=%s", reqID.RequestID))
+
+	req, err := http.NewRequest(method, models.ProcessPaymentURL, payload2)
+	if err != nil {
+		h.logger.Error(err)
+		return err
+	}
+	req.Header.Add("Authorization", "Bearer "+paymentToken)
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		h.logger.Error(err)
+		return err
+	}
+	defer res.Body.Close()
+	return nil
+}
+
 func (h *CreatorHandler) SubscribeCreatorToNotifications(w http.ResponseWriter, r *http.Request) {
 	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
 
@@ -47,7 +191,7 @@ func (h *CreatorHandler) SubscribeCreatorToNotifications(w http.ResponseWriter, 
 	token := models.NotificationToken{}
 	err = easyjson.UnmarshalFromReader(r.Body, &token)
 	if err != nil {
-		fmt.Println(err)
+		h.logger.Error(err)
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
@@ -89,7 +233,7 @@ func (h *CreatorHandler) UnsubscribeCreatorNotifications(w http.ResponseWriter, 
 	token := models.NotificationToken{}
 	err = easyjson.UnmarshalFromReader(r.Body, &token)
 	if err != nil {
-		fmt.Println(err)
+		h.logger.Error(err)
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}

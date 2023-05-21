@@ -682,38 +682,29 @@ func (h *UserHandler) Payment(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
-	fmt.Println("Payment")
 	paymentString := strings.Join([]string{paymentStringMap["notification_type"],
 		paymentStringMap["operation_id"], paymentStringMap["amount"], paymentStringMap["currency"], paymentStringMap["datetime"], paymentStringMap["sender"],
 		paymentStringMap["codepro"], paymentSecret, paymentStringMap["label"]}, "&")
-	fmt.Println(paymentString)
 
 	hash := sha1.New()
 	hash.Write([]byte(paymentString))
 	paymentStringSHA := hash.Sum(nil)
 	if fmt.Sprintf("%x", paymentStringSHA) != sha1Hash {
-		fmt.Println("wrong hash")
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
 
 	paymentInfo := models.PaymentDetails{}
 	str := strings.Split(paymentStringMap["label"], ";")
-	fmt.Println("operation:", str[0])
-	fmt.Println("donate" == str[0])
-	fmt.Println("creatorID:", str[1])
 	paymentInfo.Operation = str[0]
 	paymentInfo.CreatorId, err = uuid.Parse(str[1])
 	if tmp, err := strconv.ParseFloat(paymentStringMap["amount"], 32); err != nil {
-		fmt.Println("WRONG MONEY COUNT")
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	} else {
 		paymentInfo.Money = float32(tmp)
 	}
 
-	fmt.Println("money: ", paymentStringMap["amount"])
-	fmt.Println("Got:   ", paymentInfo)
 	if paymentInfo.Operation == "subscribe" {
 
 		out, err := h.userClient.Subscribe(r.Context(), &generatedUser.PaymentInfo{PaymentID: paymentInfo.CreatorId.String(),
@@ -743,7 +734,7 @@ func (h *UserHandler) Payment(w http.ResponseWriter, r *http.Request) {
 
 		utils.Response(w, http.StatusOK, nil)
 	} else if paymentInfo.Operation == "donate" {
-		fmt.Println(764)
+
 		newMoneyCount, err := h.userClient.Donate(r.Context(), &generatedUser.DonateMessage{
 			MoneyCount: paymentInfo.Money,
 			CreatorID:  paymentInfo.CreatorId.String()})
@@ -755,12 +746,10 @@ func (h *UserHandler) Payment(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if newMoneyCount.Error == models.WrongData.Error() {
-			fmt.Println(776)
 			utils.Response(w, http.StatusBadRequest, nil)
 			return
 		}
 		if newMoneyCount.Error != "" {
-			fmt.Println(781)
 			utils.Response(w, http.StatusInternalServerError, nil)
 			return
 		}
@@ -773,7 +762,6 @@ func (h *UserHandler) Payment(w http.ResponseWriter, r *http.Request) {
 
 		utils.Response(w, http.StatusOK, nil)
 	} else {
-		fmt.Println(787)
 		utils.Response(w, http.StatusBadRequest, nil)
 	}
 }

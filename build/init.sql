@@ -47,9 +47,12 @@ create table creator
     description     varchar(500),
     posts_count     integer default 0 not null,
     aim             varchar(100),
-    money_needed    int     default 0,
-    money_got       int     default 0
+    money_needed    money   default 0,
+    money_got       money   default 0
 );
+
+ALTER TABLE creator
+    ADD COLUMN balance decimal(10, 2) default 0;
 
 create table subscription
 (
@@ -424,7 +427,8 @@ BEGIN
     IF (TG_OP = 'DELETE') THEN
         IF NOT check_if_bucket_exists(OLD.creator_id,
                                       date_trunc('month', OLD.creation_date)::date) THEN
-            INSERT INTO "statistics" (creator_id, month) VALUES (OLD.creator_id, date_trunc('month', OLD.creation_date)::date);
+            INSERT INTO "statistics" (creator_id, month)
+            VALUES (OLD.creator_id, date_trunc('month', OLD.creation_date)::date);
         END IF;
         UPDATE public."statistics"
         SET posts_per_month = posts_per_month - 1
@@ -453,3 +457,21 @@ CREATE TRIGGER update_posts_count_statistic
     ON post
     FOR EACH ROW
 EXECUTE PROCEDURE update_posts_count_statistics();
+
+CREATE OR REPLACE FUNCTION update_balance() RETURNS TRIGGER AS
+$update_balance$
+BEGIN
+    UPDATE creator
+    SET balance = balance + NEW.money
+    WHERE creator_id IN (SELECT creator_id FROM subscription WHERE subscription.subscription_id = OLD.subscription_id);
+    RETURN NEW;
+END;
+$update_balance$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS update_creator_balance ON user_payments;
+
+CREATE TRIGGER update_creator_balance
+    AFTER UPDATE
+    ON user_payments
+    FOR EACH ROW
+EXECUTE PROCEDURE update_balance();

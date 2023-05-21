@@ -60,6 +60,8 @@ type CreatorServiceClient interface {
 	IsPostAvailable(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*proto.Empty, error)
 	Statistics(ctx context.Context, in *StatisticsInput, opts ...grpc.CallOption) (*Stat, error)
 	StatisticsFirstDate(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*FirstDate, error)
+	GetCreatorBalance(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*CreatorBalance, error)
+	UpdateBalance(ctx context.Context, in *CreatorTransfer, opts ...grpc.CallOption) (*CreatorBalance, error)
 }
 
 type creatorServiceClient struct {
@@ -403,6 +405,24 @@ func (c *creatorServiceClient) StatisticsFirstDate(ctx context.Context, in *prot
 	return out, nil
 }
 
+func (c *creatorServiceClient) GetCreatorBalance(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*CreatorBalance, error) {
+	out := new(CreatorBalance)
+	err := c.cc.Invoke(ctx, "/CreatorService/GetCreatorBalance", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) UpdateBalance(ctx context.Context, in *CreatorTransfer, opts ...grpc.CallOption) (*CreatorBalance, error) {
+	out := new(CreatorBalance)
+	err := c.cc.Invoke(ctx, "/CreatorService/UpdateBalance", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CreatorServiceServer is the server API for CreatorService service.
 // All implementations must embed UnimplementedCreatorServiceServer
 // for forward compatibility
@@ -444,6 +464,8 @@ type CreatorServiceServer interface {
 	IsPostAvailable(context.Context, *PostUserMessage) (*proto.Empty, error)
 	Statistics(context.Context, *StatisticsInput) (*Stat, error)
 	StatisticsFirstDate(context.Context, *proto.UUIDMessage) (*FirstDate, error)
+	GetCreatorBalance(context.Context, *proto.UUIDMessage) (*CreatorBalance, error)
+	UpdateBalance(context.Context, *CreatorTransfer) (*CreatorBalance, error)
 	mustEmbedUnimplementedCreatorServiceServer()
 }
 
@@ -561,6 +583,12 @@ func (UnimplementedCreatorServiceServer) Statistics(context.Context, *Statistics
 }
 func (UnimplementedCreatorServiceServer) StatisticsFirstDate(context.Context, *proto.UUIDMessage) (*FirstDate, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StatisticsFirstDate not implemented")
+}
+func (UnimplementedCreatorServiceServer) GetCreatorBalance(context.Context, *proto.UUIDMessage) (*CreatorBalance, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCreatorBalance not implemented")
+}
+func (UnimplementedCreatorServiceServer) UpdateBalance(context.Context, *CreatorTransfer) (*CreatorBalance, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateBalance not implemented")
 }
 func (UnimplementedCreatorServiceServer) mustEmbedUnimplementedCreatorServiceServer() {}
 
@@ -1241,6 +1269,42 @@ func _CreatorService_StatisticsFirstDate_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CreatorService_GetCreatorBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(proto.UUIDMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).GetCreatorBalance(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/GetCreatorBalance",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).GetCreatorBalance(ctx, req.(*proto.UUIDMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_UpdateBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreatorTransfer)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).UpdateBalance(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/UpdateBalance",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).UpdateBalance(ctx, req.(*CreatorTransfer))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CreatorService_ServiceDesc is the grpc.ServiceDesc for CreatorService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1395,6 +1459,14 @@ var CreatorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StatisticsFirstDate",
 			Handler:    _CreatorService_StatisticsFirstDate_Handler,
+		},
+		{
+			MethodName: "GetCreatorBalance",
+			Handler:    _CreatorService_GetCreatorBalance_Handler,
+		},
+		{
+			MethodName: "UpdateBalance",
+			Handler:    _CreatorService_UpdateBalance_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

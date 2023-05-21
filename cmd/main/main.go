@@ -70,7 +70,7 @@ func run() error {
 
 	authConn, err := grpc.Dial(
 		"auth:8010",
-		//":8010",
+// 		":8010",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -80,7 +80,7 @@ func run() error {
 
 	userConn, err := grpc.Dial(
 		"user:8020",
-		//":8020",
+// 		":8020",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -90,7 +90,7 @@ func run() error {
 
 	creatorConn, err := grpc.Dial(
 		"creator:8030",
-		//":8030",
+// 		":8030",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -164,7 +164,8 @@ func run() error {
 		creator.HandleFunc("/statistics", creatorHandler.Statistics).Methods(http.MethodPost, http.MethodOptions)
 		creator.HandleFunc("/statisticsFirstDate", creatorHandler.StatisticsFirstDate).Methods(http.MethodGet, http.MethodOptions)
 		creator.HandleFunc("/subscribeToNotifications", creatorHandler.SubscribeCreatorToNotifications).Methods(http.MethodOptions, http.MethodPut)
-		creator.HandleFunc("/unsubscribeFromNotifications", userHandler.UnsubscribeUserNotifications).Methods(http.MethodOptions, http.MethodPut)
+		creator.HandleFunc("/unsubscribeFromNotifications", creatorHandler.UnsubscribeCreatorNotifications).Methods(http.MethodOptions, http.MethodPut)
+		creator.HandleFunc("/transferMoney", creatorHandler.TransferMoney).Methods(http.MethodOptions, http.MethodPut)
 	}
 	post := r.PathPrefix("/post").Subrouter()
 	{

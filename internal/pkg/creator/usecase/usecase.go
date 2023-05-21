@@ -84,3 +84,11 @@ func (uc *CreatorUsecase) DeleteProfilePhoto(ctx context.Context, creatorId uuid
 func (uc *CreatorUsecase) Statistics(ctx context.Context, statsInput models.StatisticsDates) (models.Statistics, error) {
 	return uc.repo.Statistics(ctx, statsInput)
 }
+
+func (uc *CreatorUsecase) GetCreatorBalance(ctx context.Context, creatorID uuid.UUID) (float32, error) {
+	return uc.repo.GetCreatorBalance(ctx, creatorID)
+}
+
+func (uc *CreatorUsecase) UpdateBalance(ctx context.Context, transfer models.CreatorTransfer) (float32, error) {
+	return uc.repo.UpdateBalance(ctx, transfer)
+}

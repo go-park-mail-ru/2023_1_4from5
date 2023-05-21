@@ -33,6 +33,8 @@ const (
 	GetStatistics           = `SELECT sum(posts_per_month), sum(subscriptions_bought), sum(donations_count), sum(money_from_donations), sum(money_from_subscriptions), sum(new_followers), sum(likes_count), sum(comments_count) FROM "statistics" AS s WHERE creator_id = $1 AND  date_trunc('month'::text, s.month::date)::date BETWEEN date_trunc('month'::text, $2::date)::date AND  date_trunc('month'::text, $3::date)::date;`
 	CreatorNotificationInfo = `SELECT profile_photo, name FROM creator WHERE creator_id = $1;`
 	FirstStatisticsDate     = `SELECT MIN(month) FROM statistics WHERE creator_id = $1;`
+	CreatorBalance          = `SELECT balance FROM creator WHERE creator_id = $1;`
+	UpdateBalance           = `UPDATE creator SET balance = balance - $1 WHERE creator_id = $2 RETURNING balance;`
 )
 
 type CreatorRepo struct {
@@ -68,6 +70,16 @@ func (r *CreatorRepo) CreatorNotificationInfo(ctx context.Context, creatorID uui
 	return info, nil
 }
 
+func (ur *CreatorRepo) UpdateBalance(ctx context.Context, transfer models.CreatorTransfer) (float32, error) {
+	var newBalance float32
+	row := ur.db.QueryRowContext(ctx, UpdateBalance, transfer.Money, transfer.CreatorID)
+	if err := row.Scan(&newBalance); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		ur.logger.Error(err)
+		return 0, models.InternalError
+	}
+	return 0, nil
+}
+
 func (r *CreatorRepo) GetUserSubscriptions(ctx context.Context, userId uuid.UUID) ([]uuid.UUID, error) {
 	userSubscriptions := make([]uuid.UUID, 0)
 	row := r.db.QueryRowContext(ctx, UserSubscriptions, userId)
@@ -86,6 +98,16 @@ func (r *CreatorRepo) StatisticsFirstDate(ctx context.Context, creatorID uuid.UU
 		return "", models.InternalError
 	}
 	return firstDate, nil
+}
+
+func (r *CreatorRepo) GetCreatorBalance(ctx context.Context, creatorID uuid.UUID) (float32, error) {
+	var balance float32
+	row := r.db.QueryRowContext(ctx, CreatorBalance, creatorID)
+	if err := row.Scan(&balance); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
+		return 0, models.InternalError
+	}
+	return balance, nil
 }
 
 func (r *CreatorRepo) IsLiked(ctx context.Context, userID uuid.UUID, postID uuid.UUID) (bool, error) {
