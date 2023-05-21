@@ -30,7 +30,7 @@ const (
 	UpdateCoverPhoto        = `UPDATE "creator" SET cover_photo = $1 WHERE creator_id = $2;`
 	DeleteCoverPhoto        = `UPDATE "creator" SET cover_photo = null WHERE creator_id = $1`
 	DeleteProfilePhoto      = `UPDATE "creator" SET profile_photo = null WHERE creator_id = $1`
-	GetStatistics           = `SELECT sum(posts_per_month), sum(subscriptions_bought), sum(donations_count), sum(money_from_donations), sum(money_from_subscriptions), sum(new_followers), sum(likes_count), sum(comments_count) FROM "statistics" AS s WHERE creator_id = $1 AND  date_trunc('month'::text, s.month::date)::date BETWEEN date_trunc('month'::text, $2::date)::date AND  date_trunc('month'::text, $3::date)::date;`
+	GetStatistics           = `SELECT coalesce(sum(posts_per_month), 0.00), coalesce(sum(subscriptions_bought), 0.0), coalesce(sum(donations_count), 0.0), coalesce(sum(money_from_donations), 0.0), coalesce(sum(money_from_subscriptions),0.0), coalesce(sum(new_followers), 0.0), coalesce(sum(likes_count), 0.0), coalesce(sum(comments_count), 0.0) FROM "statistics" AS s WHERE creator_id = $1 AND  date_trunc('month'::text, s.month::date)::date BETWEEN date_trunc('month'::text, $2::date)::date AND  date_trunc('month'::text, $3::date)::date;`
 	CreatorNotificationInfo = `SELECT profile_photo, name FROM creator WHERE creator_id = $1;`
 	FirstStatisticsDate     = `SELECT MIN(month) FROM statistics WHERE creator_id = $1;`
 	CreatorBalance          = `SELECT balance FROM creator WHERE creator_id = $1;`
