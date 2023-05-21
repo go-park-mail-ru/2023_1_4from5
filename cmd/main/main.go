@@ -9,6 +9,7 @@ import (
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	creatorDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/http"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notifications"
 	postDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/delivery/http"
 	subscriptionDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription/delivery/http"
 	generatedUser "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/grpc/generated"
@@ -95,6 +96,9 @@ func run() error {
 	if err != nil {
 		log.Fatalf("cant connect to session grpc")
 	}
+
+	app := notifications.SetupFirebase()
+	notifications.SendToToken(app)
 
 	authClient := generatedAuth.NewAuthServiceClient(authConn)
 	userClient := generatedUser.NewUserServiceClient(userConn)
