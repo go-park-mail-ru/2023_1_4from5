@@ -59,6 +59,7 @@ type CreatorServiceClient interface {
 	RemoveLikeComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*Like, error)
 	IsPostAvailable(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*proto.Empty, error)
 	Statistics(ctx context.Context, in *StatisticsInput, opts ...grpc.CallOption) (*Stat, error)
+	StatisticsFirstDate(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*FirstDate, error)
 }
 
 type creatorServiceClient struct {
@@ -393,6 +394,15 @@ func (c *creatorServiceClient) Statistics(ctx context.Context, in *StatisticsInp
 	return out, nil
 }
 
+func (c *creatorServiceClient) StatisticsFirstDate(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*FirstDate, error) {
+	out := new(FirstDate)
+	err := c.cc.Invoke(ctx, "/CreatorService/StatisticsFirstDate", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CreatorServiceServer is the server API for CreatorService service.
 // All implementations must embed UnimplementedCreatorServiceServer
 // for forward compatibility
@@ -433,6 +443,7 @@ type CreatorServiceServer interface {
 	RemoveLikeComment(context.Context, *Comment) (*Like, error)
 	IsPostAvailable(context.Context, *PostUserMessage) (*proto.Empty, error)
 	Statistics(context.Context, *StatisticsInput) (*Stat, error)
+	StatisticsFirstDate(context.Context, *proto.UUIDMessage) (*FirstDate, error)
 	mustEmbedUnimplementedCreatorServiceServer()
 }
 
@@ -547,6 +558,9 @@ func (UnimplementedCreatorServiceServer) IsPostAvailable(context.Context, *PostU
 }
 func (UnimplementedCreatorServiceServer) Statistics(context.Context, *StatisticsInput) (*Stat, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Statistics not implemented")
+}
+func (UnimplementedCreatorServiceServer) StatisticsFirstDate(context.Context, *proto.UUIDMessage) (*FirstDate, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StatisticsFirstDate not implemented")
 }
 func (UnimplementedCreatorServiceServer) mustEmbedUnimplementedCreatorServiceServer() {}
 
@@ -1209,6 +1223,24 @@ func _CreatorService_Statistics_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CreatorService_StatisticsFirstDate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(proto.UUIDMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).StatisticsFirstDate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/StatisticsFirstDate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).StatisticsFirstDate(ctx, req.(*proto.UUIDMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CreatorService_ServiceDesc is the grpc.ServiceDesc for CreatorService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1359,6 +1391,10 @@ var CreatorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Statistics",
 			Handler:    _CreatorService_Statistics_Handler,
+		},
+		{
+			MethodName: "StatisticsFirstDate",
+			Handler:    _CreatorService_StatisticsFirstDate_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

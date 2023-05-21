@@ -32,6 +32,7 @@ const (
 	DeleteProfilePhoto      = `UPDATE "creator" SET profile_photo = null WHERE creator_id = $1`
 	GetStatistics           = `SELECT sum(posts_per_month), sum(subscriptions_bought), sum(donations_count), sum(money_from_donations), sum(money_from_subscriptions), sum(new_followers), sum(likes_count), sum(comments_count) FROM "statistics" AS s WHERE creator_id = $1 AND  date_trunc('month'::text, s.month::date)::date BETWEEN date_trunc('month'::text, $2::date)::date AND  date_trunc('month'::text, $3::date)::date;`
 	CreatorNotificationInfo = `SELECT profile_photo, name FROM creator WHERE creator_id = $1;`
+	FirstStatisticsDate     = `SELECT MIN(month) FROM statistics WHERE creator_id = $1;`
 )
 
 type CreatorRepo struct {
@@ -75,6 +76,16 @@ func (r *CreatorRepo) GetUserSubscriptions(ctx context.Context, userId uuid.UUID
 		return nil, models.InternalError
 	}
 	return userSubscriptions, nil
+}
+
+func (r *CreatorRepo) StatisticsFirstDate(ctx context.Context, creatorID uuid.UUID) (string, error) {
+	var firstDate string
+	row := r.db.QueryRowContext(ctx, FirstStatisticsDate, creatorID)
+	if err := row.Scan(&firstDate); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
+		return "", models.InternalError
+	}
+	return firstDate, nil
 }
 
 func (r *CreatorRepo) IsLiked(ctx context.Context, userID uuid.UUID, postID uuid.UUID) (bool, error) {

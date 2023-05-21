@@ -365,6 +365,18 @@ func (h GrpcCreatorHandler) DeleteAttachmentsByPostID(ctx context.Context, in *g
 	return &generatedCommon.Empty{Error: ""}, nil
 }
 
+func (h GrpcCreatorHandler) StatisticsFirstDate(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedCreator.FirstDate, error) {
+	creatorID, err := uuid.Parse(in.Value)
+	if err != nil {
+		return &generatedCreator.FirstDate{Error: err.Error()}, nil
+	}
+	firstDate, err := h.uc.StatisticsFirstDate(ctx, creatorID)
+	if err != nil {
+		return &generatedCreator.FirstDate{Error: err.Error()}, nil
+	}
+	return &generatedCreator.FirstDate{Error: "", Date: firstDate}, nil
+}
+
 func (h GrpcCreatorHandler) DeleteAttachment(ctx context.Context, in *generatedCreator.PostAttachMessage) (*generatedCommon.Empty, error) {
 	postID, err := uuid.Parse(in.PostID)
 	if err != nil {

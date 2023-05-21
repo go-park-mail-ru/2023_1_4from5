@@ -938,6 +938,46 @@ func (h *CreatorHandler) DeleteProfilePhoto(w http.ResponseWriter, r *http.Reque
 	utils.Response(w, http.StatusOK, nil)
 }
 
+func (h *CreatorHandler) StatisticsFirstDate(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	creatorID, err := h.creatorClient.CheckIfCreator(r.Context(), &generatedCommon.UUIDMessage{Value: userDataJWT.Id.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if creatorID.Error == models.NotFound.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if creatorID.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	date, err := h.creatorClient.StatisticsFirstDate(r.Context(), &generatedCommon.UUIDMessage{Value: creatorID.Value})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if date.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, date.Date)
+
+}
+
 func (h *CreatorHandler) Statistics(w http.ResponseWriter, r *http.Request) {
 	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
 	if err != nil {

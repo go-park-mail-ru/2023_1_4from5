@@ -162,6 +162,7 @@ func run() error {
 		creator.HandleFunc("/deleteCoverPhoto/{image-uuid}", creatorHandler.DeleteCoverPhoto).Methods(http.MethodDelete, http.MethodOptions, http.MethodGet)
 		creator.HandleFunc("/updateCoverPhoto", creatorHandler.UpdateCoverPhoto).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
 		creator.HandleFunc("/statistics", creatorHandler.Statistics).Methods(http.MethodPost, http.MethodOptions)
+		creator.HandleFunc("/statisticsFirstDate", creatorHandler.StatisticsFirstDate).Methods(http.MethodGet, http.MethodOptions)
 		creator.HandleFunc("/subscribeToNotifications", creatorHandler.SubscribeCreatorToNotifications).Methods(http.MethodOptions, http.MethodPut)
 		creator.HandleFunc("/unsubscribeFromNotifications", userHandler.UnsubscribeUserNotifications).Methods(http.MethodOptions, http.MethodPut)
 	}

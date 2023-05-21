@@ -138,6 +138,11 @@ message Attachment{
   string Type = 2;
 };
 
+message FirstDate {
+  string Date = 1;
+  string Error = 2;
+}
+
 message Attachments{
   repeated Attachment Attachments = 1;
 }
@@ -222,5 +227,6 @@ service CreatorService {
   rpc IsPostAvailable(PostUserMessage) returns (common.Empty) {}
 
   rpc Statistics(StatisticsInput) returns (Stat) {}
+  rpc StatisticsFirstDate(common.UUIDMessage) returns (FirstDate) {}
 }
 

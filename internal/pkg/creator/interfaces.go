@@ -21,6 +21,7 @@ type CreatorUsecase interface {
 	UpdateCoverPhoto(ctx context.Context, creatorId uuid.UUID) (uuid.UUID, error)
 	DeleteCoverPhoto(ctx context.Context, creatorId uuid.UUID) error
 	Statistics(ctx context.Context, statsInput models.StatisticsDates) (models.Statistics, error)
+	StatisticsFirstDate(ctx context.Context, creatorID uuid.UUID) (string, error)
 	CreatorNotificationInfo(ctx context.Context, creatorID uuid.UUID) (models.NotificationCreatorInfo, error)
 }
 
@@ -38,5 +39,6 @@ type CreatorRepo interface {
 	UpdateCoverPhoto(ctx context.Context, creatorId, path uuid.UUID) error
 	DeleteCoverPhoto(ctx context.Context, creatorId uuid.UUID) error
 	Statistics(ctx context.Context, statsInput models.StatisticsDates) (models.Statistics, error)
+	StatisticsFirstDate(ctx context.Context, creatorID uuid.UUID) (string, error)
 	CreatorNotificationInfo(ctx context.Context, creatorID uuid.UUID) (models.NotificationCreatorInfo, error)
 }

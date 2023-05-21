@@ -423,3 +423,5 @@ SELECT (sum(posts_per_month), sum(subscriptions_bought), sum(donations_count), s
 FROM "statistics" AS s
 WHERE creator_id = $1
   AND date_trunc('month'::text, s.month::date)::date BETWEEN date_trunc('month'::text, $2::date)::date AND date_trunc('month'::text, $3)::date;
+
+SELECT MIN(month) FROM statistics WHERE creator_id = '10b0d1b8-0e67-4e7e-9f08-124b3e32cce4';

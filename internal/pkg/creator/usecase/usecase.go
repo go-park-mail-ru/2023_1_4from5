@@ -70,6 +70,10 @@ func (uc *CreatorUsecase) UpdateCoverPhoto(ctx context.Context, creatorId uuid.U
 	return path, nil
 }
 
+func (uc *CreatorUsecase) StatisticsFirstDate(ctx context.Context, creatorID uuid.UUID) (string, error) {
+	return uc.repo.StatisticsFirstDate(ctx, creatorID)
+}
+
 func (uc *CreatorUsecase) DeleteCoverPhoto(ctx context.Context, creatorId uuid.UUID) error {
 	return uc.repo.DeleteCoverPhoto(ctx, creatorId)
 }
