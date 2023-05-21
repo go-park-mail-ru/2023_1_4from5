@@ -38,6 +38,55 @@ func NewCreatorHandler(creatorClient generatedCreator.CreatorServiceClient, auth
 	}
 }
 
+func (h *CreatorHandler) GetBalance(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	creatorID, err := h.creatorClient.CheckIfCreator(r.Context(), &generatedCommon.UUIDMessage{Value: userDataJWT.Id.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if creatorID.Error == models.NotFound.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if creatorID.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	transfer := models.CreatorTransfer{}
+	err = easyjson.UnmarshalFromReader(r.Body, &transfer)
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	balance, err := h.creatorClient.GetCreatorBalance(r.Context(), &generatedCommon.UUIDMessage{Value: creatorID.Value})
+
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if balance.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, balance.Balance)
+}
+
 func (h *CreatorHandler) TransferMoney(w http.ResponseWriter, r *http.Request) {
 	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
 
