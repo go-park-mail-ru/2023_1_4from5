@@ -6,6 +6,7 @@ import (
 	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notifications"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/google/uuid"
@@ -19,21 +20,22 @@ import (
 )
 
 type PostHandler struct {
-	authClient    generatedAuth.AuthServiceClient
-	creatorClient generatedCreator.CreatorServiceClient
-	logger        *zap.SugaredLogger
+	authClient      generatedAuth.AuthServiceClient
+	creatorClient   generatedCreator.CreatorServiceClient
+	logger          *zap.SugaredLogger
+	notificationApp *notifications.NotificationApp
 }
 
-func NewPostHandler(auc generatedAuth.AuthServiceClient, csc generatedCreator.CreatorServiceClient, logger *zap.SugaredLogger) *PostHandler {
+func NewPostHandler(auc generatedAuth.AuthServiceClient, csc generatedCreator.CreatorServiceClient, logger *zap.SugaredLogger, app *notifications.NotificationApp) *PostHandler {
 	return &PostHandler{
-		authClient:    auc,
-		creatorClient: csc,
-		logger:        logger,
+		authClient:      auc,
+		creatorClient:   csc,
+		logger:          logger,
+		notificationApp: app,
 	}
 }
 
 func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
-
 	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
@@ -327,6 +329,8 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		}
 		_ = f.Close()
 	}
+	err = h.notificationApp.SendUserNotification(fmt.Sprintf("%s-%s", postData.Creator, "user"), fmt.Sprintf("У автора %s", postData.Title), "Новый пост", r.Context())
+
 	utils.Response(w, http.StatusOK, nil)
 }
 

@@ -69,8 +69,8 @@ func run() error {
 	}
 
 	authConn, err := grpc.Dial(
-		"auth:8010",
-		//":8010",
+		//"auth:8010",
+		":8010",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -79,8 +79,8 @@ func run() error {
 	}
 
 	userConn, err := grpc.Dial(
-		"user:8020",
-		//":8020",
+		//"user:8020",
+		":8020",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -89,8 +89,8 @@ func run() error {
 	}
 
 	creatorConn, err := grpc.Dial(
-		"creator:8030",
-		//":8030",
+		//"creator:8030",
+		":8030",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -99,7 +99,6 @@ func run() error {
 	}
 
 	notifApp := notifications.SetupFirebase(context.Background(), zapSugar)
-
 	authClient := generatedAuth.NewAuthServiceClient(authConn)
 	userClient := generatedUser.NewUserServiceClient(userConn)
 	creatorClient := generatedCreator.NewCreatorServiceClient(creatorConn)
@@ -107,7 +106,7 @@ func run() error {
 	authHandler := authDelivery.NewAuthHandler(authClient, zapSugar)
 	userHandler := userDelivery.NewUserHandler(userClient, authClient, notifApp, zapSugar)
 	creatorHandler := creatorDelivery.NewCreatorHandler(creatorClient, authClient, notifApp, zapSugar)
-	postHandler := postDelivery.NewPostHandler(authClient, creatorClient, zapSugar)
+	postHandler := postDelivery.NewPostHandler(authClient, creatorClient, zapSugar, notifApp)
 	subscriptionHandler := subscriptionDelivery.NewSubscriptionHandler(authClient, creatorClient, userClient, zapSugar)
 	commentHandler := commentDelivery.NewCommentHandler(authClient, userClient, creatorClient, zapSugar)
 
@@ -149,7 +148,7 @@ func run() error {
 		user.HandleFunc("/subscriptions", userHandler.UserSubscriptions).Methods(http.MethodOptions, http.MethodGet)
 		user.HandleFunc("/follows", userHandler.UserFollows).Methods(http.MethodOptions, http.MethodGet)
 		user.HandleFunc("/subscribeToNotifications/{creator-uuid}", userHandler.SubscribeUserToNotifications).Methods(http.MethodOptions, http.MethodPut)
-		// 		user.HandleFunc("/unsubscribeFromNotifications/{creator-uuid}", userHandler.UnsubscribeUserToNotifications).Methods(http.MethodOptions, http.MethodGet)
+		user.HandleFunc("/unsubscribeFromNotifications/{creator-uuid}", userHandler.UnsubscribeUserNotifications).Methods(http.MethodOptions, http.MethodPut)
 	}
 
 	creator := r.PathPrefix("/creator").Subrouter()
@@ -164,6 +163,8 @@ func run() error {
 		creator.HandleFunc("/deleteCoverPhoto/{image-uuid}", creatorHandler.DeleteCoverPhoto).Methods(http.MethodDelete, http.MethodOptions, http.MethodGet)
 		creator.HandleFunc("/updateCoverPhoto", creatorHandler.UpdateCoverPhoto).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
 		creator.HandleFunc("/statistics", creatorHandler.Statistics).Methods(http.MethodPost, http.MethodOptions)
+		creator.HandleFunc("/subscribeToNotifications", creatorHandler.SubscribeCreatorToNotifications).Methods(http.MethodOptions, http.MethodPut)
+		creator.HandleFunc("/unsubscribeFromNotifications/{creator-uuid}", userHandler.UnsubscribeUserNotifications).Methods(http.MethodOptions, http.MethodPut)
 
 	}
 

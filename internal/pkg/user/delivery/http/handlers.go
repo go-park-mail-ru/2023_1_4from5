@@ -40,8 +40,9 @@ func NewUserHandler(userClient generatedUser.UserServiceClient, auc generatedAut
 }
 
 func (h *UserHandler) SubscribeUserToNotifications(w http.ResponseWriter, r *http.Request) {
-	creatorID, ok := mux.Vars(r)["creator_id"]
+	creatorID, ok := mux.Vars(r)["creator-uuid"]
 	if !ok {
+		fmt.Println("wrong")
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
@@ -49,16 +50,41 @@ func (h *UserHandler) SubscribeUserToNotifications(w http.ResponseWriter, r *htt
 	token := models.NotificationToken{}
 	err := easyjson.UnmarshalFromReader(r.Body, &token)
 	if err != nil {
+		fmt.Println(err)
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
 
-	err = h.notificationApp.AddUserToNotificationTopic(creatorID, token, context.Background())
+	err = h.notificationApp.AddUserToNotificationTopic(fmt.Sprintf("%s-%s", creatorID, "user"), token, context.Background())
 	if err != nil {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 
+	utils.Response(w, http.StatusOK, nil)
+}
+
+func (h *UserHandler) UnsubscribeUserNotifications(w http.ResponseWriter, r *http.Request) {
+	creatorID, ok := mux.Vars(r)["creator-uuid"]
+	if !ok {
+		fmt.Println("wrong")
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	token := models.NotificationToken{}
+	err := easyjson.UnmarshalFromReader(r.Body, &token)
+	if err != nil {
+		fmt.Println(err)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	err = h.notificationApp.RemoveUserFromNotificationTopic(fmt.Sprintf("%s-%s", creatorID, "user"), token, context.Background())
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
 	utils.Response(w, http.StatusOK, nil)
 }
 
@@ -839,13 +865,12 @@ func (h *UserHandler) AddPaymentInfo(w http.ResponseWriter, r *http.Request) {
 		utils.ResponseWithCSRF(w, tokenCSRF)
 		return
 	}
-	// check CSRF token
+
 	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
 	if err != nil || *userDataCSRF != *userDataJWT {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
-	//////////////////////////////////////////////////////////////
 
 	subUUID, ok := mux.Vars(r)["sub-uuid"]
 	if !ok {

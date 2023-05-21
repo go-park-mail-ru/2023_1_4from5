@@ -13,7 +13,7 @@ type NotificationApp struct {
 }
 
 func SetupFirebase(ctx context.Context, logger *zap.SugaredLogger) *NotificationApp {
-	opt := option.WithCredentialsFile("/home/dasha/Downloads/service.json")
+	opt := option.WithCredentialsFile("./service.json")
 
 	app, err := firebase.NewApp(ctx, nil, opt)
 	if err != nil {
