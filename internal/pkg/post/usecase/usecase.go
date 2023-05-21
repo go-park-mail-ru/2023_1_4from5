@@ -41,7 +41,7 @@ func (u *PostUsecase) GetPost(ctx context.Context, postID, userID uuid.UUID) (mo
 	if err != nil {
 		return models.PostWithComments{}, err
 	}
-	postWithComments.Comments, err = u.repo.GetComments(ctx, postID)
+	postWithComments.Comments, err = u.repo.GetComments(ctx, postID, userID)
 	if err != nil {
 		return models.PostWithComments{}, err
 	}

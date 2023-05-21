@@ -32,6 +32,8 @@ const (
 	GetPost                    = `SELECT "post".post_id, "post".creator_id, creation_date, title, post_text, likes_count, "post".comments_count, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE "post".post_id = $1 GROUP BY "post".post_id, creation_date, title, post_text;`
 	GetSubInfo                 = `SELECT creator_id, month_cost, title, description FROM "subscription" WHERE subscription_id = $1;`
 	GetComments                = `SELECT comment_id, u.user_id, u.display_name, u.profile_photo, c.post_id, c.comment_text, c.creation_date, c.likes_count FROM comment c JOIN "user" u on c.user_id = u.user_id WHERE post_id = $1;`
+	IsLikedComment             = `SELECT comment_id FROM "like_comment" WHERE comment_id = $1 AND user_id = $2;`
+	GetUserIdComments          = `SELECT user_id FROM "comment" WHERE comment_id = $1;`
 )
 
 type PostRepo struct {
@@ -140,7 +142,7 @@ func (r *PostRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]mod
 	return subsInfo, nil
 }
 
-func (r *PostRepo) GetComments(ctx context.Context, postID uuid.UUID) ([]models.Comment, error) {
+func (r *PostRepo) GetComments(ctx context.Context, postID, userID uuid.UUID) ([]models.Comment, error) {
 	comments := make([]models.Comment, 0)
 	rows, err := r.db.QueryContext(ctx, GetComments, postID)
 	if err != nil && !errors.Is(sql.ErrNoRows, err) {
@@ -150,11 +152,29 @@ func (r *PostRepo) GetComments(ctx context.Context, postID uuid.UUID) ([]models.
 	defer rows.Close()
 	for rows.Next() {
 		comment := models.Comment{}
+
 		err = rows.Scan(&comment.CommentID, &comment.UserID, &comment.Username, &comment.UserPhoto, &comment.PostID, &comment.Text, &comment.Creation, &comment.LikesCount)
 		if err != nil {
 			r.logger.Error(err)
 			return nil, models.InternalError
 		}
+
+		//check for liked
+		var commentId = uuid.UUID{}
+		row := r.db.QueryRowContext(ctx, IsLikedComment, comment.CommentID, userID)
+		if err := row.Scan(&commentId); err != nil && !errors.Is(sql.ErrNoRows, err) {
+			r.logger.Error(err)
+			return nil, models.InternalError
+		} else if err == nil {
+			comment.IsLiked = true
+		}
+
+		//check for owning
+		isCommentOwner, err := r.IsCommentOwner(ctx, comment.CommentID, userID)
+		if err != nil {
+			return nil, err
+		}
+		comment.IsOwner = isCommentOwner
 
 		comments = append(comments, comment)
 	}
@@ -378,4 +398,21 @@ func (r *PostRepo) EditPost(ctx context.Context, postData models.PostEditData) e
 	}
 
 	return nil
+}
+
+func (r *PostRepo) IsCommentOwner(ctx context.Context, commentID, userID uuid.UUID) (bool, error) {
+	row := r.db.QueryRowContext(ctx, GetUserIdComments, commentID)
+
+	userIdTmp := uuid.UUID{}
+
+	if err := row.Scan(&userIdTmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
+		return false, models.InternalError
+	} else if errors.Is(sql.ErrNoRows, err) {
+		return false, models.WrongData
+	}
+	if userIdTmp != userID {
+		return false, nil
+	}
+	return true, nil
 }

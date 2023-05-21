@@ -301,7 +301,7 @@ CREATE TRIGGER comments_count_statistic
 EXECUTE PROCEDURE update_comments_count_statistics();
 
 INSERT INTO comment (comment_id, post_id, user_id, comment_text)
-VALUES (gen_random_uuid(), '566ece0a-a3a4-466c-8425-251147a68e90', 'a1664774-e00a-436b-b412-43de8a023863', 'some test');
+VALUES (gen_random_uuid(), 'a1d043ff-8849-4cee-a2d9-6c2972dcfe9d', 'a1664774-e00a-436b-b412-43de8a023863', 'some test');
 
 --Followers
 CREATE OR REPLACE FUNCTION update_followers_count_statistics() RETURNS TRIGGER AS
@@ -414,5 +414,12 @@ INSERT INTO post (post_id, creator_id, creation_date, title, post_text, likes_co
 VALUES (gen_random_uuid(), '10b0d1b8-0e67-4e7e-9f08-124b3e32cce4',
         now(), 'ttt', 'yyyyy', 1, 2);
 
-INSERT INTO subscription (subscription_id, creator_id, month_cost, title, description)  VALUES (gen_random_uuid(), '83b1f4df-a232-400e-b71c-5d45b9111f8d',
-                                                                                                111.34, 'tesd', 'vsjhw');
+INSERT INTO subscription (subscription_id, creator_id, month_cost, title, description)
+VALUES (gen_random_uuid(), '83b1f4df-a232-400e-b71c-5d45b9111f8d',
+        111.34, 'tesd', 'vsjhw');
+
+SELECT (sum(posts_per_month), sum(subscriptions_bought), sum(donations_count), sum(money_from_donations),
+        sum(money_from_subscriptions), sum(new_followers), sum(likes_count), sum(comments_count))
+FROM "statistics" AS s
+WHERE creator_id = $1
+  AND date_trunc('month'::text, s.month::date)::date BETWEEN date_trunc('month'::text, $2::date)::date AND date_trunc('month'::text, $3)::date;

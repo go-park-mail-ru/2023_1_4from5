@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"go.uber.org/zap"
+	"time"
 )
 
 const (
@@ -29,6 +30,7 @@ const (
 	UpdateCoverPhoto   = `UPDATE "creator" SET cover_photo = $1 WHERE creator_id = $2;`
 	DeleteCoverPhoto   = `UPDATE "creator" SET cover_photo = null WHERE creator_id = $1`
 	DeleteProfilePhoto = `UPDATE "creator" SET profile_photo = null WHERE creator_id = $1`
+	GetStatistics      = `SELECT sum(posts_per_month), sum(subscriptions_bought), sum(donations_count), sum(money_from_donations), sum(money_from_subscriptions), sum(new_followers), sum(likes_count), sum(comments_count) FROM "statistics" AS s WHERE creator_id = $1 AND  date_trunc('month'::text, s.month::date)::date BETWEEN date_trunc('month'::text, $2::date)::date AND  date_trunc('month'::text, $3::date)::date;`
 )
 
 type CreatorRepo struct {
@@ -393,4 +395,20 @@ func (r *CreatorRepo) DeleteProfilePhoto(ctx context.Context, creatorId uuid.UUI
 		return models.InternalError
 	}
 	return nil
+}
+
+func (r *CreatorRepo) Statistics(ctx context.Context, statsInput models.StatisticsDates) (models.Statistics, error) {
+	var stat models.Statistics
+
+	row := r.db.QueryRowContext(ctx, GetStatistics, statsInput.CreatorId, statsInput.FirstMonth.Format(time.RFC3339), statsInput.SecondMonth.Format(time.RFC3339))
+	err := row.Scan(&stat.PostsPerMonth, &stat.SubscriptionsBought, &stat.DonationsCount, &stat.MoneyFromDonations, &stat.MoneyFromSubscriptions, &stat.NewFollowers, &stat.LikesCount, &stat.CommentsCount)
+	if err != nil && errors.Is(sql.ErrNoRows, err) {
+		return models.Statistics{}, models.WrongData
+	}
+	if err != nil {
+		r.logger.Error(err)
+		return models.Statistics{}, models.InternalError
+	}
+
+	return stat, nil
 }

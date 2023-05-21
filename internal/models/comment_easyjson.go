@@ -62,6 +62,10 @@ func easyjsonE9abebc9DecodeGithubComGoParkMailRu202314from5InternalModels(in *jl
 			}
 		case "likes_count":
 			out.LikesCount = int64(in.Int64())
+		case "is_liked":
+			out.IsLiked = bool(in.Bool())
+		case "is_owner":
+			out.IsOwner = bool(in.Bool())
 		default:
 			in.SkipRecursive()
 		}
@@ -151,6 +155,21 @@ func easyjsonE9abebc9EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 			out.RawString(prefix)
 		}
 		out.Int64(int64(in.LikesCount))
+	}
+	{
+		const prefix string = ",\"is_liked\":"
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
+		out.Bool(bool(in.IsLiked))
+	}
+	{
+		const prefix string = ",\"is_owner\":"
+		out.RawString(prefix)
+		out.Bool(bool(in.IsOwner))
 	}
 	out.RawByte('}')
 }

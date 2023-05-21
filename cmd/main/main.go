@@ -163,6 +163,8 @@ func run() error {
 		creator.HandleFunc("/deleteProfilePhoto/{image-uuid}", creatorHandler.DeleteProfilePhoto).Methods(http.MethodDelete, http.MethodOptions, http.MethodGet)
 		creator.HandleFunc("/deleteCoverPhoto/{image-uuid}", creatorHandler.DeleteCoverPhoto).Methods(http.MethodDelete, http.MethodOptions, http.MethodGet)
 		creator.HandleFunc("/updateCoverPhoto", creatorHandler.UpdateCoverPhoto).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
+		creator.HandleFunc("/statistics", creatorHandler.Statistics).Methods(http.MethodPost, http.MethodOptions)
+
 	}
 
 	post := r.PathPrefix("/post").Subrouter()

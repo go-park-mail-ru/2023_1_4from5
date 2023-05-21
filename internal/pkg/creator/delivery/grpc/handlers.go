@@ -11,6 +11,7 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription"
 	"github.com/google/uuid"
 	"golang.org/x/net/context"
+	"time"
 )
 
 //go:generate mockgen -source=./generated/creator_grpc.pb.go -destination=../../mocks/creator_grpc.go -package=mock
@@ -93,16 +94,17 @@ func (h GrpcCreatorHandler) GetFeed(ctx context.Context, in *generatedCommon.UUI
 	var postsProto generatedCreator.PostsMessage
 	for i, post := range feed {
 		postsProto.Posts = append(postsProto.Posts, &generatedCreator.Post{
-			Id:           post.Id.String(),
-			CreatorID:    post.Creator.String(),
-			Creation:     post.Creation.String(),
-			CreatorName:  post.CreatorName,
-			LikesCount:   post.LikesCount,
-			CreatorPhoto: post.CreatorPhoto.String(),
-			Title:        post.Title,
-			Text:         post.Text,
-			IsAvailable:  true,
-			IsLiked:      post.IsLiked,
+			Id:            post.Id.String(),
+			CreatorID:     post.Creator.String(),
+			Creation:      post.Creation.String(),
+			CreatorName:   post.CreatorName,
+			LikesCount:    post.LikesCount,
+			CommentsCount: post.CommentsCount,
+			CreatorPhoto:  post.CreatorPhoto.String(),
+			Title:         post.Title,
+			Text:          post.Text,
+			IsAvailable:   true,
+			IsLiked:       post.IsLiked,
 		})
 
 		for _, attach := range post.Attachments {
@@ -169,16 +171,17 @@ func (h GrpcCreatorHandler) GetPage(ctx context.Context, in *generatedCreator.Us
 	}
 	for i, post := range page.Posts {
 		creatorPage.Posts = append(creatorPage.Posts, &generatedCreator.Post{
-			Id:           post.Id.String(),
-			CreatorID:    post.Creator.String(),
-			Creation:     post.Creation.String(),
-			CreatorName:  post.CreatorName,
-			LikesCount:   post.LikesCount,
-			CreatorPhoto: post.CreatorPhoto.String(),
-			Title:        post.Title,
-			Text:         post.Text,
-			IsAvailable:  post.IsAvailable,
-			IsLiked:      post.IsLiked,
+			Id:            post.Id.String(),
+			CreatorID:     post.Creator.String(),
+			Creation:      post.Creation.String(),
+			CreatorName:   post.CreatorName,
+			LikesCount:    post.LikesCount,
+			CommentsCount: post.CommentsCount,
+			CreatorPhoto:  post.CreatorPhoto.String(),
+			Title:         post.Title,
+			Text:          post.Text,
+			IsAvailable:   post.IsAvailable,
+			IsLiked:       post.IsLiked,
 		})
 
 		for _, attach := range post.Attachments {
@@ -483,6 +486,8 @@ func (h GrpcCreatorHandler) GetPost(ctx context.Context, in *generatedCreator.Po
 			Text:       v.Text,
 			Creation:   v.Creation.String(),
 			LikesCount: v.LikesCount,
+			IsOwner:    v.IsOwner,
+			IsLiked:    v.IsLiked,
 		})
 	}
 
@@ -822,5 +827,39 @@ func (h GrpcCreatorHandler) IsCommentOwner(ctx context.Context, in *generatedCre
 	return &generatedCreator.FlagMessage{
 		Flag:  flag,
 		Error: "",
+	}, nil
+}
+
+func (h GrpcCreatorHandler) Statistics(ctx context.Context, in *generatedCreator.StatisticsInput) (*generatedCreator.Stat, error) {
+	creatorId, err := uuid.Parse(in.CreatorId)
+	if err != nil {
+		return &generatedCreator.Stat{Error: models.WrongData.Error()}, nil
+	}
+
+	firstDate, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", in.FirstDate)
+	secondDate, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", in.SecondDate)
+	if err != nil {
+		return &generatedCreator.Stat{Error: models.WrongData.Error()}, nil
+	}
+
+	stat, err := h.uc.Statistics(ctx, models.StatisticsDates{
+		CreatorId:   creatorId,
+		FirstMonth:  firstDate,
+		SecondMonth: secondDate,
+	})
+
+	if err != nil {
+		return &generatedCreator.Stat{Error: err.Error()}, nil
+	}
+	return &generatedCreator.Stat{
+		CreatorId:              stat.CreatorId.String(),
+		PostsPerMonth:          stat.PostsPerMonth,
+		SubscriptionsBought:    stat.SubscriptionsBought,
+		DonationsCount:         stat.DonationsCount,
+		MoneyFromDonations:     stat.MoneyFromDonations,
+		MoneyFromSubscriptions: stat.MoneyFromSubscriptions,
+		NewFollowers:           stat.NewFollowers,
+		LikesCount:             stat.LikesCount,
+		Error:                  "",
 	}, nil
 }
