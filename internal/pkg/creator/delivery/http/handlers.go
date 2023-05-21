@@ -6,6 +6,7 @@ import (
 	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notifications"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/google/uuid"
@@ -19,16 +20,18 @@ import (
 )
 
 type CreatorHandler struct {
-	creatorClient generatedCreator.CreatorServiceClient
-	authClient    generatedAuth.AuthServiceClient
-	logger        *zap.SugaredLogger
+	creatorClient   generatedCreator.CreatorServiceClient
+	authClient      generatedAuth.AuthServiceClient
+	notificationApp *notifications.NotificationApp
+	logger          *zap.SugaredLogger
 }
 
-func NewCreatorHandler(creatorClient generatedCreator.CreatorServiceClient, authClient generatedAuth.AuthServiceClient, logger *zap.SugaredLogger) *CreatorHandler {
+func NewCreatorHandler(creatorClient generatedCreator.CreatorServiceClient, authClient generatedAuth.AuthServiceClient, na *notifications.NotificationApp, logger *zap.SugaredLogger) *CreatorHandler {
 	return &CreatorHandler{
-		creatorClient: creatorClient,
-		authClient:    authClient,
-		logger:        logger,
+		creatorClient:   creatorClient,
+		authClient:      authClient,
+		notificationApp: na,
+		logger:          logger,
 	}
 }
 

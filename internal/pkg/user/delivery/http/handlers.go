@@ -1,11 +1,13 @@
 package http
 
 import (
+	"context"
 	"crypto/sha1"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notifications"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	generatedUser "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
@@ -22,17 +24,42 @@ import (
 )
 
 type UserHandler struct {
-	userClient generatedUser.UserServiceClient
-	authClient generatedAuth.AuthServiceClient
-	logger     *zap.SugaredLogger
+	userClient      generatedUser.UserServiceClient
+	authClient      generatedAuth.AuthServiceClient
+	notificationApp *notifications.NotificationApp
+	logger          *zap.SugaredLogger
 }
 
-func NewUserHandler(userClient generatedUser.UserServiceClient, auc generatedAuth.AuthServiceClient, logger *zap.SugaredLogger) *UserHandler {
+func NewUserHandler(userClient generatedUser.UserServiceClient, auc generatedAuth.AuthServiceClient, na *notifications.NotificationApp, logger *zap.SugaredLogger) *UserHandler {
 	return &UserHandler{
-		userClient: userClient,
-		authClient: auc,
-		logger:     logger,
+		userClient:      userClient,
+		authClient:      auc,
+		notificationApp: na,
+		logger:          logger,
 	}
+}
+
+func (h *UserHandler) SubscribeUserToNotifications(w http.ResponseWriter, r *http.Request) {
+	creatorID, ok := mux.Vars(r)["creator_id"]
+	if !ok {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	token := models.NotificationToken{}
+	err := easyjson.UnmarshalFromReader(r.Body, &token)
+	if err != nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	err = h.notificationApp.AddUserToNotificationTopic(creatorID, token, context.Background())
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, nil)
 }
 
 func (h *UserHandler) Follow(w http.ResponseWriter, r *http.Request) {
@@ -871,7 +898,7 @@ func (h *UserHandler) AddPaymentInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.Response(w, http.StatusOK, nil)
+	utils.Response(w, http.StatusOK, subscription.PaymentInfo)
 }
 
 func (h *UserHandler) DeleteProfilePhoto(w http.ResponseWriter, r *http.Request) {
