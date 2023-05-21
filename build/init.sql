@@ -59,7 +59,7 @@ create table subscription
     creator_id      uuid        not null
         constraint subscription_creator_creator_id_fk
             references creator (creator_id),
-    month_cost      money         not null,
+    month_cost      money       not null,
     title           varchar(40) not null,
     description     varchar(200),
     is_available    bool default true
@@ -77,13 +77,13 @@ create table user_subscription
 
 create table user_payments
 (
-    user_id           uuid           not null
+    user_id           uuid      not null
         constraint user_payments_user_user_id_fk references "user" (user_id),
-    subscription_id   uuid           not null
+    subscription_id   uuid      not null
         constraint user_payments_subscription_subscription_id_fk references subscription (subscription_id),
-    payment_timestamp timestamp      not null default now(),
+    payment_timestamp timestamp not null default now(),
     payment_info      text, ---что-то, номер кошелька, что угодно
-    money             money not null
+    money             money     not null
 );
 
 create table post
@@ -173,14 +173,14 @@ create table like_comment
 );
 create table donation
 (
-    user_id       uuid           not null
+    user_id       uuid      not null
         constraint donation_user_user_id_fk
             references "user" (user_id),
-    creator_id    uuid           not null
+    creator_id    uuid      not null
         constraint donation_creator_creator_id_fk
             references "creator" (creator_id),
-    money_count   money not null,
-    donation_date timestamp      not null default now()
+    money_count   money     not null,
+    donation_date timestamp not null default now()
 );
 
 create table follow
@@ -234,35 +234,55 @@ $$ LANGUAGE 'plpgsql' IMMUTABLE;
 --Statistics
 CREATE TABLE "statistics"
 (
-    id                       uuid not null  default gen_random_uuid(),
+    id                       uuid not null default gen_random_uuid(),
     creator_id               uuid not null,
-    posts_per_month          int            default 0,
-    subscriptions_bought     int            default 0,
-    donations_count          int            default 0,
-    money_from_donations     money default 0,
-    money_from_subscriptions money default 0,
-    new_followers            int            default 0,
-    likes_count              int            default 0,
-    comments_count           int            default 0,
-    month                    timestamp      default now()
+    posts_per_month          int           default 0,
+    subscriptions_bought     int           default 0,
+    donations_count          int           default 0,
+    money_from_donations     money         default 0,
+    money_from_subscriptions money         default 0,
+    new_followers            int           default 0,
+    likes_count              int           default 0,
+    comments_count           int           default 0,
+    month                    timestamp     default now()
 );
+
+CREATE OR REPLACE FUNCTION check_if_bucket_exists(creator uuid, month_val timestamp) RETURNS boolean AS
+$$
+BEGIN
+    RETURN (SELECT EXISTS(SELECT 1 FROM "statistics" WHERE creator_id = creator AND month = month_val));
+END
+$$ LANGUAGE 'plpgsql' IMMUTABLE;
+
 
 alter table "statistics"
     add constraint unique_bucket unique (creator_id, month);
 --likes
 CREATE OR REPLACE FUNCTION update_likes_count_statistics() RETURNS TRIGGER AS
 $likes_count_statistics$
+DECLARE
+    creator uuid := null;
 BEGIN
     IF (TG_OP = 'DELETE') THEN
+        creator := (SELECT creator_id FROM post WHERE post.post_id = OLD.post_id);
+        IF NOT check_if_bucket_exists(creator,
+                                      date_trunc('month', now())::date) THEN
+            INSERT INTO "statistics" (creator_id, month) VALUES (creator, date_trunc('month', now())::date);
+        END IF;
         UPDATE public."statistics"
         SET likes_count = likes_count - 1
-        WHERE creator_id IN (SELECT creator_id FROM post WHERE post.post_id = OLD.post_id)
+        WHERE creator_id = creator
           AND date_trunc('month', month)::date = date_trunc('month', now())::date;
         RETURN OLD;
     ELSIF (TG_OP = 'INSERT') THEN
+        creator := (SELECT creator_id FROM post WHERE post.post_id = NEW.post_id);
+        IF NOT check_if_bucket_exists(creator,
+                                      date_trunc('month', now())::date) THEN
+            INSERT INTO "statistics" (creator_id, month) VALUES (creator, date_trunc('month', now())::date);
+        END IF;
         UPDATE public."statistics"
         SET likes_count = likes_count + 1
-        WHERE creator_id IN (SELECT creator_id FROM post WHERE post.post_id = NEW.post_id)
+        WHERE creator_id = creator --IN (SELECT creator_id FROM post WHERE post.post_id = NEW.post_id)
           AND date_trunc('month', month)::date = date_trunc('month', now())::date;
         RETURN NEW;
     END IF;
@@ -282,17 +302,29 @@ EXECUTE PROCEDURE update_likes_count_statistics();
 
 CREATE OR REPLACE FUNCTION update_comments_count_statistics() RETURNS TRIGGER AS
 $comments_count_statistics$
+DECLARE
+    creator uuid := null;
 BEGIN
     IF (TG_OP = 'DELETE') THEN
+        creator := (SELECT creator_id FROM post WHERE post.post_id = OLD.post_id);
+        IF NOT check_if_bucket_exists(creator,
+                                      date_trunc('month', now())::date) THEN
+            INSERT INTO "statistics" (creator_id, month) VALUES (creator, date_trunc('month', now())::date);
+        END IF;
         UPDATE public."statistics"
         SET comments_count = comments_count - 1
-        WHERE creator_id IN (SELECT creator_id FROM post WHERE post.post_id = OLD.post_id)
+        WHERE creator_id = creator
           AND date_trunc('month', month)::date = date_trunc('month', now())::date;
         RETURN OLD;
     ELSIF (TG_OP = 'INSERT') THEN
+        creator := (SELECT creator_id FROM post WHERE post.post_id = NEW.post_id);
+        IF NOT check_if_bucket_exists(creator,
+                                      date_trunc('month', now())::date) THEN
+            INSERT INTO "statistics" (creator_id, month) VALUES (creator, date_trunc('month', now())::date);
+        END IF;
         UPDATE public."statistics"
         SET comments_count = comments_count + 1
-        WHERE creator_id IN (SELECT creator_id FROM post WHERE post.post_id = NEW.post_id)
+        WHERE creator_id = creator
           AND date_trunc('month', month)::date = date_trunc('month', now())::date;
         RETURN NEW;
     END IF;
@@ -312,6 +344,10 @@ EXECUTE PROCEDURE update_comments_count_statistics();
 CREATE OR REPLACE FUNCTION update_followers_count_statistics() RETURNS TRIGGER AS
 $followers_count_statistics$
 BEGIN
+    IF NOT check_if_bucket_exists(NEW.creator_id,
+                                  date_trunc('month', now())::date) THEN
+        INSERT INTO "statistics" (creator_id, month) VALUES (NEW.creator_id, date_trunc('month', now())::date);
+    END IF;
     UPDATE "statistics"
     SET new_followers = new_followers + 1
     WHERE creator_id = NEW.creator_id
@@ -331,11 +367,18 @@ EXECUTE PROCEDURE update_followers_count_statistics();
 --Subscriptions
 CREATE OR REPLACE FUNCTION subs_statistics() RETURNS TRIGGER AS
 $subs_statistics$
+DECLARE
+    creator uuid = null;
 BEGIN
+    creator = (SELECT creator_id FROM subscription WHERE subscription.subscription_id = NEW.subscription_id);
+    IF NOT check_if_bucket_exists(creator,
+                                  date_trunc('month', now())::date) THEN
+        INSERT INTO "statistics" (creator_id, month) VALUES (creator, date_trunc('month', now())::date);
+    END IF;
     UPDATE "statistics"
     SET money_from_subscriptions = money_from_subscriptions + NEW.money,
         subscriptions_bought     = subscriptions_bought + 1
-    WHERE creator_id IN (SELECT creator_id FROM subscription WHERE subscription.subscription_id = NEW.subscription_id)
+    WHERE creator_id = creator
       AND date_trunc('month', month)::date = date_trunc('month', now())::date;
     RETURN NEW;
 END;
@@ -353,6 +396,10 @@ EXECUTE PROCEDURE subs_statistics();
 CREATE OR REPLACE FUNCTION donations_statistics() RETURNS TRIGGER AS
 $donations_statistics$
 BEGIN
+    IF NOT check_if_bucket_exists(NEW.creator_id,
+                                  date_trunc('month', now())::date) THEN
+        INSERT INTO "statistics" (creator_id, month) VALUES (NEW.creator_id, date_trunc('month', now())::date);
+    END IF;
     UPDATE "statistics"
     SET money_from_donations = money_from_donations + NEW.money_count,
         donations_count      = donations_count + 1
@@ -375,12 +422,20 @@ CREATE OR REPLACE FUNCTION update_posts_count_statistics() RETURNS TRIGGER AS
 $update_posts_count_statistics$
 BEGIN
     IF (TG_OP = 'DELETE') THEN
+        IF NOT check_if_bucket_exists(OLD.creator_id,
+                                      date_trunc('month', OLD.creation_date)::date) THEN
+            INSERT INTO "statistics" (creator_id, month) VALUES (OLD.creator_id, date_trunc('month', OLD.creation_date)::date);
+        END IF;
         UPDATE public."statistics"
         SET posts_per_month = posts_per_month - 1
         WHERE creator_id = OLD.creator_id
           AND date_trunc('month', month)::date = date_trunc('month', OLD.creation_date)::date;
         RETURN OLD;
     ELSIF (TG_OP = 'INSERT') THEN
+        IF NOT check_if_bucket_exists(NEW.creator_id,
+                                      date_trunc('month', now())::date) THEN
+            INSERT INTO "statistics" (creator_id, month) VALUES (NEW.creator_id, date_trunc('month', now())::date);
+        END IF;
         UPDATE public."statistics"
         SET posts_per_month = posts_per_month + 1
         WHERE creator_id = NEW.creator_id

@@ -301,7 +301,7 @@ CREATE TRIGGER comments_count_statistic
 EXECUTE PROCEDURE update_comments_count_statistics();
 
 INSERT INTO comment (comment_id, post_id, user_id, comment_text)
-VALUES (gen_random_uuid(), '566ece0a-a3a4-466c-8425-251147a68e90', 'a1664774-e00a-436b-b412-43de8a023863', 'some test');
+VALUES (gen_random_uuid(), 'a1d043ff-8849-4cee-a2d9-6c2972dcfe9d', 'a1664774-e00a-436b-b412-43de8a023863', 'some test');
 
 --Followers
 CREATE OR REPLACE FUNCTION update_followers_count_statistics() RETURNS TRIGGER AS
