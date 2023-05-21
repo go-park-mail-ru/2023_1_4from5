@@ -103,10 +103,6 @@ type Donate struct {
 	MoneyCount float32   `json:"money_count"`
 }
 
-type NotificationToken struct {
-	Token string `json:"notification_token"`
-}
-
 func (creatorInfo *BecameCreatorInfo) IsValid() bool {
 	return (len(creatorInfo.Name) > 0 && len(creatorInfo.Name) < 40) && (len(creatorInfo.Description) > 0 && len(creatorInfo.Description) < 500)
 }

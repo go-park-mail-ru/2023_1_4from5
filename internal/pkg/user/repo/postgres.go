@@ -24,7 +24,7 @@ const (
 	CheckIfFollow        = `SELECT user_id FROM "follow" WHERE user_id = $1 AND creator_id = $2;`
 	UpdateSubscription   = `UPDATE "user_subscription" SET expire_date = expire_date + $1 * INTERVAL '1 MONTH' WHERE user_id = $2 AND subscription_id = $3 RETURNING user_id;`
 	Subscribe            = `INSERT INTO "user_subscription" VALUES ($1, $2, now() + $3 * INTERVAL '1 MONTH');`
-	CheckIfSubExists     = `SELECT subscription_id FROM subscription WHERE subscription_id = $1;`
+	CheckIfSubExists     = `SELECT title FROM subscription WHERE subscription_id = $1;`
 	AddPaymentInfo       = `INSERT INTO "user_payments" (user_id, subscription_id, payment_timestamp, month_count, payment_info, money) VALUES ($1, $2, now(), $3, $4, 0);`
 	CheckPaymentInfo     = `SELECT user_id, subscription_id, month_count FROM "user_payments" WHERE payment_info = $1;`
 	UpdatePaymentInfo    = `UPDATE "user_payments" SET money = $1 WHERE payment_info = $2`
@@ -165,44 +165,45 @@ func (ur *UserRepo) UpdatePaymentInfo(ctx context.Context, money float32, paymen
 	return nil
 }
 
-func (ur *UserRepo) Subscribe(ctx context.Context, subscription models.SubscriptionDetails) error {
+func (ur *UserRepo) Subscribe(ctx context.Context, subscription models.SubscriptionDetails) (string, error) {
 	tx, err := ur.db.BeginTx(ctx, nil)
 	if err != nil {
 		ur.logger.Error(err)
-		return models.InternalError
+		return "", models.InternalError
 	}
 	// если подписка уже есть обновляем expire date
 	row := ur.db.QueryRowContext(ctx, UpdateSubscription, subscription.MonthCount, subscription.UserID, subscription.Id)
 	var userIDtmp uuid.UUID
+	var subName string
 	if err := row.Scan(&userIDtmp); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		ur.logger.Error(err)
 		_ = tx.Rollback()
-		return models.InternalError
+		return "", models.InternalError
 	} else if errors.Is(err, sql.ErrNoRows) { // если нет, то добавляем о ней запись
 		row = ur.db.QueryRowContext(ctx, CheckIfSubExists, subscription.Id)
-		if err = row.Scan(&subscription.Id); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		if err = row.Scan(&subName); err != nil && !errors.Is(err, sql.ErrNoRows) {
 			ur.logger.Error(err)
 			_ = tx.Rollback()
-			return models.InternalError
+			return "", models.InternalError
 		} else if errors.Is(err, sql.ErrNoRows) { // такой подписки нет
 			_ = tx.Rollback()
-			return models.WrongData
+			return "", models.WrongData
 		}
 
 		row = ur.db.QueryRowContext(ctx, Subscribe, subscription.UserID, subscription.Id, subscription.MonthCount)
 		if err = row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 			ur.logger.Error(err)
 			_ = tx.Rollback()
-			return models.InternalError
+			return "", models.InternalError
 		}
 	}
 
 	if err = tx.Commit(); err != nil {
 		ur.logger.Error(err)
-		return models.InternalError
+		return "", models.InternalError
 	}
 
-	return nil
+	return subName, nil
 }
 
 func (ur *UserRepo) UpdatePassword(ctx context.Context, id uuid.UUID, password string) error {

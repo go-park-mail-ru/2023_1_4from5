@@ -25,7 +25,7 @@ const _ = grpc.SupportPackageIsVersion7
 type UserServiceClient interface {
 	Follow(ctx context.Context, in *FollowMessage, opts ...grpc.CallOption) (*proto.Empty, error)
 	Unfollow(ctx context.Context, in *FollowMessage, opts ...grpc.CallOption) (*proto.Empty, error)
-	Subscribe(ctx context.Context, in *PaymentInfo, opts ...grpc.CallOption) (*proto.Empty, error)
+	Subscribe(ctx context.Context, in *PaymentInfo, opts ...grpc.CallOption) (*SubscriptionName, error)
 	AddPaymentInfo(ctx context.Context, in *SubscriptionDetails, opts ...grpc.CallOption) (*proto.Empty, error)
 	GetProfile(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*UserProfile, error)
 	UpdatePhoto(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*ImageID, error)
@@ -65,8 +65,8 @@ func (c *userServiceClient) Unfollow(ctx context.Context, in *FollowMessage, opt
 	return out, nil
 }
 
-func (c *userServiceClient) Subscribe(ctx context.Context, in *PaymentInfo, opts ...grpc.CallOption) (*proto.Empty, error) {
-	out := new(proto.Empty)
+func (c *userServiceClient) Subscribe(ctx context.Context, in *PaymentInfo, opts ...grpc.CallOption) (*SubscriptionName, error) {
+	out := new(SubscriptionName)
 	err := c.cc.Invoke(ctx, "/UserService/Subscribe", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -179,7 +179,7 @@ func (c *userServiceClient) CheckIfCreator(ctx context.Context, in *proto.UUIDMe
 type UserServiceServer interface {
 	Follow(context.Context, *FollowMessage) (*proto.Empty, error)
 	Unfollow(context.Context, *FollowMessage) (*proto.Empty, error)
-	Subscribe(context.Context, *PaymentInfo) (*proto.Empty, error)
+	Subscribe(context.Context, *PaymentInfo) (*SubscriptionName, error)
 	AddPaymentInfo(context.Context, *SubscriptionDetails) (*proto.Empty, error)
 	GetProfile(context.Context, *proto.UUIDMessage) (*UserProfile, error)
 	UpdatePhoto(context.Context, *proto.UUIDMessage) (*ImageID, error)
@@ -204,7 +204,7 @@ func (UnimplementedUserServiceServer) Follow(context.Context, *FollowMessage) (*
 func (UnimplementedUserServiceServer) Unfollow(context.Context, *FollowMessage) (*proto.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Unfollow not implemented")
 }
-func (UnimplementedUserServiceServer) Subscribe(context.Context, *PaymentInfo) (*proto.Empty, error) {
+func (UnimplementedUserServiceServer) Subscribe(context.Context, *PaymentInfo) (*SubscriptionName, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Subscribe not implemented")
 }
 func (UnimplementedUserServiceServer) AddPaymentInfo(context.Context, *SubscriptionDetails) (*proto.Empty, error) {

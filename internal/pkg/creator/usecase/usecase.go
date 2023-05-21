@@ -24,6 +24,10 @@ func (uc *CreatorUsecase) GetPage(ctx context.Context, userID, creatorID uuid.UU
 	return uc.repo.GetPage(ctx, userID, creatorID)
 }
 
+func (uc *CreatorUsecase) CreatorNotificationInfo(ctx context.Context, creatorID uuid.UUID) (models.NotificationCreatorInfo, error) {
+	return uc.repo.CreatorNotificationInfo(ctx, creatorID)
+}
+
 func (uc *CreatorUsecase) CreateAim(ctx context.Context, aimInfo models.Aim) error {
 	return uc.repo.CreateAim(ctx, aimInfo)
 }

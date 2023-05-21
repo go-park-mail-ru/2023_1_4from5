@@ -69,8 +69,8 @@ func run() error {
 	}
 
 	authConn, err := grpc.Dial(
-		//"auth:8010",
-		":8010",
+		"auth:8010",
+		//":8010",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -79,8 +79,8 @@ func run() error {
 	}
 
 	userConn, err := grpc.Dial(
-		//"user:8020",
-		":8020",
+		"user:8020",
+		//":8020",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -89,8 +89,8 @@ func run() error {
 	}
 
 	creatorConn, err := grpc.Dial(
-		//"creator:8030",
-		":8030",
+		"creator:8030",
+		//":8030",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -135,7 +135,6 @@ func run() error {
 	user := r.PathPrefix("/user").Subrouter()
 	{
 		user.HandleFunc("/profile", userHandler.GetProfile).Methods(http.MethodGet, http.MethodOptions)
-		user.HandleFunc("/donate", userHandler.Donate).Methods(http.MethodPost, http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/updatePassword", userHandler.UpdatePassword).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/updateData", userHandler.UpdateData).Methods(http.MethodPut, http.MethodGet, http.MethodOptions)
 		user.HandleFunc("/feed", creatorHandler.GetFeed).Methods(http.MethodGet, http.MethodOptions)
@@ -164,10 +163,8 @@ func run() error {
 		creator.HandleFunc("/updateCoverPhoto", creatorHandler.UpdateCoverPhoto).Methods(http.MethodPut, http.MethodOptions, http.MethodGet)
 		creator.HandleFunc("/statistics", creatorHandler.Statistics).Methods(http.MethodPost, http.MethodOptions)
 		creator.HandleFunc("/subscribeToNotifications", creatorHandler.SubscribeCreatorToNotifications).Methods(http.MethodOptions, http.MethodPut)
-		creator.HandleFunc("/unsubscribeFromNotifications/{creator-uuid}", userHandler.UnsubscribeUserNotifications).Methods(http.MethodOptions, http.MethodPut)
-
+		creator.HandleFunc("/unsubscribeFromNotifications", userHandler.UnsubscribeUserNotifications).Methods(http.MethodOptions, http.MethodPut)
 	}
-
 	post := r.PathPrefix("/post").Subrouter()
 	{
 		post.HandleFunc("/create", postHandler.CreatePost).Methods(http.MethodPost, http.MethodOptions, http.MethodGet)

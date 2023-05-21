@@ -79,17 +79,17 @@ func (h GrpcUserHandler) AddPaymentInfo(ctx context.Context, in *generatedUser.S
 	return &generatedCommon.Empty{Error: ""}, nil
 }
 
-func (h GrpcUserHandler) Subscribe(ctx context.Context, in *generatedUser.PaymentInfo) (*generatedCommon.Empty, error) {
+func (h GrpcUserHandler) Subscribe(ctx context.Context, in *generatedUser.PaymentInfo) (*generatedUser.SubscriptionName, error) {
 	paymentInfo, err := uuid.Parse(in.PaymentID)
 	if err != nil {
-		return &generatedCommon.Empty{Error: err.Error()}, nil
+		return &generatedUser.SubscriptionName{Error: err.Error()}, nil
 	}
 
-	err = h.uc.Subscribe(ctx, paymentInfo, in.Money)
+	subName, err := h.uc.Subscribe(ctx, paymentInfo, in.Money)
 	if err != nil {
-		return &generatedCommon.Empty{Error: err.Error()}, nil
+		return &generatedUser.SubscriptionName{Error: err.Error()}, nil
 	}
-	return &generatedCommon.Empty{Error: ""}, nil
+	return &generatedUser.SubscriptionName{Error: "", Name: subName}, nil
 }
 
 func (h GrpcUserHandler) GetProfile(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedUser.UserProfile, error) {

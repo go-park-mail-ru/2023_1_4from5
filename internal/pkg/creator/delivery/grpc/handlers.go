@@ -271,6 +271,19 @@ func (h GrpcCreatorHandler) CheckIfCreator(ctx context.Context, in *generatedCom
 	return &generatedCommon.UUIDResponse{Error: "", Value: creatorID.String()}, nil
 }
 
+func (h GrpcCreatorHandler) CreatorNotificationInfo(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedCreator.NotificationCreatorInfo, error) {
+	creatorID, err := uuid.Parse(in.Value)
+	if err != nil {
+		return &generatedCreator.NotificationCreatorInfo{Error: err.Error()}, nil
+	}
+
+	info, err := h.uc.CreatorNotificationInfo(ctx, creatorID)
+	if err != nil {
+		return &generatedCreator.NotificationCreatorInfo{Error: err.Error()}, nil
+	}
+	return &generatedCreator.NotificationCreatorInfo{Error: "", Name: info.Name, Photo: info.Photo.String()}, nil
+}
+
 func (h GrpcCreatorHandler) CreatePost(ctx context.Context, in *generatedCreator.PostCreationData) (*generatedCommon.Empty, error) {
 	ID, err := uuid.Parse(in.Id)
 	if err != nil {

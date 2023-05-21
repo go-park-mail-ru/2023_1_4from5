@@ -14,6 +14,11 @@ message PaymentInfo {
   float Money = 2;
 }
 
+message SubscriptionName {
+  string Name = 1;
+  string Error = 2;
+}
+
 message SubscriptionDetails{
   string Id = 1;
   string UserID = 2;
@@ -90,7 +95,7 @@ message CheckCreatorMessage{
 service UserService {
   rpc Follow(FollowMessage) returns (common.Empty) {}
   rpc Unfollow(FollowMessage) returns (common.Empty) {}
-  rpc Subscribe(PaymentInfo) returns (common.Empty) {}
+  rpc Subscribe(PaymentInfo) returns (SubscriptionName) {}
   rpc AddPaymentInfo(SubscriptionDetails) returns (common.Empty) {}
   rpc GetProfile(common.UUIDMessage) returns (UserProfile) {}
   rpc UpdatePhoto(common.UUIDMessage) returns (ImageID) {}

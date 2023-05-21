@@ -329,7 +329,28 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		}
 		_ = f.Close()
 	}
-	err = h.notificationApp.SendUserNotification(fmt.Sprintf("%s-%s", postData.Creator, "user"), fmt.Sprintf("У автора %s", postData.Title), "Новый пост", r.Context())
+
+	creatorInfo, err := h.creatorClient.CreatorNotificationInfo(r.Context(), &generatedCommon.UUIDMessage{Value: postData.Creator.String()})
+
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if len(creatorInfo.Error) != 0 {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	notification := models.Notification{
+		Topic: fmt.Sprintf("%s-%s", postData.Creator, "user"),
+		Title: "Новый пост",
+		Body:  fmt.Sprintf("У автора %s вышел новый пост \"%s\"", creatorInfo.Name, postData.Title),
+		Photo: fmt.Sprintf("%s%s.jpg", models.PhotoURL, creatorInfo.Photo),
+	}
+
+	err = h.notificationApp.SendUserNotification(notification, r.Context())
 
 	utils.Response(w, http.StatusOK, nil)
 }

@@ -49,7 +49,7 @@ func (na *NotificationApp) RemoveUserFromNotificationTopic(topic string, token m
 	return nil
 }
 
-func (na *NotificationApp) SendUserNotification(topic string, body string, title string, ctx context.Context) error {
+func (na *NotificationApp) SendUserNotification(notification models.Notification, ctx context.Context) error {
 	client, err := na.app.Messaging(ctx)
 	if err != nil {
 		na.logger.Error(err)
@@ -58,10 +58,11 @@ func (na *NotificationApp) SendUserNotification(topic string, body string, title
 
 	message := &messaging.Message{
 		Notification: &messaging.Notification{
-			Title: title,
-			Body:  body,
+			Title:    notification.Title,
+			Body:     notification.Body,
+			ImageURL: notification.Photo,
 		},
-		Topic: topic,
+		Topic: notification.Topic,
 	}
 	response, err := client.Send(ctx, message)
 	if err != nil {

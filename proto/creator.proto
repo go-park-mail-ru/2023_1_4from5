@@ -43,6 +43,12 @@ message CreatorsMessage{
   string Error = 2;
 };
 
+message NotificationCreatorInfo {
+  string Name = 1;
+  string Photo = 2;
+  string Error = 3;
+}
+
 message UserCreatorMessage {
   string UserID = 1;
   string CreatorID = 2;
@@ -198,6 +204,7 @@ service CreatorService {
   rpc AddAttach(PostAttachMessage) returns (common.Empty) {}
   rpc GetFileExtension(KeywordMessage) returns (Extension) {}
   rpc UpdateProfilePhoto(common.UUIDMessage) returns (common.UUIDResponse) {}
+  rpc CreatorNotificationInfo(common.UUIDMessage) returns (NotificationCreatorInfo) {}
   rpc DeleteProfilePhoto(common.UUIDMessage) returns (common.Empty) {}
   rpc UpdateCoverPhoto(common.UUIDMessage) returns (common.UUIDResponse) {}
   rpc DeleteCoverPhoto(common.UUIDMessage) returns (common.Empty) {}
