@@ -63,14 +63,6 @@ func (h *CreatorHandler) GetBalance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	transfer := models.CreatorTransfer{}
-	err = easyjson.UnmarshalFromReader(r.Body, &transfer)
-	if err != nil {
-		h.logger.Error(err)
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
-
 	balance, err := h.creatorClient.GetCreatorBalance(r.Context(), &generatedCommon.UUIDMessage{Value: creatorID.Value})
 
 	if err != nil {
