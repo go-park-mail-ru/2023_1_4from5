@@ -52,6 +52,7 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusForbidden, nil)
 		return
 	}
+
 	if r.Method == http.MethodGet {
 		tokenCSRF, err := token.GetCSRFToken(models.User{Login: userDataJWT.Login, Id: userDataJWT.Id, UserVersion: userDataJWT.UserVersion})
 		if err != nil {

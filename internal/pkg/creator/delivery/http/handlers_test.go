@@ -1890,7 +1890,7 @@ func TestCreatorHandler_UpdateCreatorData(t *testing.T) {
 				r := httptest.NewRequest("PUT", "/updateCreatorData", nil)
 
 				setJWTToken(r, bdy)
-
+				setCSRFToken(r, tokenCSRF)
 				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
 					UserVersion: int64(1),
 					Error:       "",
