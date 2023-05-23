@@ -62,14 +62,20 @@ func easyjson957004edEncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 	out.RawByte('{')
 	first := true
 	_ = first
-	{
+	if true {
 		const prefix string = ",\"creator_id\":"
+		first = false
 		out.RawString(prefix[1:])
 		out.RawText((in.CreatorId).MarshalText())
 	}
 	{
 		const prefix string = ",\"first_month\":"
-		out.RawString(prefix)
+		if first {
+			first = false
+			out.RawString(prefix[1:])
+		} else {
+			out.RawString(prefix)
+		}
 		out.Raw((in.FirstMonth).MarshalJSON())
 	}
 	{

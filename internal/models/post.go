@@ -3,7 +3,6 @@ package models
 // easyjson -all ./internal/models/post.go
 
 import (
-	"fmt"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	"github.com/google/uuid"
 	"html"
@@ -48,8 +47,8 @@ type PostEditData struct {
 	AvailableSubscriptions []uuid.UUID `json:"available_subscriptions"`
 }
 
-func (post PostCreationData) IsValid() bool {
-	return len(post.Text) != 0 || len(post.Title) != 0 || post.Attachments != nil
+func (postCreationData PostCreationData) IsValid() bool {
+	return len(postCreationData.Text) != 0 || len(postCreationData.Title) != 0 || postCreationData.Attachments != nil
 }
 
 func (post *Post) Sanitize() {
@@ -60,10 +59,10 @@ func (post *Post) Sanitize() {
 	}
 }
 
-func (post *PostWithComments) Sanitize() {
-	post.Post.Sanitize()
-	for i := range post.Comments {
-		post.Comments[i].Sanitize()
+func (postWithComments *PostWithComments) Sanitize() {
+	postWithComments.Post.Sanitize()
+	for i := range postWithComments.Comments {
+		postWithComments.Comments[i].Sanitize()
 	}
 }
 
@@ -76,14 +75,15 @@ func (post *Post) PostToModel(postInfo *generatedCreator.Post) error {
 	if err != nil {
 		return err
 	}
+
 	creatorPhoto, err := uuid.Parse(postInfo.CreatorPhoto)
 	if err != nil {
 		return err
 	}
 
-	reg, err := time.Parse("2006-01-02 15:04:05 -0700 -0700", postInfo.Creation)
+	reg, err := time.Parse(time.RFC3339, postInfo.Creation)
+
 	if err != nil {
-		fmt.Println("date")
 		return err
 	}
 
@@ -119,8 +119,8 @@ func (post *Post) PostToModel(postInfo *generatedCreator.Post) error {
 	return nil
 }
 
-func (post *PostWithComments) PostWithCommentsToModel(postInfo *generatedCreator.PostWithComments) error {
-	err := post.Post.PostToModel(postInfo.Post)
+func (postWithComments *PostWithComments) PostWithCommentsToModel(postInfo *generatedCreator.PostWithComments) error {
+	err := postWithComments.Post.PostToModel(postInfo.Post)
 	if err != nil {
 		return err
 	}
@@ -130,7 +130,7 @@ func (post *PostWithComments) PostWithCommentsToModel(postInfo *generatedCreator
 		if err != nil {
 			return err
 		}
-		post.Comments = append(post.Comments, comment)
+		postWithComments.Comments = append(postWithComments.Comments, comment)
 	}
 
 	return nil

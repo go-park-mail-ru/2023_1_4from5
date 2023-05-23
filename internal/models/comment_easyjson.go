@@ -175,25 +175,25 @@ func easyjsonE9abebc9EncodeGithubComGoParkMailRu202314from5InternalModels(out *j
 }
 
 // MarshalJSON supports json.Marshaler interface
-func (v Comment) MarshalJSON() ([]byte, error) {
+func (comment Comment) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjsonE9abebc9EncodeGithubComGoParkMailRu202314from5InternalModels(&w, v)
+	easyjsonE9abebc9EncodeGithubComGoParkMailRu202314from5InternalModels(&w, comment)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
-func (v Comment) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjsonE9abebc9EncodeGithubComGoParkMailRu202314from5InternalModels(w, v)
+func (comment Comment) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjsonE9abebc9EncodeGithubComGoParkMailRu202314from5InternalModels(w, comment)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
-func (v *Comment) UnmarshalJSON(data []byte) error {
+func (comment *Comment) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjsonE9abebc9DecodeGithubComGoParkMailRu202314from5InternalModels(&r, v)
+	easyjsonE9abebc9DecodeGithubComGoParkMailRu202314from5InternalModels(&r, comment)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
-func (v *Comment) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjsonE9abebc9DecodeGithubComGoParkMailRu202314from5InternalModels(l, v)
+func (comment *Comment) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjsonE9abebc9DecodeGithubComGoParkMailRu202314from5InternalModels(l, comment)
 }
