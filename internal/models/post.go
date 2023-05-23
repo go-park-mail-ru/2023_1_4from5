@@ -82,7 +82,6 @@ func (post *Post) PostToModel(postInfo *generatedCreator.Post) error {
 	}
 
 	reg, err := time.Parse(time.RFC3339, postInfo.Creation)
-
 	if err != nil {
 		return err
 	}

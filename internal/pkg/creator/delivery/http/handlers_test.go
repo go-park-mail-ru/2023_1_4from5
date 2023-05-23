@@ -13,7 +13,7 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	mockCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/mocks"
-	mock "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notifications/mocks"
+	mock "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notification/mocks"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/golang/mock/gomock"
@@ -50,7 +50,7 @@ var attachs = []*generated.Attachment{&generated.Attachment{
 var post = &generated.Post{
 	Id:              uuid.New().String(),
 	CreatorID:       uuid.New().String(),
-	Creation:        "2006-01-02 15:04:05 -0700 -0700",
+	Creation:        time.Now().Format(time.RFC3339),
 	LikesCount:      2,
 	CreatorPhoto:    uuid.New().String(),
 	CreatorName:     "test",

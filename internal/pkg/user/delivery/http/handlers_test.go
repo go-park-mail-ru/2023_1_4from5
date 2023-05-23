@@ -11,7 +11,7 @@ import (
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	mockAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/mocks"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
-	mockNotification "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notifications/mocks"
+	mockNotification "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notification/mocks"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/grpc/generated"
 	mock "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/mocks"
@@ -357,7 +357,7 @@ func TestGetProfile(t *testing.T) {
 						Login:        "testLogin",
 						Name:         "testName",
 						ProfilePhoto: "1",
-						Registration: "2006-01-02 15:04:05 -0700 -0700",
+						Registration: time.Now().Format(time.RFC3339),
 						IsCreator:    false,
 						CreatorID:    uuid.New().String(),
 						Error:        "",

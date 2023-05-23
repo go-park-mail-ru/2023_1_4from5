@@ -13,7 +13,7 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	mockCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/mocks"
-	mockNotification "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notifications/mocks"
+	mockNotification "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notification/mocks"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
