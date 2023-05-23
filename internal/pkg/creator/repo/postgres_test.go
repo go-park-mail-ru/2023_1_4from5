@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	"testing"
+	"time"
 )
 
 var userId = uuid.New()
@@ -628,6 +629,79 @@ func TestCreatorRepo_GetAllCreators(t *testing.T) {
 	}
 }
 
+func TestCreatorRepo_FindCreators(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("cant create mock: %s", err)
+	}
+	defer db.Close()
+
+	logger := zap.NewNop()
+	defer func(logger *zap.Logger) {
+		err = logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+	r := NewCreatorRepo(db, zapSugar)
+
+	tests := []struct {
+		name        string
+		mock        func()
+		expectedRes []models.Creator
+		expectedErr error
+	}{
+		{
+			name: "Ok",
+			mock: func() {
+				rows := sqlmock.NewRows([]string{"creator_id", "user_id", "name", "cover_photo", "followers_count", "description", "posts_count", "profile_photo"})
+				rows = rows.AddRow(creatorInfo.Id, creatorInfo.UserId, creatorInfo.Name, creatorInfo.CoverPhoto, creatorInfo.FollowersCount, creatorInfo.Description, creatorInfo.PostsCount, creatorInfo.ProfilePhoto)
+				rows = rows.AddRow(creatorInfo.Id, creatorInfo.UserId, creatorInfo.Name, creatorInfo.CoverPhoto, creatorInfo.FollowersCount, creatorInfo.Description, creatorInfo.PostsCount, creatorInfo.ProfilePhoto)
+				mock.ExpectQuery(`SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM creator`).
+					WithArgs("test").WillReturnRows(rows)
+			},
+			expectedRes: creators,
+			expectedErr: nil,
+		},
+		{
+			name: "Internal Error",
+			mock: func() {
+				mock.ExpectQuery(`SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM creator`).
+					WithArgs("test").WillReturnError(errors.New("test"))
+			},
+			expectedErr: models.InternalError,
+		},
+		{
+			name: "Internal Error wrong data type",
+			mock: func() {
+				rows := sqlmock.NewRows([]string{"creator_id", "user_id", "name", "cover_photo", "followers_count", "description", "posts_count", "profile_photo"})
+				rows = rows.AddRow(creatorInfo.Id, 11, creatorInfo.Name, creatorInfo.CoverPhoto, creatorInfo.FollowersCount, creatorInfo.Description, creatorInfo.PostsCount, creatorInfo.ProfilePhoto)
+				rows = rows.AddRow(creatorInfo.Id, creatorInfo.UserId, creatorInfo.Name, creatorInfo.CoverPhoto, creatorInfo.FollowersCount, creatorInfo.Description, creatorInfo.PostsCount, creatorInfo.ProfilePhoto)
+				mock.ExpectQuery(`SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM creator`).
+					WithArgs("test").WillReturnRows(rows)
+			},
+			expectedRes: creators,
+			expectedErr: models.InternalError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.mock()
+
+			got, err := r.FindCreators(context.Background(), "test")
+			if test.expectedErr != nil {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, test.expectedRes, got)
+			}
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
 func TestCreatorRepo_GetPage(t *testing.T) {
 	creatorPageRes2.Posts[0].IsAvailable = true
 	creatorPageRes2.Posts[0].IsLiked = true
@@ -1036,6 +1110,325 @@ func TestCreatorRepo_CheckIfFollow(t *testing.T) {
 			test.mock()
 
 			got, err := r.CheckIfFollow(context.Background(), userId, creatorId)
+			if test.expectedErr != nil {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, test.expectedRes, got)
+			}
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestCreatorRepo_CreatorNotificationInfo(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("cant create mock: %s", err)
+	}
+	defer db.Close()
+
+	logger := zap.NewNop()
+	defer func(logger *zap.Logger) {
+		err = logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+	r := NewCreatorRepo(db, zapSugar)
+
+	tests := []struct {
+		name        string
+		mock        func()
+		expectedErr error
+		expectedRes models.NotificationCreatorInfo
+	}{
+		{
+			name: "Ok",
+			mock: func() {
+				rows := sqlmock.NewRows([]string{"profile_photo", "name"}).AddRow(creatorId, "test")
+				mock.ExpectQuery(`SELECT profile_photo, name FROM creator WHERE`).WithArgs(creatorId).WillReturnRows(rows)
+			},
+			expectedErr: nil,
+			expectedRes: models.NotificationCreatorInfo{Name: "test", Photo: creatorId},
+		},
+
+		{
+			name: "Err",
+			mock: func() {
+				mock.ExpectQuery(`SELECT profile_photo, name FROM creator WHERE`).WithArgs(creatorId).WillReturnError(errors.New("test"))
+			},
+			expectedErr: models.InternalError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.mock()
+
+			got, err := r.CreatorNotificationInfo(context.Background(), creatorId)
+			if test.expectedErr != nil {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, test.expectedRes, got)
+			}
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestCreatorRepo_UpdateBalance(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("cant create mock: %s", err)
+	}
+	defer db.Close()
+
+	logger := zap.NewNop()
+	defer func(logger *zap.Logger) {
+		err = logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+	r := NewCreatorRepo(db, zapSugar)
+
+	tests := []struct {
+		name        string
+		mock        func()
+		expectedErr error
+		expectedRes float32
+	}{
+		{
+			name: "Ok",
+			mock: func() {
+				rows := sqlmock.NewRows([]string{"balance"}).AddRow(120.0)
+				mock.ExpectQuery(`UPDATE creator SET balance = balance`).WithArgs(100.0, creatorId).WillReturnRows(rows)
+			},
+			expectedErr: nil,
+			expectedRes: 120,
+		},
+
+		{
+			name: "Err",
+			mock: func() {
+				mock.ExpectQuery(`UPDATE creator SET balance = balance`).WithArgs(100.0, creatorId).WillReturnError(errors.New("test"))
+			},
+			expectedErr: models.InternalError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.mock()
+
+			got, err := r.UpdateBalance(context.Background(), models.CreatorTransfer{
+				Money:       100.0,
+				CreatorID:   creatorId,
+				PhoneNumber: "89999999",
+			})
+			if test.expectedErr != nil {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, test.expectedRes, got)
+			}
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+var testDate = time.Now()
+
+func TestCreatorRepo_StatisticsFirstDate(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("cant create mock: %s", err)
+	}
+	defer db.Close()
+
+	logger := zap.NewNop()
+	defer func(logger *zap.Logger) {
+		err = logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+	r := NewCreatorRepo(db, zapSugar)
+
+	tests := []struct {
+		name        string
+		mock        func()
+		expectedErr error
+		expectedRes string
+	}{
+		{
+			name: "Ok",
+			mock: func() {
+				rows := sqlmock.NewRows([]string{"month"}).AddRow(testDate.String())
+				mock.ExpectQuery(`SELECT MIN`).WithArgs(creatorId).WillReturnRows(rows)
+			},
+			expectedErr: nil,
+			expectedRes: testDate.String(),
+		},
+
+		{
+			name: "Err",
+			mock: func() {
+				mock.ExpectQuery(`SELECT MIN`).WithArgs(creatorId).WillReturnError(errors.New("test"))
+			},
+			expectedErr: models.InternalError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.mock()
+
+			got, err := r.StatisticsFirstDate(context.Background(), creatorId)
+			if test.expectedErr != nil {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, test.expectedRes, got)
+			}
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestCreatorRepo_GetCreatorBalance(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("cant create mock: %s", err)
+	}
+	defer db.Close()
+
+	logger := zap.NewNop()
+	defer func(logger *zap.Logger) {
+		err = logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+	r := NewCreatorRepo(db, zapSugar)
+
+	tests := []struct {
+		name        string
+		mock        func()
+		expectedErr error
+		expectedRes float32
+	}{
+		{
+			name: "Ok",
+			mock: func() {
+				rows := sqlmock.NewRows([]string{"balance"}).AddRow(100.0)
+				mock.ExpectQuery(`SELECT balance FROM creator WHERE`).WithArgs(creatorId).WillReturnRows(rows)
+			},
+			expectedErr: nil,
+			expectedRes: 100.0,
+		},
+
+		{
+			name: "Err",
+			mock: func() {
+				mock.ExpectQuery(`SELECT balance FROM creator WHERE`).WithArgs(creatorId).WillReturnError(errors.New("test"))
+			},
+			expectedErr: models.InternalError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.mock()
+
+			got, err := r.GetCreatorBalance(context.Background(), creatorId)
+			if test.expectedErr != nil {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, test.expectedRes, got)
+			}
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+var testStatDates = models.StatisticsDates{
+	CreatorId:   creatorId,
+	FirstMonth:  time.Now(),
+	SecondMonth: time.Now(),
+}
+
+func TestCreatorRepo_Statistics(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("cant create mock: %s", err)
+	}
+	defer db.Close()
+
+	logger := zap.NewNop()
+	defer func(logger *zap.Logger) {
+		err = logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+	r := NewCreatorRepo(db, zapSugar)
+
+	tests := []struct {
+		name        string
+		mock        func()
+		expectedErr error
+		expectedRes models.Statistics
+	}{
+		{
+			name: "Ok",
+			mock: func() {
+				rows := sqlmock.NewRows([]string{"posts_per_month", "subscriptions_bought", "donations_count", "money_from_donations", "money_from_subscriptions", "new_followers", "likes_count", "comments_count"}).AddRow(10, 10, 10, 10, 10, 10, 10, 10)
+				mock.ExpectQuery(`SELECT coalesce`).WithArgs(testStatDates.CreatorId, testStatDates.FirstMonth.Format(time.RFC3339), testStatDates.SecondMonth.Format(time.RFC3339)).WillReturnRows(rows)
+			},
+			expectedErr: nil,
+			expectedRes: models.Statistics{
+				CreatorId:              uuid.Nil,
+				PostsPerMonth:          10,
+				SubscriptionsBought:    10,
+				DonationsCount:         10,
+				MoneyFromDonations:     10,
+				MoneyFromSubscriptions: 10,
+				NewFollowers:           10,
+				LikesCount:             10,
+				CommentsCount:          10,
+			},
+		},
+
+		{
+			name: "Err",
+			mock: func() {
+				mock.ExpectQuery(`SELECT coalesce`).WithArgs(testStatDates.CreatorId, testStatDates.FirstMonth.Format(time.RFC3339), testStatDates.SecondMonth.Format(time.RFC3339)).WillReturnError(errors.New("test"))
+			},
+			expectedErr: models.InternalError,
+		},
+		{
+			name: "Err WrongData",
+			mock: func() {
+				mock.ExpectQuery(`SELECT coalesce`).WithArgs(testStatDates.CreatorId, testStatDates.FirstMonth.Format(time.RFC3339), testStatDates.SecondMonth.Format(time.RFC3339)).WillReturnError(sql.ErrNoRows)
+			},
+			expectedErr: models.WrongData,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.mock()
+
+			got, err := r.Statistics(context.Background(), testStatDates)
 			if test.expectedErr != nil {
 				assert.Error(t, err)
 			} else {

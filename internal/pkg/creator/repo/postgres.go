@@ -77,7 +77,7 @@ func (ur *CreatorRepo) UpdateBalance(ctx context.Context, transfer models.Creato
 		ur.logger.Error(err)
 		return 0, models.InternalError
 	}
-	return 0, nil
+	return newBalance, nil
 }
 
 func (r *CreatorRepo) GetUserSubscriptions(ctx context.Context, userId uuid.UUID) ([]uuid.UUID, error) {
@@ -450,6 +450,7 @@ func (r *CreatorRepo) Statistics(ctx context.Context, statsInput models.Statisti
 		return models.Statistics{}, models.WrongData
 	}
 	if err != nil {
+		fmt.Println(err)
 		r.logger.Error(err)
 		return models.Statistics{}, models.InternalError
 	}

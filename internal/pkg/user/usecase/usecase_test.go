@@ -226,3 +226,163 @@ func TestUserUsecase_UpdateProfileInfo(t *testing.T) {
 		})
 	}
 }
+
+func TestUserUsecase_BecomeCreator(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	mockUserRepo := mock.NewMockUserRepo(ctl)
+
+	tests := []struct {
+		name               string
+		mock               func()
+		expectedStatusCode error
+	}{
+		{
+			name: "OK",
+			mock: func() {
+				mockUserRepo.EXPECT().BecomeCreator(gomock.Any(), gomock.Any(), gomock.Any()).Return(uuid.New(), nil)
+			},
+			expectedStatusCode: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &UserUsecase{
+				repo: mockUserRepo,
+			}
+			test.mock()
+			_, err := h.BecomeCreator(context.Background(), models.BecameCreatorInfo{}, uuid.New())
+			require.Equal(t, test.expectedStatusCode, err, fmt.Errorf("%s :  expected %e, got %e,",
+				test.name, test.expectedStatusCode, err))
+		})
+	}
+}
+
+func TestUserUsecase_Donate(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	mockUserRepo := mock.NewMockUserRepo(ctl)
+
+	tests := []struct {
+		name               string
+		mock               func()
+		expectedStatusCode error
+	}{
+		{
+			name: "OK",
+			mock: func() {
+				mockUserRepo.EXPECT().Donate(gomock.Any(), gomock.Any()).Return(float32(10.0), nil)
+			},
+			expectedStatusCode: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &UserUsecase{
+				repo: mockUserRepo,
+			}
+			test.mock()
+			_, err := h.Donate(context.Background(), models.Donate{})
+			require.Equal(t, test.expectedStatusCode, err, fmt.Errorf("%s :  expected %e, got %e,",
+				test.name, test.expectedStatusCode, err))
+		})
+	}
+}
+
+func TestUserUsecase_UserSubscriptions(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	mockUserRepo := mock.NewMockUserRepo(ctl)
+
+	tests := []struct {
+		name               string
+		mock               func()
+		expectedStatusCode error
+	}{
+		{
+			name: "OK",
+			mock: func() {
+				mockUserRepo.EXPECT().UserSubscriptions(gomock.Any(), gomock.Any()).Return([]models.Subscription{}, nil)
+			},
+			expectedStatusCode: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &UserUsecase{
+				repo: mockUserRepo,
+			}
+			test.mock()
+			_, err := h.UserSubscriptions(context.Background(), uuid.New())
+			require.Equal(t, test.expectedStatusCode, err, fmt.Errorf("%s :  expected %e, got %e,",
+				test.name, test.expectedStatusCode, err))
+		})
+	}
+}
+
+func TestUserUsecase_DeletePhoto(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	mockUserRepo := mock.NewMockUserRepo(ctl)
+
+	tests := []struct {
+		name               string
+		mock               func()
+		expectedStatusCode error
+	}{
+		{
+			name: "OK",
+			mock: func() {
+				mockUserRepo.EXPECT().DeletePhoto(gomock.Any(), gomock.Any()).Return(nil)
+			},
+			expectedStatusCode: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &UserUsecase{
+				repo: mockUserRepo,
+			}
+			test.mock()
+			err := h.DeletePhoto(context.Background(), uuid.New())
+			require.Equal(t, test.expectedStatusCode, err, fmt.Errorf("%s :  expected %e, got %e,",
+				test.name, test.expectedStatusCode, err))
+		})
+	}
+}
+
+func TestUserUsecase_UserFollows(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+	mockUserRepo := mock.NewMockUserRepo(ctl)
+
+	tests := []struct {
+		name               string
+		mock               func()
+		expectedStatusCode error
+	}{
+		{
+			name: "OK",
+			mock: func() {
+				mockUserRepo.EXPECT().UserFollows(gomock.Any(), gomock.Any()).Return([]models.Follow{}, nil)
+			},
+			expectedStatusCode: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &UserUsecase{
+				repo: mockUserRepo,
+			}
+			test.mock()
+			_, err := h.UserFollows(context.Background(), uuid.New())
+			require.Equal(t, test.expectedStatusCode, err, fmt.Errorf("%s :  expected %e, got %e,",
+				test.name, test.expectedStatusCode, err))
+		})
+	}
+}

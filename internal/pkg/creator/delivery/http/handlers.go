@@ -127,7 +127,6 @@ func (h *CreatorHandler) TransferMoney(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if balance.Balance < transfer.Money {
-		fmt.Println(balance.Balance, transfer.Money)
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
