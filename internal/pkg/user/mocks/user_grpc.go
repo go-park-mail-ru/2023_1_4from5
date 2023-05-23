@@ -37,6 +37,26 @@ func (m *MockUserServiceClient) EXPECT() *MockUserServiceClientMockRecorder {
 	return m.recorder
 }
 
+// AddPaymentInfo mocks base method.
+func (m *MockUserServiceClient) AddPaymentInfo(ctx context.Context, in *generated.SubscriptionDetails, opts ...grpc.CallOption) (*proto.Empty, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AddPaymentInfo", varargs...)
+	ret0, _ := ret[0].(*proto.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddPaymentInfo indicates an expected call of AddPaymentInfo.
+func (mr *MockUserServiceClientMockRecorder) AddPaymentInfo(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPaymentInfo", reflect.TypeOf((*MockUserServiceClient)(nil).AddPaymentInfo), varargs...)
+}
+
 // BecomeCreator mocks base method.
 func (m *MockUserServiceClient) BecomeCreator(ctx context.Context, in *generated.BecameCreatorInfoMessage, opts ...grpc.CallOption) (*proto.UUIDResponse, error) {
 	m.ctrl.T.Helper()
@@ -158,14 +178,14 @@ func (mr *MockUserServiceClientMockRecorder) GetProfile(ctx, in interface{}, opt
 }
 
 // Subscribe mocks base method.
-func (m *MockUserServiceClient) Subscribe(ctx context.Context, in *generated.SubscriptionDetails, opts ...grpc.CallOption) (*proto.Empty, error) {
+func (m *MockUserServiceClient) Subscribe(ctx context.Context, in *generated.PaymentInfo, opts ...grpc.CallOption) (*generated.SubscriptionName, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Subscribe", varargs...)
-	ret0, _ := ret[0].(*proto.Empty)
+	ret0, _ := ret[0].(*generated.SubscriptionName)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -320,6 +340,21 @@ func (m *MockUserServiceServer) EXPECT() *MockUserServiceServerMockRecorder {
 	return m.recorder
 }
 
+// AddPaymentInfo mocks base method.
+func (m *MockUserServiceServer) AddPaymentInfo(arg0 context.Context, arg1 *generated.SubscriptionDetails) (*proto.Empty, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddPaymentInfo", arg0, arg1)
+	ret0, _ := ret[0].(*proto.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddPaymentInfo indicates an expected call of AddPaymentInfo.
+func (mr *MockUserServiceServerMockRecorder) AddPaymentInfo(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPaymentInfo", reflect.TypeOf((*MockUserServiceServer)(nil).AddPaymentInfo), arg0, arg1)
+}
+
 // BecomeCreator mocks base method.
 func (m *MockUserServiceServer) BecomeCreator(arg0 context.Context, arg1 *generated.BecameCreatorInfoMessage) (*proto.UUIDResponse, error) {
 	m.ctrl.T.Helper()
@@ -411,10 +446,10 @@ func (mr *MockUserServiceServerMockRecorder) GetProfile(arg0, arg1 interface{}) 
 }
 
 // Subscribe mocks base method.
-func (m *MockUserServiceServer) Subscribe(arg0 context.Context, arg1 *generated.SubscriptionDetails) (*proto.Empty, error) {
+func (m *MockUserServiceServer) Subscribe(arg0 context.Context, arg1 *generated.PaymentInfo) (*generated.SubscriptionName, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Subscribe", arg0, arg1)
-	ret0, _ := ret[0].(*proto.Empty)
+	ret0, _ := ret[0].(*generated.SubscriptionName)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

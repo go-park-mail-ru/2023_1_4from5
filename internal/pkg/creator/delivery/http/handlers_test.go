@@ -150,7 +150,7 @@ func TestNewCreatorHandler(t *testing.T) {
 	zapSugar := logger.Sugar()
 
 	testHandler := NewCreatorHandler(creatorClient, authClient, notify, zapSugar)
-	if testHandler.authClient != authClient || testHandler.creatorClient != creatorClient {
+	if testHandler.authClient != authClient || testHandler.creatorClient != creatorClient || testHandler.notificationApp != notify {
 		t.Error("bad constructor")
 	}
 }

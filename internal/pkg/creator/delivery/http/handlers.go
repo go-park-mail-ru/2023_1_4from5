@@ -25,11 +25,11 @@ import (
 type CreatorHandler struct {
 	creatorClient   generatedCreator.CreatorServiceClient
 	authClient      generatedAuth.AuthServiceClient
-	notificationApp *notifications.NotificationApp
+	notificationApp notifications.NotificationApp
 	logger          *zap.SugaredLogger
 }
 
-func NewCreatorHandler(creatorClient generatedCreator.CreatorServiceClient, authClient generatedAuth.AuthServiceClient, na *notifications.NotificationApp, logger *zap.SugaredLogger) *CreatorHandler {
+func NewCreatorHandler(creatorClient generatedCreator.CreatorServiceClient, authClient generatedAuth.AuthServiceClient, na notifications.NotificationApp, logger *zap.SugaredLogger) *CreatorHandler {
 	return &CreatorHandler{
 		creatorClient:   creatorClient,
 		authClient:      authClient,

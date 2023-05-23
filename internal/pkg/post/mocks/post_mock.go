@@ -94,10 +94,10 @@ func (mr *MockPostUsecaseMockRecorder) EditPost(ctx, postData interface{}) *gomo
 }
 
 // GetPost mocks base method.
-func (m *MockPostUsecase) GetPost(ctx context.Context, postID, userID uuid.UUID) (models.Post, error) {
+func (m *MockPostUsecase) GetPost(ctx context.Context, postID, userID uuid.UUID) (models.PostWithComments, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPost", ctx, postID, userID)
-	ret0, _ := ret[0].(models.Post)
+	ret0, _ := ret[0].(models.PostWithComments)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -121,6 +121,20 @@ func (m *MockPostUsecase) IsCreator(ctx context.Context, userID, creatorID uuid.
 func (mr *MockPostUsecaseMockRecorder) IsCreator(ctx, userID, creatorID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsCreator", reflect.TypeOf((*MockPostUsecase)(nil).IsCreator), ctx, userID, creatorID)
+}
+
+// IsPostAvailable mocks base method.
+func (m *MockPostUsecase) IsPostAvailable(ctx context.Context, postID, userID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsPostAvailable", ctx, postID, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IsPostAvailable indicates an expected call of IsPostAvailable.
+func (mr *MockPostUsecaseMockRecorder) IsPostAvailable(ctx, postID, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPostAvailable", reflect.TypeOf((*MockPostUsecase)(nil).IsPostAvailable), ctx, postID, userID)
 }
 
 // IsPostOwner mocks base method.
@@ -231,6 +245,21 @@ func (m *MockPostRepo) EditPost(ctx context.Context, postData models.PostEditDat
 func (mr *MockPostRepoMockRecorder) EditPost(ctx, postData interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EditPost", reflect.TypeOf((*MockPostRepo)(nil).EditPost), ctx, postData)
+}
+
+// GetComments mocks base method.
+func (m *MockPostRepo) GetComments(ctx context.Context, postID, userID uuid.UUID) ([]models.Comment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetComments", ctx, postID, userID)
+	ret0, _ := ret[0].([]models.Comment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetComments indicates an expected call of GetComments.
+func (mr *MockPostRepoMockRecorder) GetComments(ctx, postID, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComments", reflect.TypeOf((*MockPostRepo)(nil).GetComments), ctx, postID, userID)
 }
 
 // GetPost mocks base method.

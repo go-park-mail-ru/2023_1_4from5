@@ -26,11 +26,11 @@ import (
 type UserHandler struct {
 	userClient      generatedUser.UserServiceClient
 	authClient      generatedAuth.AuthServiceClient
-	notificationApp *notifications.NotificationApp
+	notificationApp notifications.NotificationApp
 	logger          *zap.SugaredLogger
 }
 
-func NewUserHandler(userClient generatedUser.UserServiceClient, auc generatedAuth.AuthServiceClient, na *notifications.NotificationApp, logger *zap.SugaredLogger) *UserHandler {
+func NewUserHandler(userClient generatedUser.UserServiceClient, auc generatedAuth.AuthServiceClient, na notifications.NotificationApp, logger *zap.SugaredLogger) *UserHandler {
 	return &UserHandler{
 		userClient:      userClient,
 		authClient:      auc,
@@ -757,7 +757,7 @@ func (h *UserHandler) Payment(w http.ResponseWriter, r *http.Request) {
 		_ = h.notificationApp.SendUserNotification(models.Notification{
 			Topic: fmt.Sprintf("%s-%s", paymentInfo.CreatorId.String(), "creator"),
 			Title: "Новый донат",
-			Body:  fmt.Sprintf("Вам пришёл новый донат на сумму %s", paymentInfo.Money),
+			Body:  fmt.Sprintf("Вам пришёл новый донат на сумму %f", paymentInfo.Money),
 		}, r.Context())
 
 		utils.Response(w, http.StatusOK, nil)

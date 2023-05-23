@@ -36,6 +36,20 @@ func (m *MockUserUsecase) EXPECT() *MockUserUsecaseMockRecorder {
 	return m.recorder
 }
 
+// AddPaymentInfo mocks base method.
+func (m *MockUserUsecase) AddPaymentInfo(ctx context.Context, subscription models.SubscriptionDetails) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddPaymentInfo", ctx, subscription)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddPaymentInfo indicates an expected call of AddPaymentInfo.
+func (mr *MockUserUsecaseMockRecorder) AddPaymentInfo(ctx, subscription interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPaymentInfo", reflect.TypeOf((*MockUserUsecase)(nil).AddPaymentInfo), ctx, subscription)
+}
+
 // BecomeCreator mocks base method.
 func (m *MockUserUsecase) BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
@@ -82,18 +96,18 @@ func (mr *MockUserUsecaseMockRecorder) DeletePhoto(ctx, userId interface{}) *gom
 }
 
 // Donate mocks base method.
-func (m *MockUserUsecase) Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int64, error) {
+func (m *MockUserUsecase) Donate(ctx context.Context, donateInfo models.Donate) (float32, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Donate", ctx, donateInfo, userID)
-	ret0, _ := ret[0].(int64)
+	ret := m.ctrl.Call(m, "Donate", ctx, donateInfo)
+	ret0, _ := ret[0].(float32)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Donate indicates an expected call of Donate.
-func (mr *MockUserUsecaseMockRecorder) Donate(ctx, donateInfo, userID interface{}) *gomock.Call {
+func (mr *MockUserUsecaseMockRecorder) Donate(ctx, donateInfo interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Donate", reflect.TypeOf((*MockUserUsecase)(nil).Donate), ctx, donateInfo, userID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Donate", reflect.TypeOf((*MockUserUsecase)(nil).Donate), ctx, donateInfo)
 }
 
 // Follow mocks base method.
@@ -126,17 +140,18 @@ func (mr *MockUserUsecaseMockRecorder) GetProfile(ctx, userId interface{}) *gomo
 }
 
 // Subscribe mocks base method.
-func (m *MockUserUsecase) Subscribe(ctx context.Context, subscription models.SubscriptionDetails) error {
+func (m *MockUserUsecase) Subscribe(ctx context.Context, paymentInfo uuid.UUID, money float32) (models.NotificationSubInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Subscribe", ctx, subscription)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "Subscribe", ctx, paymentInfo, money)
+	ret0, _ := ret[0].(models.NotificationSubInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Subscribe indicates an expected call of Subscribe.
-func (mr *MockUserUsecaseMockRecorder) Subscribe(ctx, subscription interface{}) *gomock.Call {
+func (mr *MockUserUsecaseMockRecorder) Subscribe(ctx, paymentInfo, money interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockUserUsecase)(nil).Subscribe), ctx, subscription)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockUserUsecase)(nil).Subscribe), ctx, paymentInfo, money)
 }
 
 // Unfollow mocks base method.
@@ -249,6 +264,20 @@ func (m *MockUserRepo) EXPECT() *MockUserRepoMockRecorder {
 	return m.recorder
 }
 
+// AddPaymentInfo mocks base method.
+func (m *MockUserRepo) AddPaymentInfo(ctx context.Context, subscription models.SubscriptionDetails) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddPaymentInfo", ctx, subscription)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddPaymentInfo indicates an expected call of AddPaymentInfo.
+func (mr *MockUserRepoMockRecorder) AddPaymentInfo(ctx, subscription interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPaymentInfo", reflect.TypeOf((*MockUserRepo)(nil).AddPaymentInfo), ctx, subscription)
+}
+
 // BecomeCreator mocks base method.
 func (m *MockUserRepo) BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
@@ -295,6 +324,21 @@ func (mr *MockUserRepoMockRecorder) CheckIfFollow(ctx, userId, creatorId interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckIfFollow", reflect.TypeOf((*MockUserRepo)(nil).CheckIfFollow), ctx, userId, creatorId)
 }
 
+// CheckPaymentInfo mocks base method.
+func (m *MockUserRepo) CheckPaymentInfo(ctx context.Context, paymentInfo uuid.UUID) (models.SubscriptionDetails, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckPaymentInfo", ctx, paymentInfo)
+	ret0, _ := ret[0].(models.SubscriptionDetails)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CheckPaymentInfo indicates an expected call of CheckPaymentInfo.
+func (mr *MockUserRepoMockRecorder) CheckPaymentInfo(ctx, paymentInfo interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckPaymentInfo", reflect.TypeOf((*MockUserRepo)(nil).CheckPaymentInfo), ctx, paymentInfo)
+}
+
 // DeletePhoto mocks base method.
 func (m *MockUserRepo) DeletePhoto(ctx context.Context, userId uuid.UUID) error {
 	m.ctrl.T.Helper()
@@ -310,18 +354,18 @@ func (mr *MockUserRepoMockRecorder) DeletePhoto(ctx, userId interface{}) *gomock
 }
 
 // Donate mocks base method.
-func (m *MockUserRepo) Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int64, error) {
+func (m *MockUserRepo) Donate(ctx context.Context, donateInfo models.Donate) (float32, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Donate", ctx, donateInfo, userID)
-	ret0, _ := ret[0].(int64)
+	ret := m.ctrl.Call(m, "Donate", ctx, donateInfo)
+	ret0, _ := ret[0].(float32)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Donate indicates an expected call of Donate.
-func (mr *MockUserRepoMockRecorder) Donate(ctx, donateInfo, userID interface{}) *gomock.Call {
+func (mr *MockUserRepoMockRecorder) Donate(ctx, donateInfo interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Donate", reflect.TypeOf((*MockUserRepo)(nil).Donate), ctx, donateInfo, userID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Donate", reflect.TypeOf((*MockUserRepo)(nil).Donate), ctx, donateInfo)
 }
 
 // Follow mocks base method.
@@ -336,6 +380,21 @@ func (m *MockUserRepo) Follow(ctx context.Context, userId, creatorId uuid.UUID) 
 func (mr *MockUserRepoMockRecorder) Follow(ctx, userId, creatorId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Follow", reflect.TypeOf((*MockUserRepo)(nil).Follow), ctx, userId, creatorId)
+}
+
+// GetCreatorID mocks base method.
+func (m *MockUserRepo) GetCreatorID(ctx context.Context, subscriptionID uuid.UUID) (uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCreatorID", ctx, subscriptionID)
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCreatorID indicates an expected call of GetCreatorID.
+func (mr *MockUserRepoMockRecorder) GetCreatorID(ctx, subscriptionID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCreatorID", reflect.TypeOf((*MockUserRepo)(nil).GetCreatorID), ctx, subscriptionID)
 }
 
 // GetUserProfile mocks base method.
@@ -354,11 +413,12 @@ func (mr *MockUserRepoMockRecorder) GetUserProfile(ctx, id interface{}) *gomock.
 }
 
 // Subscribe mocks base method.
-func (m *MockUserRepo) Subscribe(ctx context.Context, subscription models.SubscriptionDetails) error {
+func (m *MockUserRepo) Subscribe(ctx context.Context, subscription models.SubscriptionDetails) (models.NotificationSubInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Subscribe", ctx, subscription)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(models.NotificationSubInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Subscribe indicates an expected call of Subscribe.
@@ -393,6 +453,20 @@ func (m *MockUserRepo) UpdatePassword(ctx context.Context, id uuid.UUID, passwor
 func (mr *MockUserRepoMockRecorder) UpdatePassword(ctx, id, password interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePassword", reflect.TypeOf((*MockUserRepo)(nil).UpdatePassword), ctx, id, password)
+}
+
+// UpdatePaymentInfo mocks base method.
+func (m *MockUserRepo) UpdatePaymentInfo(ctx context.Context, money float32, paymentInfo uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatePaymentInfo", ctx, money, paymentInfo)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdatePaymentInfo indicates an expected call of UpdatePaymentInfo.
+func (mr *MockUserRepoMockRecorder) UpdatePaymentInfo(ctx, money, paymentInfo interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePaymentInfo", reflect.TypeOf((*MockUserRepo)(nil).UpdatePaymentInfo), ctx, money, paymentInfo)
 }
 
 // UpdateProfileInfo mocks base method.

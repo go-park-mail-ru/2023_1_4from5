@@ -11,6 +11,7 @@ import (
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	mockAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/mocks"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
+	mockNotification "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notifications/mocks"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/grpc/generated"
 	mock "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/mocks"
@@ -64,6 +65,7 @@ func TestNewUserHandler(t *testing.T) {
 
 	authClient := mockAuth.NewMockAuthServiceClient(ctl)
 	userClient := mock.NewMockUserServiceClient(ctl)
+	notify := mockNotification.NewMockNotificationApp(ctl)
 
 	logger := zap.NewNop()
 
@@ -75,9 +77,112 @@ func TestNewUserHandler(t *testing.T) {
 	}(logger)
 	zapSugar := logger.Sugar()
 
-	testHandler := NewUserHandler(userClient, authClient, zapSugar)
+	testHandler := NewUserHandler(userClient, authClient, notify, zapSugar)
 	if testHandler.userClient != userClient || testHandler.authClient != authClient {
 		t.Error("bad constructor")
+	}
+}
+
+func TestUserHandler_UserSubscriptions(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	os.Setenv("TOKEN_SECRET", "TEST")
+	tkn := &usecase.Tokenator{}
+	const body = "body"
+	token, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: uuid.New()})
+
+	authClient := mockAuth.NewMockAuthServiceClient(ctl)
+	userClient := mock.NewMockUserServiceClient(ctl)
+
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	tests := []struct {
+		name             string
+		expectedResponse int
+		mock             func() *http.Request
+	}{
+		{
+			name:             "OK",
+			expectedResponse: http.StatusOK,
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/subscriptions", strings.NewReader(fmt.Sprint()))
+				setJWTToken(r, token)
+				userClient.EXPECT().
+					UserSubscriptions(gomock.Any(), gomock.Any()).
+					Return(&generated.SubscriptionsMessage{
+						Subscriptions: []*generatedCommon.Subscription{&generatedCommon.Subscription{
+							Id:           uuid.New().String(),
+							Creator:      uuid.New().String(),
+							CreatorName:  uuid.New().String(),
+							CreatorPhoto: uuid.New().String(),
+							MonthCost:    100,
+							Title:        "test",
+							Description:  "test",
+						}},
+						Error: "",
+					}, nil)
+				return r
+
+			},
+		},
+		{
+			name:             "Unauthorized",
+			expectedResponse: http.StatusUnauthorized,
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/subscriptions", strings.NewReader(fmt.Sprint()))
+				setJWTToken(r, "1")
+				return r
+			},
+		},
+		{
+			name:             "Error from user service",
+			expectedResponse: http.StatusInternalServerError,
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/subscriptions", strings.NewReader(fmt.Sprint()))
+				setJWTToken(r, token)
+				userClient.EXPECT().
+					UserSubscriptions(gomock.Any(), gomock.Any()).
+					Return(&generated.SubscriptionsMessage{
+						Subscriptions: []*generatedCommon.Subscription{&generatedCommon.Subscription{
+							Id:           uuid.New().String(),
+							Creator:      uuid.New().String(),
+							CreatorName:  uuid.New().String(),
+							CreatorPhoto: uuid.New().String(),
+							MonthCost:    100,
+							Title:        "test",
+							Description:  "test",
+						}},
+						Error: "",
+					}, errors.New("test"))
+				return r
+
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &UserHandler{
+				userClient: userClient,
+				authClient: authClient,
+				logger:     zapSugar,
+			}
+			w := httptest.NewRecorder()
+			r := test.mock()
+
+			h.UserSubscriptions(w, r)
+			require.Equal(t, test.expectedResponse, w.Code, fmt.Errorf("%s :  expected %d, got %d,",
+				test.name, test.expectedResponse, w.Code))
+		})
 	}
 }
 
@@ -875,239 +980,6 @@ func TestUserHandler_Unfollow(t *testing.T) {
 			r := test.mock()
 
 			h.Unfollow(w, r)
-			require.Equal(t, test.expectedResponse, w.Code, fmt.Errorf("%s :  expected %d, got %d,",
-				test.name, test.expectedResponse, w.Code))
-		})
-	}
-}
-
-func TestUserHandler_Donate(t *testing.T) {
-	ctl := gomock.NewController(t)
-	defer ctl.Finish()
-
-	id := uuid.New()
-	os.Setenv("CSRF_SECRET", "TEST")
-	tokenCSRF, _ := token.GetCSRFToken(models.User{Login: testUser.Login, Id: id})
-	os.Setenv("TOKEN_SECRET", "TEST")
-	tkn := &usecase.Tokenator{}
-	token, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: id})
-	authClient := mockAuth.NewMockAuthServiceClient(ctl)
-	userClient := mock.NewMockUserServiceClient(ctl)
-
-	logger := zap.NewNop()
-
-	defer func(logger *zap.Logger) {
-		err := logger.Sync()
-		if err != nil {
-			return
-		}
-	}(logger)
-	zapSugar := logger.Sugar()
-
-	tests := []struct {
-		name             string
-		expectedResponse int
-		mock             func() *http.Request
-	}{
-		{
-			name:             "OK",
-			expectedResponse: http.StatusOK,
-			mock: func() *http.Request {
-				r := httptest.NewRequest("PUT", "/donate", bytes.NewReader(bodyPrepare(models.Donate{
-					MoneyCount: 100,
-					CreatorID:  uuid.New(),
-				})))
-				setJWTToken(r, token)
-				setCSRFToken(r, tokenCSRF)
-				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
-					UserVersion: int64(1),
-					Error:       "",
-				}, nil)
-				userClient.EXPECT().Donate(gomock.Any(), gomock.Any()).Return(&generated.DonateResponse{
-					MoneyCount: 100,
-					Error:      "",
-				}, nil)
-				return r
-
-			},
-		},
-		{
-			name:             "err from donate",
-			expectedResponse: http.StatusInternalServerError,
-			mock: func() *http.Request {
-				r := httptest.NewRequest("PUT", "/donate", bytes.NewReader(bodyPrepare(models.Donate{
-					MoneyCount: 100,
-					CreatorID:  uuid.New(),
-				})))
-				setJWTToken(r, token)
-				setCSRFToken(r, tokenCSRF)
-				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
-					UserVersion: int64(1),
-					Error:       "",
-				}, nil)
-				userClient.EXPECT().Donate(gomock.Any(), gomock.Any()).Return(&generated.DonateResponse{
-					MoneyCount: 100,
-					Error:      "",
-				}, errors.New("test"))
-				return r
-			},
-		},
-		{
-			name:             "err from donate wrong data",
-			expectedResponse: http.StatusBadRequest,
-			mock: func() *http.Request {
-				r := httptest.NewRequest("PUT", "/donate", bytes.NewReader(bodyPrepare(models.Donate{
-					MoneyCount: 100,
-					CreatorID:  uuid.New(),
-				})))
-				setJWTToken(r, token)
-				setCSRFToken(r, tokenCSRF)
-				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
-					UserVersion: int64(1),
-					Error:       "",
-				}, nil)
-				userClient.EXPECT().Donate(gomock.Any(), gomock.Any()).Return(&generated.DonateResponse{
-					MoneyCount: 100,
-					Error:      models.WrongData.Error(),
-				}, nil)
-				return r
-
-			},
-		},
-		{
-			name:             "err from donate internal error",
-			expectedResponse: http.StatusInternalServerError,
-			mock: func() *http.Request {
-				r := httptest.NewRequest("PUT", "/donate", bytes.NewReader(bodyPrepare(models.Donate{
-					MoneyCount: 100,
-					CreatorID:  uuid.New(),
-				})))
-				setJWTToken(r, token)
-				setCSRFToken(r, tokenCSRF)
-				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
-					UserVersion: int64(1),
-					Error:       "",
-				}, nil)
-				userClient.EXPECT().Donate(gomock.Any(), gomock.Any()).Return(&generated.DonateResponse{
-					MoneyCount: 100,
-					Error:      models.InternalError.Error(),
-				}, nil)
-				return r
-
-			},
-		},
-		{
-			name:             "Err from CheckUserVersion",
-			expectedResponse: http.StatusInternalServerError,
-			mock: func() *http.Request {
-				r := httptest.NewRequest("PUT", "/donate", bytes.NewReader(bodyPrepare(models.Donate{
-					MoneyCount: 100,
-					CreatorID:  uuid.New(),
-				})))
-				setJWTToken(r, token)
-				setCSRFToken(r, tokenCSRF)
-				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
-					UserVersion: int64(1),
-					Error:       "",
-				}, errors.New("test"))
-				return r
-
-			},
-		},
-		{
-			name:             "Err from CheckUserVersion",
-			expectedResponse: http.StatusForbidden,
-			mock: func() *http.Request {
-				r := httptest.NewRequest("PUT", "/donate", bytes.NewReader(bodyPrepare(models.Donate{
-					MoneyCount: 100,
-					CreatorID:  uuid.New(),
-				})))
-				setJWTToken(r, token)
-				setCSRFToken(r, tokenCSRF)
-				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
-					UserVersion: int64(1),
-					Error:       "test",
-				}, nil)
-				return r
-
-			},
-		},
-		{
-			name: "Get CSRF with error",
-			mock: func() *http.Request {
-				r := httptest.NewRequest("GET", "/donate", nil)
-
-				setJWTToken(r, token)
-				os.Unsetenv("CSRF_SECRET")
-
-				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
-					UserVersion: int64(1),
-					Error:       "",
-				}, nil)
-				return r
-			},
-			expectedResponse: http.StatusUnauthorized,
-		},
-		{
-			name: "Get CSRF",
-			mock: func() *http.Request {
-				r := httptest.NewRequest("GET", "/donate", nil)
-
-				setJWTToken(r, token)
-				os.Setenv("CSRF_SECRET", "TEST")
-
-				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
-					UserVersion: int64(1),
-					Error:       "",
-				}, nil)
-				return r
-			},
-			expectedResponse: http.StatusOK,
-		},
-		{
-			name: "Wrong Token",
-			mock: func() *http.Request {
-				r := httptest.NewRequest("PUT", "/donate",
-					nil)
-
-				r.AddCookie(&http.Cookie{
-					Name:     "SSID",
-					Value:    "1",
-					Expires:  time.Time{},
-					HttpOnly: true,
-				})
-
-				return r
-			},
-			expectedResponse: http.StatusUnauthorized,
-		},
-		{
-			name:             "Wrong data",
-			expectedResponse: http.StatusBadRequest,
-			mock: func() *http.Request {
-				r := httptest.NewRequest("PUT", "/donate", bytes.NewReader([]byte("11")))
-				setJWTToken(r, token)
-				setCSRFToken(r, tokenCSRF)
-				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
-					UserVersion: int64(1),
-					Error:       "",
-				}, nil)
-				return r
-
-			},
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			h := &UserHandler{
-				userClient: userClient,
-				authClient: authClient,
-				logger:     zapSugar,
-			}
-			w := httptest.NewRecorder()
-			r := test.mock()
-
-			h.Donate(w, r)
 			require.Equal(t, test.expectedResponse, w.Code, fmt.Errorf("%s :  expected %d, got %d,",
 				test.name, test.expectedResponse, w.Code))
 		})
