@@ -22,3 +22,9 @@ type NotificationCreatorInfo struct {
 	Name  string
 	Photo uuid.UUID
 }
+
+//easyjson:skip
+type NotificationSubInfo struct {
+	SubscriptionName string
+	CreatorID        uuid.UUID
+}

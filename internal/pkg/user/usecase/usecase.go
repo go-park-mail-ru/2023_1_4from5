@@ -42,22 +42,22 @@ func (uc *UserUsecase) Unfollow(ctx context.Context, userId, creatorId uuid.UUID
 	return uc.repo.Unfollow(ctx, userId, creatorId)
 }
 
-func (uc *UserUsecase) Subscribe(ctx context.Context, paymentInfo uuid.UUID, money float32) (string, error) {
+func (uc *UserUsecase) Subscribe(ctx context.Context, paymentInfo uuid.UUID, money float32) (models.NotificationSubInfo, error) {
 	subscription, err := uc.repo.CheckPaymentInfo(ctx, paymentInfo)
 	if err != nil {
-		return "", err
+		return models.NotificationSubInfo{}, err
 	}
 	subscription.CreatorId, err = uc.repo.GetCreatorID(ctx, subscription.Id)
 	if err != nil {
-		return "", err
+		return models.NotificationSubInfo{}, err
 	}
 	err = uc.repo.UpdatePaymentInfo(ctx, money, paymentInfo)
 	if isFollowing, err := uc.repo.CheckIfFollow(ctx, subscription.UserID, subscription.CreatorId); err == models.InternalError {
-		return "", err
+		return models.NotificationSubInfo{}, err
 	} else if isFollowing == false {
 		err = uc.repo.Follow(ctx, subscription.UserID, subscription.CreatorId)
 		if err == models.InternalError {
-			return "", err
+			return models.NotificationSubInfo{}, err
 		}
 	}
 	return uc.repo.Subscribe(ctx, subscription)
