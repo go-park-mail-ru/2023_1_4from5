@@ -96,7 +96,7 @@ func (h GrpcCreatorHandler) GetFeed(ctx context.Context, in *generatedCommon.UUI
 		postsProto.Posts = append(postsProto.Posts, &generatedCreator.Post{
 			Id:            post.Id.String(),
 			CreatorID:     post.Creator.String(),
-			Creation:      post.Creation.String(),
+			Creation:      post.Creation.Format(time.RFC3339),
 			CreatorName:   post.CreatorName,
 			LikesCount:    post.LikesCount,
 			CommentsCount: post.CommentsCount,
@@ -173,7 +173,7 @@ func (h GrpcCreatorHandler) GetPage(ctx context.Context, in *generatedCreator.Us
 		creatorPage.Posts = append(creatorPage.Posts, &generatedCreator.Post{
 			Id:            post.Id.String(),
 			CreatorID:     post.Creator.String(),
-			Creation:      post.Creation.String(),
+			Creation:      post.Creation.Format(time.RFC3339),
 			CreatorName:   post.CreatorName,
 			LikesCount:    post.LikesCount,
 			CommentsCount: post.CommentsCount,
@@ -539,7 +539,7 @@ func (h GrpcCreatorHandler) GetPost(ctx context.Context, in *generatedCreator.Po
 			UserPhoto:  v.UserPhoto.String(),
 			PostID:     v.PostID.String(),
 			Text:       v.Text,
-			Creation:   v.Creation.String(),
+			Creation:   v.Creation.Format(time.RFC3339),
 			LikesCount: v.LikesCount,
 			IsOwner:    v.IsOwner,
 			IsLiked:    v.IsLiked,
@@ -549,7 +549,7 @@ func (h GrpcCreatorHandler) GetPost(ctx context.Context, in *generatedCreator.Po
 	return &generatedCreator.PostWithComments{Error: "", Post: &generatedCreator.Post{
 		Id:              post.Post.Id.String(),
 		CreatorID:       post.Post.Creator.String(),
-		Creation:        post.Post.Creation.String(),
+		Creation:        post.Post.Creation.Format(time.RFC3339),
 		CreatorName:     post.Post.CreatorName,
 		LikesCount:      post.Post.LikesCount,
 		CreatorPhoto:    post.Post.CreatorPhoto.String(),
@@ -891,8 +891,11 @@ func (h GrpcCreatorHandler) Statistics(ctx context.Context, in *generatedCreator
 		return &generatedCreator.Stat{Error: models.WrongData.Error()}, nil
 	}
 
-	firstDate, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", in.FirstDate)
-	secondDate, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", in.SecondDate)
+	firstDate, err := time.Parse(time.RFC3339, in.FirstDate)
+	if err != nil {
+		return &generatedCreator.Stat{Error: models.WrongData.Error()}, nil
+	}
+	secondDate, err := time.Parse(time.RFC3339, in.SecondDate)
 	if err != nil {
 		return &generatedCreator.Stat{Error: models.WrongData.Error()}, nil
 	}

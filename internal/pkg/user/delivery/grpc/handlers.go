@@ -25,6 +25,9 @@ func NewGrpcUserHandler(uc user.UserUsecase) *GrpcUserHandler {
 
 func (h GrpcUserHandler) Follow(ctx context.Context, in *generatedUser.FollowMessage) (*generatedCommon.Empty, error) {
 	userId, err := uuid.Parse(in.UserID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
 	creatorId, err := uuid.Parse(in.CreatorID)
 	if err != nil {
 		return &generatedCommon.Empty{Error: err.Error()}, nil
@@ -38,6 +41,9 @@ func (h GrpcUserHandler) Follow(ctx context.Context, in *generatedUser.FollowMes
 
 func (h GrpcUserHandler) Unfollow(ctx context.Context, in *generatedUser.FollowMessage) (*generatedCommon.Empty, error) {
 	userId, err := uuid.Parse(in.UserID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
 	creatorId, err := uuid.Parse(in.CreatorID)
 	if err != nil {
 		return &generatedCommon.Empty{Error: err.Error()}, nil

@@ -99,7 +99,12 @@ func run() error {
 	http.Handle("/", r)
 	httpSrv := http.Server{Handler: r, Addr: ":8031"}
 
-	go httpSrv.ListenAndServe()
+	go func() {
+		err := httpSrv.ListenAndServe()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}()
 
 	fmt.Print("creator running on: ", srv.Addr())
 	return server.Serve(srv)

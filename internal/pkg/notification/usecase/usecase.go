@@ -4,11 +4,9 @@ import (
 	"context"
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/messaging"
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"go.uber.org/zap"
 	"google.golang.org/api/option"
-	"strconv"
 )
 
 type NotificationApp struct {
@@ -42,13 +40,12 @@ func (na *NotificationApp) AddUserToNotificationTopic(topic string, token models
 
 	registrationTokens := []string{token.Token}
 
-	response, err := client.SubscribeToTopic(ctx, registrationTokens, topic)
+	_, err = client.SubscribeToTopic(ctx, registrationTokens, topic)
 	if err != nil {
 		na.logger.Error(err)
 		return err
 	}
 
-	fmt.Println(strconv.Itoa(response.SuccessCount) + " tokens were subscribed successfully")
 	return nil
 }
 
@@ -61,13 +58,12 @@ func (na *NotificationApp) RemoveUserFromNotificationTopic(topic string, token m
 
 	registrationTokens := []string{token.Token}
 
-	response, err := client.UnsubscribeFromTopic(ctx, registrationTokens, topic)
+	_, err = client.UnsubscribeFromTopic(ctx, registrationTokens, topic)
 	if err != nil {
 		na.logger.Error(err)
 		return err
 	}
 
-	fmt.Println(strconv.Itoa(response.SuccessCount) + " tokens were subscribed successfully")
 	return nil
 }
 
@@ -86,11 +82,10 @@ func (na *NotificationApp) SendUserNotification(notification models.Notification
 		},
 		Topic: notification.Topic,
 	}
-	response, err := client.Send(ctx, message)
+	_, err = client.Send(ctx, message)
 	if err != nil {
 		na.logger.Error(err)
 		return err
 	}
-	fmt.Println("Successfully sent message:", response)
 	return nil
 }

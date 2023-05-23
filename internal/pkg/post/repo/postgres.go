@@ -34,6 +34,7 @@ const (
 	GetComments                = `SELECT comment_id, u.user_id, u.display_name, u.profile_photo, c.post_id, c.comment_text, c.creation_date, c.likes_count FROM comment c JOIN "user" u on c.user_id = u.user_id WHERE post_id = $1;`
 	IsLikedComment             = `SELECT comment_id FROM "like_comment" WHERE comment_id = $1 AND user_id = $2;`
 	GetUserIdComments          = `SELECT user_id FROM "comment" WHERE comment_id = $1;`
+	GetCreatorPhoto            = `SELECT profile_photo FROM "creator" WHERE creator_id = $1`
 )
 
 type PostRepo struct {
@@ -198,6 +199,12 @@ func (r *PostRepo) GetPost(ctx context.Context, postID, userID uuid.UUID) (model
 		return models.Post{}, models.InternalError
 	}
 	post.Text = postTextTmp.String
+
+	row = r.db.QueryRowContext(ctx, GetCreatorPhoto, post.Creator)
+	if err = row.Scan(&post.CreatorPhoto); err != nil {
+		r.logger.Error(err)
+		return models.Post{}, models.InternalError
+	}
 
 	for i, v := range attachs {
 		if v == uuid.Nil {

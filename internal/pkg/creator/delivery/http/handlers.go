@@ -8,7 +8,7 @@ import (
 	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notifications"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notification"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/google/uuid"
@@ -20,16 +20,17 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type CreatorHandler struct {
 	creatorClient   generatedCreator.CreatorServiceClient
 	authClient      generatedAuth.AuthServiceClient
-	notificationApp notifications.NotificationApp
+	notificationApp notification.NotificationApp
 	logger          *zap.SugaredLogger
 }
 
-func NewCreatorHandler(creatorClient generatedCreator.CreatorServiceClient, authClient generatedAuth.AuthServiceClient, na notifications.NotificationApp, logger *zap.SugaredLogger) *CreatorHandler {
+func NewCreatorHandler(creatorClient generatedCreator.CreatorServiceClient, authClient generatedAuth.AuthServiceClient, na notification.NotificationApp, logger *zap.SugaredLogger) *CreatorHandler {
 	return &CreatorHandler{
 		creatorClient:   creatorClient,
 		authClient:      authClient,
@@ -1200,8 +1201,8 @@ func (h *CreatorHandler) Statistics(w http.ResponseWriter, r *http.Request) {
 
 	stat, err := h.creatorClient.Statistics(r.Context(), &generatedCreator.StatisticsInput{
 		CreatorId:  creatorID.Value,
-		FirstDate:  monthGap.FirstMonth.String(),
-		SecondDate: monthGap.SecondMonth.String(),
+		FirstDate:  monthGap.FirstMonth.Format(time.RFC3339),
+		SecondDate: monthGap.SecondMonth.Format(time.RFC3339),
 	})
 	if err != nil {
 		h.logger.Error(err)

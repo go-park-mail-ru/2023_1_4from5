@@ -26,20 +26,20 @@ type StatisticsDates struct {
 	SecondMonth time.Time `json:"second_month"`
 }
 
-func (stat *Statistics) StatToModel(statInfo *generatedCreator.Stat) error {
+func (statistics *Statistics) StatToModel(statInfo *generatedCreator.Stat) error {
 	creatorId, err := uuid.Parse(statInfo.CreatorId)
 	if err != nil {
 		return err
 	}
 
-	stat.CreatorId = creatorId
-	stat.PostsPerMonth = statInfo.PostsPerMonth
-	stat.SubscriptionsBought = statInfo.SubscriptionsBought
-	stat.DonationsCount = statInfo.DonationsCount
-	stat.MoneyFromDonations = statInfo.MoneyFromDonations
-	stat.MoneyFromSubscriptions = statInfo.MoneyFromSubscriptions
-	stat.NewFollowers = statInfo.NewFollowers
-	stat.LikesCount = statInfo.LikesCount
-	stat.CommentsCount = statInfo.CommentsCount
+	statistics.CreatorId = creatorId
+	statistics.PostsPerMonth = statInfo.PostsPerMonth
+	statistics.SubscriptionsBought = statInfo.SubscriptionsBought
+	statistics.DonationsCount = statInfo.DonationsCount
+	statistics.MoneyFromDonations = statInfo.MoneyFromDonations
+	statistics.MoneyFromSubscriptions = statInfo.MoneyFromSubscriptions
+	statistics.NewFollowers = statInfo.NewFollowers
+	statistics.LikesCount = statInfo.LikesCount
+	statistics.CommentsCount = statInfo.CommentsCount
 	return nil
 }

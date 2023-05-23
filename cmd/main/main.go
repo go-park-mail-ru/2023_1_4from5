@@ -10,7 +10,7 @@ import (
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	creatorDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/http"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
-	notificationUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notifications/usecase"
+	notificationUsecase "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notification/usecase"
 	postDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/delivery/http"
 	subscriptionDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription/delivery/http"
 	generatedUser "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/grpc/generated"

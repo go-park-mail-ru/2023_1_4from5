@@ -22,8 +22,8 @@ type Comment struct {
 	IsOwner    bool      `json:"is_owner"`
 }
 
-func (commentData *Comment) IsValid() bool {
-	return 0 < len(commentData.Text) && len(commentData.Text) < 401
+func (comment *Comment) IsValid() bool {
+	return 0 < len(comment.Text) && len(comment.Text) < 401
 }
 
 func (comment *Comment) Sanitize() {
@@ -50,7 +50,7 @@ func (comment *Comment) CommentToModel(com *generatedCreator.Comment) error {
 		return err
 	}
 
-	creation, err := time.Parse("2006-01-02 15:04:05 -0700 -0700", com.Creation)
+	creation, err := time.Parse(time.RFC3339, com.Creation)
 	if err != nil {
 		return err
 	}

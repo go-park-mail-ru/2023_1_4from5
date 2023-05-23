@@ -65,14 +65,14 @@ func (aim *Aim) Sanitize() {
 	aim.Description = html.EscapeString(aim.Description)
 }
 
-func (page *CreatorPage) Sanitize() {
-	page.CreatorInfo.Sanitize()
-	page.Aim.Sanitize()
-	for i := range page.Posts {
-		page.Posts[i].Sanitize()
+func (creatorPage *CreatorPage) Sanitize() {
+	creatorPage.CreatorInfo.Sanitize()
+	creatorPage.Aim.Sanitize()
+	for i := range creatorPage.Posts {
+		creatorPage.Posts[i].Sanitize()
 	}
-	for i := range page.Subscriptions {
-		page.Subscriptions[i].Sanitize()
+	for i := range creatorPage.Subscriptions {
+		creatorPage.Subscriptions[i].Sanitize()
 	}
 }
 
