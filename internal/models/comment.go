@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	"github.com/google/uuid"
 	"html"
@@ -53,7 +52,6 @@ func (comment *Comment) CommentToModel(com *generatedCreator.Comment) error {
 
 	creation, err := time.Parse("2006-01-02 15:04:05 -0700 -0700", com.Creation)
 	if err != nil {
-		fmt.Println("date")
 		return err
 	}
 
