@@ -1,12 +1,34 @@
-package notifications
+package usecase
 
 import (
 	"context"
+	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/messaging"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
+	"go.uber.org/zap"
+	"google.golang.org/api/option"
 	"strconv"
 )
+
+type NotificationApp struct {
+	logger *zap.SugaredLogger
+	app    *firebase.App
+}
+
+func SetupFirebase(ctx context.Context, logger *zap.SugaredLogger) *NotificationApp {
+	opt := option.WithCredentialsFile("./service.json")
+
+	app, err := firebase.NewApp(ctx, nil, opt)
+	if err != nil {
+		logger.Error(err)
+	}
+
+	return &NotificationApp{
+		logger: logger,
+		app:    app,
+	}
+}
 
 // topic name is creator_id for users
 // topic name for creator is user_id

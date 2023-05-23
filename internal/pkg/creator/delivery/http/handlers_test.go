@@ -13,6 +13,7 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	mockCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/mocks"
+	mock "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notifications/mocks"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/golang/mock/gomock"
@@ -136,6 +137,7 @@ func TestNewCreatorHandler(t *testing.T) {
 
 	authClient := mockAuth.NewMockAuthServiceClient(ctl)
 	creatorClient := mockCreator.NewMockCreatorServiceClient(ctl)
+	notify := mock.NewMockNotificationApp(ctl)
 
 	logger := zap.NewNop()
 
@@ -147,7 +149,7 @@ func TestNewCreatorHandler(t *testing.T) {
 	}(logger)
 	zapSugar := logger.Sugar()
 
-	testHandler := NewCreatorHandler(creatorClient, authClient, zapSugar)
+	testHandler := NewCreatorHandler(creatorClient, authClient, notify, zapSugar)
 	if testHandler.authClient != authClient || testHandler.creatorClient != creatorClient {
 		t.Error("bad constructor")
 	}
