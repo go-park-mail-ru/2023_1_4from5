@@ -6,7 +6,7 @@ import (
 	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notifications"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notification"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/google/uuid"
@@ -23,10 +23,10 @@ type PostHandler struct {
 	authClient      generatedAuth.AuthServiceClient
 	creatorClient   generatedCreator.CreatorServiceClient
 	logger          *zap.SugaredLogger
-	notificationApp *notifications.NotificationApp
+	notificationApp *notification.NotificationApp
 }
 
-func NewPostHandler(auc generatedAuth.AuthServiceClient, csc generatedCreator.CreatorServiceClient, logger *zap.SugaredLogger, app *notifications.NotificationApp) *PostHandler {
+func NewPostHandler(auc generatedAuth.AuthServiceClient, csc generatedCreator.CreatorServiceClient, logger *zap.SugaredLogger, app *notification.NotificationApp) *PostHandler {
 	return &PostHandler{
 		authClient:      auc,
 		creatorClient:   csc,

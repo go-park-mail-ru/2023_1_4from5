@@ -7,7 +7,7 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notifications"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notification"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	generatedUser "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
@@ -26,11 +26,11 @@ import (
 type UserHandler struct {
 	userClient      generatedUser.UserServiceClient
 	authClient      generatedAuth.AuthServiceClient
-	notificationApp *notifications.NotificationApp
+	notificationApp *notification.NotificationApp
 	logger          *zap.SugaredLogger
 }
 
-func NewUserHandler(userClient generatedUser.UserServiceClient, auc generatedAuth.AuthServiceClient, na *notifications.NotificationApp, logger *zap.SugaredLogger) *UserHandler {
+func NewUserHandler(userClient generatedUser.UserServiceClient, auc generatedAuth.AuthServiceClient, na *notification.NotificationApp, logger *zap.SugaredLogger) *UserHandler {
 	return &UserHandler{
 		userClient:      userClient,
 		authClient:      auc,

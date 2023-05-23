@@ -10,7 +10,7 @@ import (
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	creatorDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/http"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/middleware"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notifications"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notification"
 	postDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post/delivery/http"
 	subscriptionDelivery "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription/delivery/http"
 	generatedUser "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/grpc/generated"
@@ -69,8 +69,8 @@ func run() error {
 	}
 
 	authConn, err := grpc.Dial(
-		"auth:8010",
-		//":8010",
+		//"auth:8010",
+		":8010",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -79,8 +79,8 @@ func run() error {
 	}
 
 	userConn, err := grpc.Dial(
-		"user:8020",
-		//":8020",
+		//"user:8020",
+		":8020",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -89,8 +89,8 @@ func run() error {
 	}
 
 	creatorConn, err := grpc.Dial(
-		"creator:8030",
-		//":8030",
+		//"creator:8030",
+		":8030",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
@@ -98,7 +98,7 @@ func run() error {
 		log.Fatalf("cant connect to session grpc")
 	}
 
-	notifApp := notifications.SetupFirebase(context.Background(), zapSugar)
+	notifApp := notification.SetupFirebase(context.Background(), zapSugar)
 	authClient := generatedAuth.NewAuthServiceClient(authConn)
 	userClient := generatedUser.NewUserServiceClient(userConn)
 	creatorClient := generatedCreator.NewCreatorServiceClient(creatorConn)
