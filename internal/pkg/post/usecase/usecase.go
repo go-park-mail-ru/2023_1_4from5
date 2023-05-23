@@ -37,7 +37,7 @@ func (u *PostUsecase) GetPost(ctx context.Context, postID, userID uuid.UUID) (mo
 	if err == nil {
 		isAvailable = true
 	}
-	postWithComments.Post, err = u.repo.GetPost(ctx, postID)
+	postWithComments.Post, err = u.repo.GetPost(ctx, postID, userID)
 	if err != nil {
 		return models.PostWithComments{}, err
 	}

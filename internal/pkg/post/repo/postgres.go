@@ -181,7 +181,7 @@ func (r *PostRepo) GetComments(ctx context.Context, postID, userID uuid.UUID) ([
 	return comments, nil
 }
 
-func (r *PostRepo) GetPost(ctx context.Context, postID uuid.UUID) (models.Post, error) {
+func (r *PostRepo) GetPost(ctx context.Context, postID, userID uuid.UUID) (models.Post, error) {
 	var post models.Post
 	var postTextTmp sql.NullString
 	attachs := make([]uuid.UUID, 0)
@@ -209,6 +209,15 @@ func (r *PostRepo) GetPost(ctx context.Context, postID uuid.UUID) (models.Post, 
 		})
 	}
 	post.Subscriptions, err = r.GetSubsByID(ctx, subs...)
+
+	row = r.db.QueryRowContext(ctx, IsLiked, postID, userID)
+	var postUUID, userUUID uuid.UUID
+	if err := row.Scan(&postUUID, &userUUID); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
+		return models.Post{}, models.InternalError
+	} else if err == nil { // уже есть запись об этом лайке
+		post.IsLiked = true
+	}
 
 	return post, err
 }

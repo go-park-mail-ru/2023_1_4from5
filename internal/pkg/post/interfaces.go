@@ -21,7 +21,7 @@ type PostUsecase interface {
 }
 type PostRepo interface {
 	CreatePost(ctx context.Context, postData models.PostCreationData) error
-	GetPost(ctx context.Context, postID uuid.UUID) (models.Post, error)
+	GetPost(ctx context.Context, postID, userID uuid.UUID) (models.Post, error)
 	DeletePost(ctx context.Context, postID uuid.UUID) error
 	GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]models.Subscription, error)
 	IsPostOwner(ctx context.Context, userId uuid.UUID, postId uuid.UUID) (bool, error)
