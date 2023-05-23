@@ -16,7 +16,8 @@ message PaymentInfo {
 
 message SubscriptionName {
   string Name = 1;
-  string Error = 2;
+  string CreatorID = 2;
+  string Error = 3;
 }
 
 message SubscriptionDetails{

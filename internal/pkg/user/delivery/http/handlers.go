@@ -727,7 +727,7 @@ func (h *UserHandler) Payment(w http.ResponseWriter, r *http.Request) {
 		}
 
 		_ = h.notificationApp.SendUserNotification(models.Notification{
-			Topic: fmt.Sprintf("%s-%s", paymentInfo.CreatorId.String(), "creator"),
+			Topic: fmt.Sprintf("%s-%s", out.CreatorID, "creator"),
 			Title: "Новая подписка",
 			Body:  fmt.Sprintf("На вас была оформлена подписка %s", out.Name),
 		}, r.Context())

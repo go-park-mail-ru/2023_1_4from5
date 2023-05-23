@@ -85,11 +85,11 @@ func (h GrpcUserHandler) Subscribe(ctx context.Context, in *generatedUser.Paymen
 		return &generatedUser.SubscriptionName{Error: err.Error()}, nil
 	}
 
-	subName, err := h.uc.Subscribe(ctx, paymentInfo, in.Money)
+	subNotification, err := h.uc.Subscribe(ctx, paymentInfo, in.Money)
 	if err != nil {
 		return &generatedUser.SubscriptionName{Error: err.Error()}, nil
 	}
-	return &generatedUser.SubscriptionName{Error: "", Name: subName}, nil
+	return &generatedUser.SubscriptionName{Error: "", Name: subNotification.SubscriptionName, CreatorID: subNotification.CreatorID.String()}, nil
 }
 
 func (h GrpcUserHandler) GetProfile(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedUser.UserProfile, error) {
