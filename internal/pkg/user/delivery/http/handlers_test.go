@@ -32,21 +32,21 @@ import (
 	"time"
 )
 
-var follow = []*generated.Follow{&generated.Follow{
+var follow = []*generated.Follow{{
 	Creator:      uuid.New().String(),
 	CreatorName:  "test",
 	CreatorPhoto: uuid.New().String(),
 	Description:  "test",
 }}
 
-var followWithErr1 = []*generated.Follow{&generated.Follow{
+var followWithErr1 = []*generated.Follow{{
 	Creator:      "11",
 	CreatorName:  "test",
 	CreatorPhoto: uuid.New().String(),
 	Description:  "test",
 }}
 
-var followWithErr2 = []*generated.Follow{&generated.Follow{
+var followWithErr2 = []*generated.Follow{{
 	Creator:      uuid.New().String(),
 	CreatorName:  "test",
 	CreatorPhoto: "11",
@@ -89,7 +89,6 @@ func TestUserHandler_UserSubscriptions(t *testing.T) {
 
 	os.Setenv("TOKEN_SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
-	const body = "body"
 	token, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: uuid.New()})
 
 	authClient := mockAuth.NewMockAuthServiceClient(ctl)
@@ -119,7 +118,7 @@ func TestUserHandler_UserSubscriptions(t *testing.T) {
 				userClient.EXPECT().
 					UserSubscriptions(gomock.Any(), gomock.Any()).
 					Return(&generated.SubscriptionsMessage{
-						Subscriptions: []*generatedCommon.Subscription{&generatedCommon.Subscription{
+						Subscriptions: []*generatedCommon.Subscription{{
 							Id:           uuid.New().String(),
 							Creator:      uuid.New().String(),
 							CreatorName:  uuid.New().String(),
@@ -152,7 +151,7 @@ func TestUserHandler_UserSubscriptions(t *testing.T) {
 				userClient.EXPECT().
 					UserSubscriptions(gomock.Any(), gomock.Any()).
 					Return(&generated.SubscriptionsMessage{
-						Subscriptions: []*generatedCommon.Subscription{&generatedCommon.Subscription{
+						Subscriptions: []*generatedCommon.Subscription{{
 							Id:           uuid.New().String(),
 							Creator:      uuid.New().String(),
 							CreatorName:  uuid.New().String(),
@@ -213,7 +212,6 @@ func TestGetProfile(t *testing.T) {
 
 	os.Setenv("TOKEN_SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
-	const body = "body"
 	token, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: uuid.New()})
 
 	authClient := mockAuth.NewMockAuthServiceClient(ctl)
@@ -1855,6 +1853,53 @@ func TestUserHandler_UpdateProfilePhoto(t *testing.T) {
 			},
 			expectedStatus: http.StatusForbidden,
 		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &UserHandler{
+				userClient: userClient,
+				authClient: authClient,
+				logger:     zapSugar,
+			}
+			w := httptest.NewRecorder()
+			r := test.mock()
+			h.UpdateProfilePhoto(w, r)
+			require.Equal(t, test.expectedStatus, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
+				" for test:%s", test.name, test.expectedStatus, w.Code, test.name))
+		})
+	}
+}
+
+func TestUserHandler_UpdateProfilePhoto2(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	id := uuid.New()
+	os.Setenv("CSRF_SECRET", "TEST")
+	tokenCSRF, _ := token.GetCSRFToken(models.User{Login: testUser.Login, Id: id})
+	os.Setenv("TOKEN_SECRET", "TEST")
+	tkn := &usecase.Tokenator{}
+	token, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: id})
+	authClient := mockAuth.NewMockAuthServiceClient(ctl)
+	userClient := mock.NewMockUserServiceClient(ctl)
+
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	tests := []struct {
+		name           string
+		mock           func() *http.Request
+		expectedStatus int
+	}{
+
 		{
 			name: "err from auth service",
 			mock: func() *http.Request {

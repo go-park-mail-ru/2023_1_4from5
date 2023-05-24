@@ -27,7 +27,7 @@ func (uc *UserUsecase) CheckIfCreator(ctx context.Context, userId uuid.UUID) (uu
 func (uc *UserUsecase) Follow(ctx context.Context, userId, creatorId uuid.UUID) error {
 	if isFollowing, err := uc.repo.CheckIfFollow(ctx, userId, creatorId); err == models.InternalError {
 		return err
-	} else if isFollowing == true {
+	} else if isFollowing {
 		return models.WrongData
 	}
 	return uc.repo.Follow(ctx, userId, creatorId)
@@ -36,7 +36,7 @@ func (uc *UserUsecase) Follow(ctx context.Context, userId, creatorId uuid.UUID) 
 func (uc *UserUsecase) Unfollow(ctx context.Context, userId, creatorId uuid.UUID) error {
 	if isFollowing, err := uc.repo.CheckIfFollow(ctx, userId, creatorId); err == models.InternalError {
 		return err
-	} else if isFollowing == false {
+	} else if !isFollowing {
 		return models.WrongData
 	}
 	return uc.repo.Unfollow(ctx, userId, creatorId)
@@ -52,9 +52,12 @@ func (uc *UserUsecase) Subscribe(ctx context.Context, paymentInfo uuid.UUID, mon
 		return models.NotificationSubInfo{}, err
 	}
 	err = uc.repo.UpdatePaymentInfo(ctx, money, paymentInfo)
+	if err != nil {
+		return models.NotificationSubInfo{}, err
+	}
 	if isFollowing, err := uc.repo.CheckIfFollow(ctx, subscription.UserID, subscription.CreatorId); err == models.InternalError {
 		return models.NotificationSubInfo{}, err
-	} else if isFollowing == false {
+	} else if !isFollowing {
 		err = uc.repo.Follow(ctx, subscription.UserID, subscription.CreatorId)
 		if err == models.InternalError {
 			return models.NotificationSubInfo{}, err

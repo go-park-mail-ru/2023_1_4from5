@@ -698,6 +698,10 @@ func (h *UserHandler) Payment(w http.ResponseWriter, r *http.Request) {
 	str := strings.Split(paymentStringMap["label"], ";")
 	paymentInfo.Operation = str[0]
 	paymentInfo.CreatorId, err = uuid.Parse(str[1])
+	if err != nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
 	if tmp, err := strconv.ParseFloat(paymentStringMap["amount"], 32); err != nil {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return

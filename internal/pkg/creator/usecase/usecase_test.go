@@ -34,8 +34,6 @@ func TestNewCreatorUsecase(t *testing.T) {
 	}
 }
 
-var testUser = &models.AccessDetails{Login: "Bashmak1!", Id: uuid.New()}
-
 func TestCreatorUsecase_GetPage(t *testing.T) {
 	ctl := gomock.NewController(t)
 	defer ctl.Finish()

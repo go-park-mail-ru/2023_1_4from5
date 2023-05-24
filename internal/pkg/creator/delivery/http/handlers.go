@@ -1215,7 +1215,10 @@ func (h *CreatorHandler) Statistics(w http.ResponseWriter, r *http.Request) {
 	}
 	var statistics models.Statistics
 
-	err = statistics.StatToModel(stat)
+	if err = statistics.StatToModel(stat); err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
 
 	statistics.CreatorId, _ = uuid.Parse(creatorID.Value)
 

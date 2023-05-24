@@ -35,6 +35,7 @@ func NewPostHandler(auc generatedAuth.AuthServiceClient, csc generatedCreator.Cr
 	}
 }
 
+// nolint:gocognit
 func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
 	if err != nil {
@@ -297,7 +298,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 				utils.Response(w, http.StatusInternalServerError, nil)
 				return
 			}
-			errMessage, err = h.creatorClient.DeletePost(r.Context(), &generatedCommon.UUIDMessage{Value: postData.Id.String()})
+			_, err = h.creatorClient.DeletePost(r.Context(), &generatedCommon.UUIDMessage{Value: postData.Id.String()})
 			if err != nil {
 				h.logger.Error(err)
 			}
@@ -320,7 +321,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			errMessage, err = h.creatorClient.DeletePost(r.Context(), &generatedCommon.UUIDMessage{Value: postData.Id.String()})
+			_, err = h.creatorClient.DeletePost(r.Context(), &generatedCommon.UUIDMessage{Value: postData.Id.String()})
 			if err != nil {
 				h.logger.Error(err)
 			}
@@ -351,6 +352,11 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = h.notificationApp.SendUserNotification(notification, r.Context())
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
 
 	utils.Response(w, http.StatusOK, nil)
 }
@@ -910,7 +916,7 @@ func (h *PostHandler) AddAttach(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if out.Error != "" {
-		var attachProto = []*generatedCreator.Attachment{&generatedCreator.Attachment{ID: attach.Id.String(), Type: attach.Type}}
+		var attachProto = []*generatedCreator.Attachment{{ID: attach.Id.String(), Type: attach.Type}}
 		_, err = h.creatorClient.DeleteAttachmentsFiles(r.Context(), &generatedCreator.Attachments{Attachments: attachProto})
 
 		if err != nil {

@@ -15,7 +15,6 @@ import (
 	mockCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/mocks"
 	mock "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notification/mocks"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -33,7 +32,7 @@ import (
 	"time"
 )
 
-var subs = []*generatedCommon.Subscription{&generatedCommon.Subscription{
+var subs = []*generatedCommon.Subscription{{
 	Id:           uuid.New().String(),
 	Creator:      uuid.New().String(),
 	CreatorName:  "test",
@@ -42,7 +41,7 @@ var subs = []*generatedCommon.Subscription{&generatedCommon.Subscription{
 	Title:        "test",
 	Description:  "test",
 }}
-var attachs = []*generated.Attachment{&generated.Attachment{
+var attachs = []*generated.Attachment{{
 	ID:   uuid.New().String(),
 	Type: "test",
 }}
@@ -62,7 +61,20 @@ var post = &generated.Post{
 	Subscriptions:   subs,
 }
 
-var postWithErr = *post
+var postWithErr = generated.Post{
+	Id:              uuid.New().String(),
+	CreatorID:       uuid.New().String(),
+	Creation:        time.Now().Format(time.RFC3339),
+	LikesCount:      2,
+	CreatorPhoto:    uuid.New().String(),
+	CreatorName:     "test",
+	Title:           "test",
+	Text:            "",
+	IsAvailable:     false,
+	IsLiked:         false,
+	PostAttachments: attachs,
+	Subscriptions:   subs,
+}
 
 var posts = []*generated.Post{post}
 
@@ -694,18 +706,6 @@ func TestCreatorHandler_CreateAim(t *testing.T) {
 				" for test:%s", test.name, test.expectedStatus, w.Code, test.name))
 		})
 	}
-}
-
-var testCreators = make([]models.Creator, 1)
-
-func creatorsBodyPrepare(status int, creator ...models.Creator) *httptest.ResponseRecorder {
-	w := httptest.NewRecorder()
-	if len(creator) == 0 {
-		utils.Response(w, status, nil)
-		return w
-	}
-	utils.Response(w, status, creator)
-	return w
 }
 
 func TestCreatorHandler_GetAllCreators(t *testing.T) {

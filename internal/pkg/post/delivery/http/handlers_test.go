@@ -1213,7 +1213,6 @@ func TestPostHandler_CreatePost(t *testing.T) {
 	}
 }
 
-var newPostErr = models.PostEditData{Title: "testavbjkwkjebojweabkvsn;awlvmnbjerkvjawlvnkaoeibr aelsvjoerbjvkas,zjfonwileabuvtsyhexfnsrjdfyxdhfsehrjm", Text: "testtest"}
 var newPost = models.PostEditData{Title: "test", Text: "testtest"}
 
 func TestPostHandler_EditPost(t *testing.T) {
