@@ -753,3 +753,564 @@ func TestCommentHandler_DeleteComment(t *testing.T) {
 		})
 	}
 }
+
+func TestCommentHandler_EditComment(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	authClient := mockAuth.NewMockAuthServiceClient(ctl)
+	creatorClient := mockCreator.NewMockCreatorServiceClient(ctl)
+	userClient := mockUser.NewMockUserServiceClient(ctl)
+
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	id := uuid.New()
+	os.Setenv("CSRF_SECRET", "TEST")
+	tokenCSRF, _ := token.GetCSRFToken(models.User{Login: testUser.Login, Id: id})
+	os.Setenv("TOKEN_SECRET", "TEST")
+	tkn := &usecase.Tokenator{}
+	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: id})
+
+	tests := []struct {
+		name           string
+		mock           func() *http.Request
+		expectedStatus int
+	}{
+		{
+			name: "Get CSRF with error",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/comment/edit/b72dd39d-e19b-4070-9200-71a0c92417ca", nil)
+
+				setJWTToken(r, "token")
+
+				return r
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "Get CSRF with error",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/comment/edit/b72dd39d-e19b-4070-9200-71a0c92417ca", nil)
+
+				setJWTToken(r, bdy)
+				os.Unsetenv("CSRF_SECRET")
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "Get CSRF",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/comment/edit/b72dd39d-e19b-4070-9200-71a0c92417ca", nil)
+
+				setJWTToken(r, bdy)
+				os.Setenv("CSRF_SECRET", "TEST")
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "No CSRF",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/comment/edit/b72dd39d-e19b-4070-9200-71a0c92417ca", nil)
+
+				setJWTToken(r, bdy)
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name: "ErrUV",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/comment/edit/{comment-uuid}",
+					bytes.NewReader(bodyPrepare(testComment)))
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+
+				r = mux.SetURLVars(r, map[string]string{
+					"comment-uuid": "b72dd39d-e19b-4070-9200-71a0c92417ca",
+				})
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "err",
+				}, nil)
+
+				return r
+			},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name: "ErrUVInternal",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/comment/edit/{comment-uuid}",
+					bytes.NewReader(bodyPrepare(testComment)))
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+
+				r = mux.SetURLVars(r, map[string]string{
+					"comment-uuid": "b72dd39d-e19b-4070-9200-71a0c92417ca",
+				})
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, errors.New("err"))
+
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Err bad uuid",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/comment/edit/{comment-uuid}",
+					bytes.NewReader(bodyPrepare(testComment)))
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+
+				r = mux.SetURLVars(r, map[string]string{
+					"comment-uuid": "b72dd39d-e19b-4070-9200-71aewewe0c92417ca",
+				})
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "CommentOwner err internal",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/comment/edit/{comment-uuid}",
+					bytes.NewReader(bodyPrepare(testComment)))
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+
+				r = mux.SetURLVars(r, map[string]string{
+					"comment-uuid": "b72dd39d-e19b-4070-9200-71a0c92417ca",
+				})
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().IsCommentOwner(gomock.Any(), gomock.Any()).Return(&generatedCreator.FlagMessage{
+					Flag:  true,
+					Error: "",
+				}, errors.New("err"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "CommentOwner err wd",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/comment/edit/{comment-uuid}",
+					bytes.NewReader(bodyPrepare(testComment)))
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+
+				r = mux.SetURLVars(r, map[string]string{
+					"comment-uuid": "b72dd39d-e19b-4070-9200-71a0c92417ca",
+				})
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().IsCommentOwner(gomock.Any(), gomock.Any()).Return(&generatedCreator.FlagMessage{
+					Flag:  true,
+					Error: "WrongData",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "CommentOwner err wd",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/comment/edit/{comment-uuid}",
+					bytes.NewReader(bodyPrepare(testComment)))
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+
+				r = mux.SetURLVars(r, map[string]string{
+					"comment-uuid": "b72dd39d-e19b-4070-9200-71a0c92417ca",
+				})
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().IsCommentOwner(gomock.Any(), gomock.Any()).Return(&generatedCreator.FlagMessage{
+					Flag:  true,
+					Error: "err",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "CommentOwner err forbiden",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/comment/edit/{comment-uuid}",
+					bytes.NewReader(bodyPrepare(testComment)))
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+
+				r = mux.SetURLVars(r, map[string]string{
+					"comment-uuid": "b72dd39d-e19b-4070-9200-71a0c92417ca",
+				})
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().IsCommentOwner(gomock.Any(), gomock.Any()).Return(&generatedCreator.FlagMessage{
+					Flag:  false,
+					Error: "",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name: "out err",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/comment/edit/{comment-uuid}",
+					bytes.NewReader(bodyPrepare(testComment)))
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+
+				r = mux.SetURLVars(r, map[string]string{
+					"comment-uuid": "b72dd39d-e19b-4070-9200-71a0c92417ca",
+				})
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().IsCommentOwner(gomock.Any(), gomock.Any()).Return(&generatedCreator.FlagMessage{
+					Flag:  true,
+					Error: "",
+				}, nil)
+				creatorClient.EXPECT().EditComment(gomock.Any(), gomock.Any()).Return(&generatedCommon.Empty{Error: "err"}, nil)
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "internal edit err",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/comment/edit/{comment-uuid}",
+					bytes.NewReader(bodyPrepare(testComment)))
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+
+				r = mux.SetURLVars(r, map[string]string{
+					"comment-uuid": "b72dd39d-e19b-4070-9200-71a0c92417ca",
+				})
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().IsCommentOwner(gomock.Any(), gomock.Any()).Return(&generatedCreator.FlagMessage{
+					Flag:  true,
+					Error: "",
+				}, nil)
+				creatorClient.EXPECT().EditComment(gomock.Any(), gomock.Any()).Return(&generatedCommon.Empty{Error: ""}, errors.New("error"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "OK",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/comment/edit/{comment-uuid}",
+					bytes.NewReader(bodyPrepare(testComment)))
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+
+				r = mux.SetURLVars(r, map[string]string{
+					"comment-uuid": "b72dd39d-e19b-4070-9200-71a0c92417ca",
+				})
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().IsCommentOwner(gomock.Any(), gomock.Any()).Return(&generatedCreator.FlagMessage{
+					Flag:  true,
+					Error: "",
+				}, nil)
+				creatorClient.EXPECT().EditComment(gomock.Any(), gomock.Any()).Return(&generatedCommon.Empty{Error: ""}, nil)
+				return r
+			},
+			expectedStatus: http.StatusOK,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &CommentHandler{
+				creatorClient: creatorClient,
+				authClient:    authClient,
+				userClient:    userClient,
+				logger:        zapSugar,
+			}
+			w := httptest.NewRecorder()
+			r := test.mock()
+			h.EditComment(w, r)
+			require.Equal(t, test.expectedStatus, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
+				" for test:%s", test.name, test.expectedStatus, w.Code, test.name))
+		})
+	}
+}
+
+func TestCommentHandler_AddLike(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	authClient := mockAuth.NewMockAuthServiceClient(ctl)
+	creatorClient := mockCreator.NewMockCreatorServiceClient(ctl)
+	userClient := mockUser.NewMockUserServiceClient(ctl)
+
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	id := uuid.New()
+	os.Setenv("TOKEN_SECRET", "TEST")
+	tkn := &usecase.Tokenator{}
+	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: id})
+
+	tests := []struct {
+		name           string
+		mock           func() *http.Request
+		expectedStatus int
+	}{
+		{
+			name: "unauth",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/comment/addLike/{comment-uuid}",
+					bytes.NewReader(bodyPrepare(testComment)))
+
+				setJWTToken(r, "token")
+				return r
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "badUuid",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/comment/addLike/{comment-uuid}",
+					bytes.NewReader(bodyPrepare(testComment)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().IsPostAvailable(gomock.Any(), gomock.Any()).Return(&generatedCommon.Empty{
+					Error: "",
+				}, nil)
+				r = mux.SetURLVars(r, map[string]string{
+					"comment-uuid": "b72dd39d-e19b-4070-9200-71a0c9ewe2417ca",
+				})
+
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "forbidden post",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/comment/addLike/{comment-uuid}",
+					bytes.NewReader(bodyPrepare(testComment)))
+
+				setJWTToken(r, bdy)
+
+				r = mux.SetURLVars(r, map[string]string{
+					"comment-uuid": "b72dd39d-e19b-4070-9200-71a0c92417ca",
+				})
+
+				creatorClient.EXPECT().IsPostAvailable(gomock.Any(), gomock.Any()).Return(&generatedCommon.Empty{
+					Error: "err",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name: "internal ispostavaliable",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/comment/addLike/{comment-uuid}",
+					bytes.NewReader(bodyPrepare(testComment)))
+
+				setJWTToken(r, bdy)
+
+				r = mux.SetURLVars(r, map[string]string{
+					"comment-uuid": "b72dd39d-e19b-4070-9200-71a0c92417ca",
+				})
+
+				creatorClient.EXPECT().IsPostAvailable(gomock.Any(), gomock.Any()).Return(&generatedCommon.Empty{
+					Error: "",
+				}, errors.New("err"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "no uuid",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/comment/addLike/{comment-uuid}",
+					bytes.NewReader(bodyPrepare(testComment)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().IsPostAvailable(gomock.Any(), gomock.Any()).Return(&generatedCommon.Empty{
+					Error: "",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Internal addLike",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/comment/addLike/{comment-uuid}",
+					bytes.NewReader(bodyPrepare(testComment)))
+
+				setJWTToken(r, bdy)
+
+				r = mux.SetURLVars(r, map[string]string{
+					"comment-uuid": "b72dd39d-e19b-4070-9200-71a0c92417ca",
+				})
+
+				creatorClient.EXPECT().IsPostAvailable(gomock.Any(), gomock.Any()).Return(&generatedCommon.Empty{
+					Error: "",
+				}, nil)
+				creatorClient.EXPECT().AddLikeComment(gomock.Any(), gomock.Any()).Return(&generatedCreator.Like{Error: ""}, errors.New("err"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "WrongData addLike",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/comment/addLike/{comment-uuid}",
+					bytes.NewReader(bodyPrepare(testComment)))
+
+				setJWTToken(r, bdy)
+
+				r = mux.SetURLVars(r, map[string]string{
+					"comment-uuid": "b72dd39d-e19b-4070-9200-71a0c92417ca",
+				})
+
+				creatorClient.EXPECT().IsPostAvailable(gomock.Any(), gomock.Any()).Return(&generatedCommon.Empty{
+					Error: "",
+				}, nil)
+				creatorClient.EXPECT().AddLikeComment(gomock.Any(), gomock.Any()).Return(&generatedCreator.Like{Error: "WrongData"}, nil)
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Internal addLike",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/comment/addLike/{comment-uuid}",
+					bytes.NewReader(bodyPrepare(testComment)))
+
+				setJWTToken(r, bdy)
+
+				r = mux.SetURLVars(r, map[string]string{
+					"comment-uuid": "b72dd39d-e19b-4070-9200-71a0c92417ca",
+				})
+
+				creatorClient.EXPECT().IsPostAvailable(gomock.Any(), gomock.Any()).Return(&generatedCommon.Empty{
+					Error: "",
+				}, nil)
+				creatorClient.EXPECT().AddLikeComment(gomock.Any(), gomock.Any()).Return(&generatedCreator.Like{Error: "err"}, nil)
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "OK",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/comment/addLike/{comment-uuid}",
+					bytes.NewReader(bodyPrepare(testComment)))
+
+				setJWTToken(r, bdy)
+
+				r = mux.SetURLVars(r, map[string]string{
+					"comment-uuid": "b72dd39d-e19b-4070-9200-71a0c92417ca",
+				})
+
+				creatorClient.EXPECT().IsPostAvailable(gomock.Any(), gomock.Any()).Return(&generatedCommon.Empty{
+					Error: "",
+				}, nil)
+				creatorClient.EXPECT().AddLikeComment(gomock.Any(), gomock.Any()).Return(&generatedCreator.Like{Error: ""}, nil)
+				return r
+			},
+			expectedStatus: http.StatusOK,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &CommentHandler{
+				creatorClient: creatorClient,
+				authClient:    authClient,
+				userClient:    userClient,
+				logger:        zapSugar,
+			}
+			w := httptest.NewRecorder()
+			r := test.mock()
+			h.AddLike(w, r)
+			require.Equal(t, test.expectedStatus, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
+				" for test:%s", test.name, test.expectedStatus, w.Code, test.name))
+		})
+	}
+}
