@@ -8,6 +8,25 @@ message KeywordMessage {
   string Keyword = 1;
 };
 
+message StatisticsInput{
+  string CreatorId = 1;
+  string FirstDate = 2;
+  string SecondDate = 3;
+};
+
+message Stat{
+  string CreatorId = 1;
+  int64 PostsPerMonth = 2;
+  int64 SubscriptionsBought = 3;
+  int64 DonationsCount = 4;
+  double MoneyFromDonations = 5;
+  double MoneyFromSubscriptions = 6;
+  int64 NewFollowers = 7;
+  int64 LikesCount = 8;
+  int64 CommentsCount = 9;
+  string Error = 10;
+};
+
 message Creator{
   string Id = 1;
   string UserID = 2;
@@ -23,6 +42,12 @@ message CreatorsMessage{
   repeated Creator Creators = 1;
   string Error = 2;
 };
+
+message NotificationCreatorInfo {
+  string Name = 1;
+  string Photo = 2;
+  string Error = 3;
+}
 
 message UserCreatorMessage {
   string UserID = 1;
@@ -45,6 +70,11 @@ message UpdateCreatorInfo {
   string CreatorID = 3;
 }
 
+message CreatorTransfer{
+  string creatorID = 1;
+  float Money = 2;
+}
+
 message CreatorPage{
   Creator CreatorInfo = 1;
   Aim AimInfo = 2;
@@ -58,8 +88,8 @@ message CreatorPage{
 message Aim{
   string Creator = 1;
   string Description = 2;
-  int64 MoneyNeeded = 3;
-  int64 MoneyGot = 4;
+  float MoneyNeeded = 3;
+  float MoneyGot = 4;
 };
 
 
@@ -68,15 +98,35 @@ message Post{
   string CreatorID = 2;
   string Creation = 3;
   int64 LikesCount = 4;
-  string CreatorPhoto = 5;
-  string CreatorName = 6;
-  string Title = 7;
-  string Text = 8;
-  bool IsAvailable = 9;
-  bool IsLiked = 10;
-  repeated Attachment PostAttachments = 11;
-  repeated common.Subscription Subscriptions = 12;
+  int64 CommentsCount = 5;
+  string CreatorPhoto = 6;
+  string CreatorName = 7;
+  string Title = 8;
+  string Text = 9;
+  bool IsAvailable = 10;
+  bool IsLiked = 11;
+  repeated Attachment PostAttachments = 12;
+  repeated common.Subscription Subscriptions = 13;
 };
+
+message Comment{
+  string Id = 1;
+  string UserId = 2;
+  string UserPhoto = 3;
+  string PostID = 4;
+  string  Text = 5;
+  string Creation = 6;
+  int64 LikesCount = 7;
+  string Username = 8;
+  bool IsOwner = 9;
+  bool IsLiked = 10;
+}
+
+message PostWithComments {
+  Post Post = 1;
+  repeated Comment Comments = 2;
+  string Error = 3;
+}
 
 message PostsMessage{
   repeated Post Posts = 1;
@@ -88,10 +138,20 @@ message PostMessage{
   string Error = 2;
 };
 
+message CreatorBalance {
+  float Balance = 1;
+  string Error = 2;
+}
+
 message Attachment{
   string ID = 1;
   string Type = 2;
 };
+
+message FirstDate {
+  string Date = 1;
+  string Error = 2;
+}
 
 message Attachments{
   repeated Attachment Attachments = 1;
@@ -145,9 +205,10 @@ service CreatorService {
   rpc CheckIfCreator(common.UUIDMessage) returns (common.UUIDResponse){}
 
   rpc CreatePost(PostCreationData) returns (common.Empty) {}
-  rpc GetPost(PostUserMessage) returns (PostMessage) {}
+  rpc GetPost(PostUserMessage) returns (PostWithComments) {}
   rpc DeletePost(common.UUIDMessage) returns (common.Empty) {}
   rpc IsPostOwner(PostUserMessage) returns (FlagMessage) {}
+  rpc IsCommentOwner(Comment) returns (FlagMessage) {}
   rpc AddLike(PostUserMessage) returns (Like) {}
   rpc RemoveLike(PostUserMessage) returns (Like) {}
   rpc EditPost(PostEditData) returns (common.Empty) {}
@@ -158,6 +219,7 @@ service CreatorService {
   rpc AddAttach(PostAttachMessage) returns (common.Empty) {}
   rpc GetFileExtension(KeywordMessage) returns (Extension) {}
   rpc UpdateProfilePhoto(common.UUIDMessage) returns (common.UUIDResponse) {}
+  rpc CreatorNotificationInfo(common.UUIDMessage) returns (NotificationCreatorInfo) {}
   rpc DeleteProfilePhoto(common.UUIDMessage) returns (common.Empty) {}
   rpc UpdateCoverPhoto(common.UUIDMessage) returns (common.UUIDResponse) {}
   rpc DeleteCoverPhoto(common.UUIDMessage) returns (common.Empty) {}
@@ -165,5 +227,18 @@ service CreatorService {
   rpc CreateSubscription(common.Subscription) returns (common.Empty) {}
   rpc DeleteSubscription(SubscriptionCreatorMessage) returns (common.Empty) {}
   rpc EditSubscription(common.Subscription) returns (common.Empty) {}
+
+  rpc CreateComment(Comment) returns (common.Empty) {}
+  rpc DeleteComment(Comment) returns (common.Empty) {}
+  rpc EditComment(Comment) returns (common.Empty) {}
+  rpc AddLikeComment(Comment) returns (Like) {}
+  rpc RemoveLikeComment(Comment) returns (Like) {}
+
+  rpc IsPostAvailable(PostUserMessage) returns (common.Empty) {}
+
+  rpc Statistics(StatisticsInput) returns (Stat) {}
+  rpc StatisticsFirstDate(common.UUIDMessage) returns (FirstDate) {}
+  rpc GetCreatorBalance(common.UUIDMessage) returns (CreatorBalance) {}
+  rpc UpdateBalance(CreatorTransfer) returns (CreatorBalance) {}
 }
 

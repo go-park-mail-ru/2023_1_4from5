@@ -13,8 +13,8 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	mockCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/mocks"
+	mock "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notification/mocks"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
-	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -32,7 +32,7 @@ import (
 	"time"
 )
 
-var subs = []*generatedCommon.Subscription{&generatedCommon.Subscription{
+var subs = []*generatedCommon.Subscription{{
 	Id:           uuid.New().String(),
 	Creator:      uuid.New().String(),
 	CreatorName:  "test",
@@ -41,7 +41,7 @@ var subs = []*generatedCommon.Subscription{&generatedCommon.Subscription{
 	Title:        "test",
 	Description:  "test",
 }}
-var attachs = []*generated.Attachment{&generated.Attachment{
+var attachs = []*generated.Attachment{{
 	ID:   uuid.New().String(),
 	Type: "test",
 }}
@@ -49,7 +49,7 @@ var attachs = []*generated.Attachment{&generated.Attachment{
 var post = &generated.Post{
 	Id:              uuid.New().String(),
 	CreatorID:       uuid.New().String(),
-	Creation:        "2006-01-02 15:04:05 -0700 -0700",
+	Creation:        time.Now().Format(time.RFC3339),
 	LikesCount:      2,
 	CreatorPhoto:    uuid.New().String(),
 	CreatorName:     "test",
@@ -61,7 +61,20 @@ var post = &generated.Post{
 	Subscriptions:   subs,
 }
 
-var postWithErr = *post
+var postWithErr = generated.Post{
+	Id:              uuid.New().String(),
+	CreatorID:       uuid.New().String(),
+	Creation:        time.Now().Format(time.RFC3339),
+	LikesCount:      2,
+	CreatorPhoto:    uuid.New().String(),
+	CreatorName:     "test",
+	Title:           "test",
+	Text:            "",
+	IsAvailable:     false,
+	IsLiked:         false,
+	PostAttachments: attachs,
+	Subscriptions:   subs,
+}
 
 var posts = []*generated.Post{post}
 
@@ -136,6 +149,7 @@ func TestNewCreatorHandler(t *testing.T) {
 
 	authClient := mockAuth.NewMockAuthServiceClient(ctl)
 	creatorClient := mockCreator.NewMockCreatorServiceClient(ctl)
+	notify := mock.NewMockNotificationApp(ctl)
 
 	logger := zap.NewNop()
 
@@ -147,8 +161,8 @@ func TestNewCreatorHandler(t *testing.T) {
 	}(logger)
 	zapSugar := logger.Sugar()
 
-	testHandler := NewCreatorHandler(creatorClient, authClient, zapSugar)
-	if testHandler.authClient != authClient || testHandler.creatorClient != creatorClient {
+	testHandler := NewCreatorHandler(creatorClient, authClient, notify, zapSugar)
+	if testHandler.authClient != authClient || testHandler.creatorClient != creatorClient || testHandler.notificationApp != notify {
 		t.Error("bad constructor")
 	}
 }
@@ -692,18 +706,6 @@ func TestCreatorHandler_CreateAim(t *testing.T) {
 				" for test:%s", test.name, test.expectedStatus, w.Code, test.name))
 		})
 	}
-}
-
-var testCreators = make([]models.Creator, 1)
-
-func creatorsBodyPrepare(status int, creator ...models.Creator) *httptest.ResponseRecorder {
-	w := httptest.NewRecorder()
-	if len(creator) == 0 {
-		utils.Response(w, status, nil)
-		return w
-	}
-	utils.Response(w, status, creator)
-	return w
 }
 
 func TestCreatorHandler_GetAllCreators(t *testing.T) {
@@ -1888,7 +1890,7 @@ func TestCreatorHandler_UpdateCreatorData(t *testing.T) {
 				r := httptest.NewRequest("PUT", "/updateCreatorData", nil)
 
 				setJWTToken(r, bdy)
-
+				setCSRFToken(r, tokenCSRF)
 				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
 					UserVersion: int64(1),
 					Error:       "",
@@ -2497,6 +2499,1056 @@ func TestCreatorHandler_DeleteProfilePhoto(t *testing.T) {
 			w := httptest.NewRecorder()
 			r := test.mock()
 			h.DeleteProfilePhoto(w, r)
+			require.Equal(t, test.expectedStatus, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
+				" for test:%s", test.name, test.expectedStatus, w.Code, test.name))
+		})
+	}
+}
+
+func TestCreatorHandler_GetBalance(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	authClient := mockAuth.NewMockAuthServiceClient(ctl)
+	creatorClient := mockCreator.NewMockCreatorServiceClient(ctl)
+
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	os.Setenv("TOKEN_SECRET", "TEST")
+	tkn := &usecase.Tokenator{}
+	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: uuid.New()})
+
+	tests := []struct {
+		name           string
+		mock           func() *http.Request
+		expectedStatus int
+	}{
+		{
+			name: "OK",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/balance",
+					bytes.NewReader(bodyPrepare(testAim)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, nil)
+				creatorClient.EXPECT().GetCreatorBalance(gomock.Any(), gomock.Any()).Return(&generated.CreatorBalance{
+					Balance: 100.1,
+					Error:   ""}, nil)
+				return r
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "Internal from Creator service CheckIfCreator",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/balance",
+					bytes.NewReader(bodyPrepare(testAim)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, errors.New("test"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Creator NotFound",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/balance",
+					bytes.NewReader(bodyPrepare(testAim)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: models.NotFound.Error(),
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "CheckIfCreator internalError",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/balance",
+					bytes.NewReader(bodyPrepare(testAim)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: models.InternalError.Error(),
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Wrong Token",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/balance",
+					bytes.NewReader(bodyPrepare(testAim)))
+
+				setJWTToken(r, "1")
+
+				return r
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "Internal err from creator service GetCreatorBalance",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/balance",
+					bytes.NewReader(bodyPrepare(testAim)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, nil)
+				creatorClient.EXPECT().GetCreatorBalance(gomock.Any(), gomock.Any()).Return(&generated.CreatorBalance{
+					Balance: 100.1,
+					Error:   ""}, errors.New("test"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "GetCreatorBalance internalError",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/balance",
+					bytes.NewReader(bodyPrepare(testAim)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, nil)
+				creatorClient.EXPECT().GetCreatorBalance(gomock.Any(), gomock.Any()).Return(&generated.CreatorBalance{
+					Balance: 100.1,
+					Error:   "test"}, nil)
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &CreatorHandler{
+				creatorClient: creatorClient,
+				authClient:    authClient,
+				logger:        zapSugar,
+			}
+			w := httptest.NewRecorder()
+			r := test.mock()
+			h.GetBalance(w, r)
+			require.Equal(t, test.expectedStatus, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
+				" for test:%s", test.name, test.expectedStatus, w.Code, test.name))
+		})
+	}
+}
+
+var testTransfer = models.CreatorTransfer{
+	Money:       10,
+	CreatorID:   uuid.New(),
+	PhoneNumber: "89999999999",
+}
+
+func TestCreatorHandler_TransferMoney(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	authClient := mockAuth.NewMockAuthServiceClient(ctl)
+	creatorClient := mockCreator.NewMockCreatorServiceClient(ctl)
+
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	os.Setenv("TOKEN_SECRET", "TEST")
+	tkn := &usecase.Tokenator{}
+	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: uuid.New()})
+
+	tests := []struct {
+		name           string
+		mock           func() *http.Request
+		expectedStatus int
+	}{
+		//{
+		//	name: "OK",
+		//	mock: func() *http.Request {
+		//		r := httptest.NewRequest("GET", "/balance",
+		//			bytes.NewReader(bodyPrepare(testAim)))
+		//
+		//		setJWTToken(r, bdy)
+		//
+		//		creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+		//			Value: uuid.New().String(),
+		//			Error: "",
+		//		}, nil)
+		//		creatorClient.EXPECT().GetCreatorBalance(gomock.Any(), gomock.Any()).Return(&generated.CreatorBalance{
+		//			Balance: 100.1,
+		//			Error:   ""}, nil)
+		//		return r
+		//	},
+		//	expectedStatus: http.StatusOK,
+		//},
+		{
+			name: "Internal from Creator service CheckIfCreator",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/transferMoney",
+					bytes.NewReader(bodyPrepare(testTransfer)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, errors.New("test"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Creator NotFound",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/transferMoney",
+					bytes.NewReader(bodyPrepare(testTransfer)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: models.NotFound.Error(),
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "CheckIfCreator internalError",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/transferMoney",
+					bytes.NewReader(bodyPrepare(testTransfer)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: models.InternalError.Error(),
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Wrong Token",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/transferMoney",
+					bytes.NewReader(bodyPrepare(testTransfer)))
+
+				setJWTToken(r, "1")
+
+				return r
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "Internal err from creator service GetCreatorBalance",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/transferMoney",
+					bytes.NewReader(bodyPrepare(testTransfer)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, nil)
+				creatorClient.EXPECT().GetCreatorBalance(gomock.Any(), gomock.Any()).Return(&generated.CreatorBalance{
+					Balance: 100.1,
+					Error:   ""}, errors.New("test"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "GetCreatorBalance internalError",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/transferMoney",
+					bytes.NewReader(bodyPrepare(testTransfer)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, nil)
+				creatorClient.EXPECT().GetCreatorBalance(gomock.Any(), gomock.Any()).Return(&generated.CreatorBalance{
+					Balance: 100.1,
+					Error:   "test"}, nil)
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Err while UnmarshalFromReader",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/transferMoney",
+					bytes.NewReader([]byte("1")))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Not enough money on balance",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/transferMoney",
+					bytes.NewReader(bodyPrepare(testTransfer)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, nil)
+				creatorClient.EXPECT().GetCreatorBalance(gomock.Any(), gomock.Any()).Return(&generated.CreatorBalance{
+					Balance: 9,
+					Error:   ""}, nil)
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &CreatorHandler{
+				creatorClient: creatorClient,
+				authClient:    authClient,
+				logger:        zapSugar,
+			}
+			w := httptest.NewRecorder()
+			r := test.mock()
+			h.TransferMoney(w, r)
+			require.Equal(t, test.expectedStatus, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
+				" for test:%s", test.name, test.expectedStatus, w.Code, test.name))
+		})
+	}
+}
+
+var testToken = models.NotificationToken{Token: "test"}
+
+func TestCreatorHandler_SubscribeCreatorToNotifications(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	authClient := mockAuth.NewMockAuthServiceClient(ctl)
+	creatorClient := mockCreator.NewMockCreatorServiceClient(ctl)
+	notify := mock.NewMockNotificationApp(ctl)
+
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	os.Setenv("TOKEN_SECRET", "TEST")
+	tkn := &usecase.Tokenator{}
+	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: uuid.New()})
+
+	tests := []struct {
+		name           string
+		mock           func() *http.Request
+		expectedStatus int
+	}{
+		{
+			name: "Internal from Creator service CheckIfCreator",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/subscribeToNotifications",
+					bytes.NewReader(bodyPrepare(testToken)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, errors.New("test"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Creator NotFound",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/subscribeToNotifications",
+					bytes.NewReader(bodyPrepare(testToken)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: models.NotFound.Error(),
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "CheckIfCreator internalError",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/subscribeToNotifications",
+					bytes.NewReader(bodyPrepare(testToken)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: models.InternalError.Error(),
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "AddUserToNotificationTopic err",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/subscribeToNotifications",
+					bytes.NewReader(bodyPrepare(testToken)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, nil)
+
+				notify.EXPECT().AddUserToNotificationTopic(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("test"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "OK",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/subscribeToNotifications",
+					bytes.NewReader(bodyPrepare(testToken)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, nil)
+
+				notify.EXPECT().AddUserToNotificationTopic(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				return r
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "No notification token",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/subscribeToNotifications",
+					bytes.NewReader([]byte("")))
+
+				setJWTToken(r, bdy)
+
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Wrong Token",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/subscribeToNotifications",
+					bytes.NewReader(bodyPrepare(testAim)))
+
+				setJWTToken(r, "1")
+
+				return r
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &CreatorHandler{
+				creatorClient:   creatorClient,
+				authClient:      authClient,
+				logger:          zapSugar,
+				notificationApp: notify,
+			}
+			w := httptest.NewRecorder()
+			r := test.mock()
+			h.SubscribeCreatorToNotifications(w, r)
+			require.Equal(t, test.expectedStatus, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
+				" for test:%s", test.name, test.expectedStatus, w.Code, test.name))
+		})
+	}
+}
+
+func TestCreatorHandler_UnsubscribeCreatorNotifications(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	authClient := mockAuth.NewMockAuthServiceClient(ctl)
+	creatorClient := mockCreator.NewMockCreatorServiceClient(ctl)
+	notify := mock.NewMockNotificationApp(ctl)
+
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	os.Setenv("TOKEN_SECRET", "TEST")
+	tkn := &usecase.Tokenator{}
+	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: uuid.New()})
+
+	tests := []struct {
+		name           string
+		mock           func() *http.Request
+		expectedStatus int
+	}{
+		{
+			name: "Internal from Creator service CheckIfCreator",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/unsubscribeToNotifications",
+					bytes.NewReader(bodyPrepare(testToken)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, errors.New("test"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Creator NotFound",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/unsubscribeFromNotifications",
+					bytes.NewReader(bodyPrepare(testToken)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: models.NotFound.Error(),
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "CheckIfCreator internalError",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/unsubscribeFromNotifications",
+					bytes.NewReader(bodyPrepare(testToken)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: models.InternalError.Error(),
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "AddUserToNotificationTopic err",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/unsubscribeFromNotifications",
+					bytes.NewReader(bodyPrepare(testToken)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, nil)
+
+				notify.EXPECT().RemoveUserFromNotificationTopic(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("test"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "OK",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/unsubscribeFromNotifications",
+					bytes.NewReader(bodyPrepare(testToken)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, nil)
+
+				notify.EXPECT().RemoveUserFromNotificationTopic(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				return r
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "No notification token",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/unsubscribeFromNotifications",
+					bytes.NewReader([]byte("")))
+
+				setJWTToken(r, bdy)
+
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Wrong Token",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("PUT", "/unsubscribeFromNotifications",
+					bytes.NewReader(bodyPrepare(testAim)))
+
+				setJWTToken(r, "1")
+
+				return r
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &CreatorHandler{
+				creatorClient:   creatorClient,
+				authClient:      authClient,
+				logger:          zapSugar,
+				notificationApp: notify,
+			}
+			w := httptest.NewRecorder()
+			r := test.mock()
+			h.UnsubscribeCreatorNotifications(w, r)
+			require.Equal(t, test.expectedStatus, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
+				" for test:%s", test.name, test.expectedStatus, w.Code, test.name))
+		})
+	}
+}
+
+var testDates = models.StatisticsDates{
+	CreatorId:   uuid.New(),
+	FirstMonth:  time.Now(),
+	SecondMonth: time.Now(),
+}
+
+var testDatesWithErr = models.StatisticsDates{
+	CreatorId:   uuid.New(),
+	FirstMonth:  time.Now().Add(time.Minute),
+	SecondMonth: time.Now(),
+}
+
+func TestCreatorHandler_Statistics(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	authClient := mockAuth.NewMockAuthServiceClient(ctl)
+	creatorClient := mockCreator.NewMockCreatorServiceClient(ctl)
+	notify := mock.NewMockNotificationApp(ctl)
+
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	os.Setenv("TOKEN_SECRET", "TEST")
+	tkn := &usecase.Tokenator{}
+	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: uuid.New()})
+
+	tests := []struct {
+		name           string
+		mock           func() *http.Request
+		expectedStatus int
+	}{
+		{
+			name: "Internal from Creator service CheckIfCreator",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/statistics",
+					bytes.NewReader(bodyPrepare(testDates)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, errors.New("test"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Wrong dates",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/statistics",
+					bytes.NewReader(bodyPrepare(testDatesWithErr)))
+
+				setJWTToken(r, bdy)
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Creator NotFound",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/statistics",
+					bytes.NewReader(bodyPrepare(testDates)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: models.NotFound.Error(),
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "CheckIfCreator internalError",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/statistics",
+					bytes.NewReader(bodyPrepare(testDates)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: models.InternalError.Error(),
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "OK",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/statistics",
+					bytes.NewReader(bodyPrepare(testToken)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, nil)
+
+				creatorClient.EXPECT().Statistics(gomock.Any(), gomock.Any(), gomock.Any()).Return(&generated.Stat{
+					CreatorId:              uuid.New().String(),
+					PostsPerMonth:          10,
+					SubscriptionsBought:    10,
+					DonationsCount:         10,
+					MoneyFromDonations:     10,
+					MoneyFromSubscriptions: 10,
+					NewFollowers:           10,
+					LikesCount:             10,
+					CommentsCount:          10,
+					Error:                  "",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "InternalErr from statistics",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/statistics",
+					bytes.NewReader(bodyPrepare(testToken)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, nil)
+
+				creatorClient.EXPECT().Statistics(gomock.Any(), gomock.Any(), gomock.Any()).Return(&generated.Stat{
+					Error: "test",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "InternalErr from creator service",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/statistics",
+					bytes.NewReader(bodyPrepare(testToken)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, nil)
+
+				creatorClient.EXPECT().Statistics(gomock.Any(), gomock.Any(), gomock.Any()).Return(&generated.Stat{
+					Error: "",
+				}, errors.New("test"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "No dates",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/statistics",
+					bytes.NewReader([]byte("")))
+
+				setJWTToken(r, bdy)
+
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Wrong Token",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/statistics",
+					bytes.NewReader(bodyPrepare(testDates)))
+
+				setJWTToken(r, "1")
+
+				return r
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &CreatorHandler{
+				creatorClient:   creatorClient,
+				authClient:      authClient,
+				logger:          zapSugar,
+				notificationApp: notify,
+			}
+			w := httptest.NewRecorder()
+			r := test.mock()
+			h.Statistics(w, r)
+			require.Equal(t, test.expectedStatus, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
+				" for test:%s", test.name, test.expectedStatus, w.Code, test.name))
+		})
+	}
+}
+
+func TestCreatorHandler_StatisticsFirstDate(t *testing.T) {
+	ctl := gomock.NewController(t)
+	defer ctl.Finish()
+
+	authClient := mockAuth.NewMockAuthServiceClient(ctl)
+	creatorClient := mockCreator.NewMockCreatorServiceClient(ctl)
+	notify := mock.NewMockNotificationApp(ctl)
+
+	logger := zap.NewNop()
+
+	defer func(logger *zap.Logger) {
+		err := logger.Sync()
+		if err != nil {
+			return
+		}
+	}(logger)
+	zapSugar := logger.Sugar()
+
+	os.Setenv("TOKEN_SECRET", "TEST")
+	tkn := &usecase.Tokenator{}
+	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUser.Login, Id: uuid.New()})
+
+	tests := []struct {
+		name           string
+		mock           func() *http.Request
+		expectedStatus int
+	}{
+		{
+			name: "Internal from Creator service CheckIfCreator",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/statisticsFirstDate",
+					bytes.NewReader(bodyPrepare(testDates)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, errors.New("test"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Creator NotFound",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/statisticsFirstDate",
+					bytes.NewReader(bodyPrepare(testDates)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: models.NotFound.Error(),
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "CheckIfCreator internalError",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/statisticsFirstDate",
+					bytes.NewReader(bodyPrepare(testDates)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: models.InternalError.Error(),
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "OK",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/statisticsFirstDate",
+					bytes.NewReader(bodyPrepare(testToken)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, nil)
+
+				creatorClient.EXPECT().StatisticsFirstDate(gomock.Any(), gomock.Any(), gomock.Any()).Return(&generated.FirstDate{
+					Date:  time.Now().Format(time.RFC3339),
+					Error: "",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "InternalErr from statistics",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/statisticsFirstDate",
+					bytes.NewReader(bodyPrepare(testToken)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, nil)
+
+				creatorClient.EXPECT().StatisticsFirstDate(gomock.Any(), gomock.Any(), gomock.Any()).Return(&generated.FirstDate{
+					Error: "test",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "InternalErr from creator service",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/statisticsFirstDate",
+					bytes.NewReader(bodyPrepare(testToken)))
+
+				setJWTToken(r, bdy)
+
+				creatorClient.EXPECT().CheckIfCreator(gomock.Any(), gomock.Any()).Return(&generatedCommon.UUIDResponse{
+					Value: uuid.New().String(),
+					Error: "",
+				}, nil)
+
+				creatorClient.EXPECT().StatisticsFirstDate(gomock.Any(), gomock.Any(), gomock.Any()).Return(&generated.FirstDate{
+					Error: "",
+				}, errors.New("test"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "Wrong Token",
+			mock: func() *http.Request {
+				r := httptest.NewRequest("GET", "/statisticsFirstDate",
+					bytes.NewReader(bodyPrepare(testDates)))
+
+				setJWTToken(r, "1")
+
+				return r
+			},
+			expectedStatus: http.StatusUnauthorized,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := &CreatorHandler{
+				creatorClient:   creatorClient,
+				authClient:      authClient,
+				logger:          zapSugar,
+				notificationApp: notify,
+			}
+			w := httptest.NewRecorder()
+			r := test.mock()
+			h.StatisticsFirstDate(w, r)
 			require.Equal(t, test.expectedStatus, w.Code, fmt.Errorf("%s :  expected %d, got %d,"+
 				" for test:%s", test.name, test.expectedStatus, w.Code, test.name))
 		})

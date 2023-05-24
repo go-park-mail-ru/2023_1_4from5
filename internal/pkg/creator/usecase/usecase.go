@@ -24,6 +24,10 @@ func (uc *CreatorUsecase) GetPage(ctx context.Context, userID, creatorID uuid.UU
 	return uc.repo.GetPage(ctx, userID, creatorID)
 }
 
+func (uc *CreatorUsecase) CreatorNotificationInfo(ctx context.Context, creatorID uuid.UUID) (models.NotificationCreatorInfo, error) {
+	return uc.repo.CreatorNotificationInfo(ctx, creatorID)
+}
+
 func (uc *CreatorUsecase) CreateAim(ctx context.Context, aimInfo models.Aim) error {
 	return uc.repo.CreateAim(ctx, aimInfo)
 }
@@ -66,10 +70,25 @@ func (uc *CreatorUsecase) UpdateCoverPhoto(ctx context.Context, creatorId uuid.U
 	return path, nil
 }
 
+func (uc *CreatorUsecase) StatisticsFirstDate(ctx context.Context, creatorID uuid.UUID) (string, error) {
+	return uc.repo.StatisticsFirstDate(ctx, creatorID)
+}
+
 func (uc *CreatorUsecase) DeleteCoverPhoto(ctx context.Context, creatorId uuid.UUID) error {
 	return uc.repo.DeleteCoverPhoto(ctx, creatorId)
 }
 
 func (uc *CreatorUsecase) DeleteProfilePhoto(ctx context.Context, creatorId uuid.UUID) error {
 	return uc.repo.DeleteProfilePhoto(ctx, creatorId)
+}
+func (uc *CreatorUsecase) Statistics(ctx context.Context, statsInput models.StatisticsDates) (models.Statistics, error) {
+	return uc.repo.Statistics(ctx, statsInput)
+}
+
+func (uc *CreatorUsecase) GetCreatorBalance(ctx context.Context, creatorID uuid.UUID) (float32, error) {
+	return uc.repo.GetCreatorBalance(ctx, creatorID)
+}
+
+func (uc *CreatorUsecase) UpdateBalance(ctx context.Context, transfer models.CreatorTransfer) (float32, error) {
+	return uc.repo.UpdateBalance(ctx, transfer)
 }

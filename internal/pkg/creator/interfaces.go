@@ -20,6 +20,11 @@ type CreatorUsecase interface {
 	DeleteProfilePhoto(ctx context.Context, creatorId uuid.UUID) error
 	UpdateCoverPhoto(ctx context.Context, creatorId uuid.UUID) (uuid.UUID, error)
 	DeleteCoverPhoto(ctx context.Context, creatorId uuid.UUID) error
+	Statistics(ctx context.Context, statsInput models.StatisticsDates) (models.Statistics, error)
+	StatisticsFirstDate(ctx context.Context, creatorID uuid.UUID) (string, error)
+	CreatorNotificationInfo(ctx context.Context, creatorID uuid.UUID) (models.NotificationCreatorInfo, error)
+	GetCreatorBalance(ctx context.Context, creatorID uuid.UUID) (float32, error)
+	UpdateBalance(ctx context.Context, transfer models.CreatorTransfer) (float32, error)
 }
 
 type CreatorRepo interface {
@@ -35,4 +40,9 @@ type CreatorRepo interface {
 	DeleteProfilePhoto(ctx context.Context, creatorId uuid.UUID) error
 	UpdateCoverPhoto(ctx context.Context, creatorId, path uuid.UUID) error
 	DeleteCoverPhoto(ctx context.Context, creatorId uuid.UUID) error
+	Statistics(ctx context.Context, statsInput models.StatisticsDates) (models.Statistics, error)
+	StatisticsFirstDate(ctx context.Context, creatorID uuid.UUID) (string, error)
+	CreatorNotificationInfo(ctx context.Context, creatorID uuid.UUID) (models.NotificationCreatorInfo, error)
+	GetCreatorBalance(ctx context.Context, creatorID uuid.UUID) (float32, error)
+	UpdateBalance(ctx context.Context, transfer models.CreatorTransfer) (float32, error)
 }

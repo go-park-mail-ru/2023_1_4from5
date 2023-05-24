@@ -27,27 +27,32 @@ func (u *PostUsecase) IsCreator(ctx context.Context, userID, creatorID uuid.UUID
 	return u.repo.IsCreator(ctx, userID, creatorID)
 }
 
-func (u *PostUsecase) GetPost(ctx context.Context, postID, userID uuid.UUID) (models.Post, error) {
+func (u *PostUsecase) GetPost(ctx context.Context, postID, userID uuid.UUID) (models.PostWithComments, error) {
+	var postWithComments models.PostWithComments
 	var isAvailable bool
 	err := u.repo.IsPostAvailable(ctx, userID, postID)
 	if err == models.InternalError {
-		return models.Post{}, err
+		return models.PostWithComments{}, err
 	}
 	if err == nil {
 		isAvailable = true
 	}
-	post, err := u.repo.GetPost(ctx, postID, userID)
+	postWithComments.Post, err = u.repo.GetPost(ctx, postID, userID)
 	if err != nil {
-		return models.Post{}, err
+		return models.PostWithComments{}, err
 	}
-
+	postWithComments.Comments, err = u.repo.GetComments(ctx, postID, userID)
+	if err != nil {
+		return models.PostWithComments{}, err
+	}
 	if !isAvailable {
-		post.Attachments = nil
-		post.Text = ""
+		postWithComments.Post.Attachments = nil
+		postWithComments.Post.Text = ""
+		postWithComments.Comments = nil
 	}
 
-	post.IsAvailable = isAvailable
-	return post, nil
+	postWithComments.Post.IsAvailable = isAvailable
+	return postWithComments, nil
 }
 
 func (u *PostUsecase) DeletePost(ctx context.Context, postID uuid.UUID) error {
@@ -66,4 +71,8 @@ func (u *PostUsecase) RemoveLike(ctx context.Context, userID, postID uuid.UUID) 
 }
 func (u *PostUsecase) EditPost(ctx context.Context, postData models.PostEditData) error {
 	return u.repo.EditPost(ctx, postData)
+}
+
+func (u *PostUsecase) IsPostAvailable(ctx context.Context, postID, userID uuid.UUID) error {
+	return u.repo.IsPostAvailable(ctx, postID, userID)
 }

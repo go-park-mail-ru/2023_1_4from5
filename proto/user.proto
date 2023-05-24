@@ -9,12 +9,24 @@ message FollowMessage {
   string CreatorID = 2;
 }
 
+message PaymentInfo {
+  string PaymentID = 1;
+  float Money = 2;
+}
+
+message SubscriptionName {
+  string Name = 1;
+  string CreatorID = 2;
+  string Error = 3;
+}
+
 message SubscriptionDetails{
   string Id = 1;
   string UserID = 2;
   int64 MonthCount = 3;
-  int64 Money = 4;
+  float Money = 4;
   string CreatorID = 5;
+  string PaymentInfo = 6;
 }
 
 message ImageID{
@@ -44,12 +56,11 @@ message UpdateProfileInfoMessage{
 
 message DonateMessage{
   string CreatorID = 1;
-  int64 MoneyCount = 2;
-  string UserID = 3;
+  float MoneyCount = 2;
 }
 
 message DonateResponse{
-  int64 MoneyCount = 1;
+  float MoneyCount = 1;
   string Error = 2;
 }
 
@@ -85,7 +96,8 @@ message CheckCreatorMessage{
 service UserService {
   rpc Follow(FollowMessage) returns (common.Empty) {}
   rpc Unfollow(FollowMessage) returns (common.Empty) {}
-  rpc Subscribe(SubscriptionDetails) returns (common.Empty) {}
+  rpc Subscribe(PaymentInfo) returns (SubscriptionName) {}
+  rpc AddPaymentInfo(SubscriptionDetails) returns (common.Empty) {}
   rpc GetProfile(common.UUIDMessage) returns (UserProfile) {}
   rpc UpdatePhoto(common.UUIDMessage) returns (ImageID) {}
   rpc DeletePhoto(common.UUIDMessage) returns (common.Empty) {}

@@ -77,6 +77,26 @@ func (mr *MockCreatorServiceClientMockRecorder) AddLike(ctx, in interface{}, opt
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddLike", reflect.TypeOf((*MockCreatorServiceClient)(nil).AddLike), varargs...)
 }
 
+// AddLikeComment mocks base method.
+func (m *MockCreatorServiceClient) AddLikeComment(ctx context.Context, in *generated.Comment, opts ...grpc.CallOption) (*generated.Like, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AddLikeComment", varargs...)
+	ret0, _ := ret[0].(*generated.Like)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddLikeComment indicates an expected call of AddLikeComment.
+func (mr *MockCreatorServiceClientMockRecorder) AddLikeComment(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddLikeComment", reflect.TypeOf((*MockCreatorServiceClient)(nil).AddLikeComment), varargs...)
+}
+
 // CheckIfCreator mocks base method.
 func (m *MockCreatorServiceClient) CheckIfCreator(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.UUIDResponse, error) {
 	m.ctrl.T.Helper()
@@ -117,6 +137,26 @@ func (mr *MockCreatorServiceClientMockRecorder) CreateAim(ctx, in interface{}, o
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAim", reflect.TypeOf((*MockCreatorServiceClient)(nil).CreateAim), varargs...)
 }
 
+// CreateComment mocks base method.
+func (m *MockCreatorServiceClient) CreateComment(ctx context.Context, in *generated.Comment, opts ...grpc.CallOption) (*proto.Empty, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CreateComment", varargs...)
+	ret0, _ := ret[0].(*proto.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateComment indicates an expected call of CreateComment.
+func (mr *MockCreatorServiceClientMockRecorder) CreateComment(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateComment", reflect.TypeOf((*MockCreatorServiceClient)(nil).CreateComment), varargs...)
+}
+
 // CreatePost mocks base method.
 func (m *MockCreatorServiceClient) CreatePost(ctx context.Context, in *generated.PostCreationData, opts ...grpc.CallOption) (*proto.Empty, error) {
 	m.ctrl.T.Helper()
@@ -155,6 +195,26 @@ func (mr *MockCreatorServiceClientMockRecorder) CreateSubscription(ctx, in inter
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSubscription", reflect.TypeOf((*MockCreatorServiceClient)(nil).CreateSubscription), varargs...)
+}
+
+// CreatorNotificationInfo mocks base method.
+func (m *MockCreatorServiceClient) CreatorNotificationInfo(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*generated.NotificationCreatorInfo, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CreatorNotificationInfo", varargs...)
+	ret0, _ := ret[0].(*generated.NotificationCreatorInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreatorNotificationInfo indicates an expected call of CreatorNotificationInfo.
+func (mr *MockCreatorServiceClientMockRecorder) CreatorNotificationInfo(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatorNotificationInfo", reflect.TypeOf((*MockCreatorServiceClient)(nil).CreatorNotificationInfo), varargs...)
 }
 
 // DeleteAttachment mocks base method.
@@ -215,6 +275,26 @@ func (mr *MockCreatorServiceClientMockRecorder) DeleteAttachmentsFiles(ctx, in i
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAttachmentsFiles", reflect.TypeOf((*MockCreatorServiceClient)(nil).DeleteAttachmentsFiles), varargs...)
+}
+
+// DeleteComment mocks base method.
+func (m *MockCreatorServiceClient) DeleteComment(ctx context.Context, in *generated.Comment, opts ...grpc.CallOption) (*proto.Empty, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeleteComment", varargs...)
+	ret0, _ := ret[0].(*proto.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteComment indicates an expected call of DeleteComment.
+func (mr *MockCreatorServiceClientMockRecorder) DeleteComment(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteComment", reflect.TypeOf((*MockCreatorServiceClient)(nil).DeleteComment), varargs...)
 }
 
 // DeleteCoverPhoto mocks base method.
@@ -297,6 +377,26 @@ func (mr *MockCreatorServiceClientMockRecorder) DeleteSubscription(ctx, in inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSubscription", reflect.TypeOf((*MockCreatorServiceClient)(nil).DeleteSubscription), varargs...)
 }
 
+// EditComment mocks base method.
+func (m *MockCreatorServiceClient) EditComment(ctx context.Context, in *generated.Comment, opts ...grpc.CallOption) (*proto.Empty, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "EditComment", varargs...)
+	ret0, _ := ret[0].(*proto.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EditComment indicates an expected call of EditComment.
+func (mr *MockCreatorServiceClientMockRecorder) EditComment(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EditComment", reflect.TypeOf((*MockCreatorServiceClient)(nil).EditComment), varargs...)
+}
+
 // EditPost mocks base method.
 func (m *MockCreatorServiceClient) EditPost(ctx context.Context, in *generated.PostEditData, opts ...grpc.CallOption) (*proto.Empty, error) {
 	m.ctrl.T.Helper()
@@ -377,6 +477,26 @@ func (mr *MockCreatorServiceClientMockRecorder) GetAllCreators(ctx, in interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCreators", reflect.TypeOf((*MockCreatorServiceClient)(nil).GetAllCreators), varargs...)
 }
 
+// GetCreatorBalance mocks base method.
+func (m *MockCreatorServiceClient) GetCreatorBalance(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*generated.CreatorBalance, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetCreatorBalance", varargs...)
+	ret0, _ := ret[0].(*generated.CreatorBalance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCreatorBalance indicates an expected call of GetCreatorBalance.
+func (mr *MockCreatorServiceClientMockRecorder) GetCreatorBalance(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCreatorBalance", reflect.TypeOf((*MockCreatorServiceClient)(nil).GetCreatorBalance), varargs...)
+}
+
 // GetFeed mocks base method.
 func (m *MockCreatorServiceClient) GetFeed(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*generated.PostsMessage, error) {
 	m.ctrl.T.Helper()
@@ -438,14 +558,14 @@ func (mr *MockCreatorServiceClientMockRecorder) GetPage(ctx, in interface{}, opt
 }
 
 // GetPost mocks base method.
-func (m *MockCreatorServiceClient) GetPost(ctx context.Context, in *generated.PostUserMessage, opts ...grpc.CallOption) (*generated.PostMessage, error) {
+func (m *MockCreatorServiceClient) GetPost(ctx context.Context, in *generated.PostUserMessage, opts ...grpc.CallOption) (*generated.PostWithComments, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetPost", varargs...)
-	ret0, _ := ret[0].(*generated.PostMessage)
+	ret0, _ := ret[0].(*generated.PostWithComments)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -455,6 +575,26 @@ func (mr *MockCreatorServiceClientMockRecorder) GetPost(ctx, in interface{}, opt
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPost", reflect.TypeOf((*MockCreatorServiceClient)(nil).GetPost), varargs...)
+}
+
+// IsCommentOwner mocks base method.
+func (m *MockCreatorServiceClient) IsCommentOwner(ctx context.Context, in *generated.Comment, opts ...grpc.CallOption) (*generated.FlagMessage, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "IsCommentOwner", varargs...)
+	ret0, _ := ret[0].(*generated.FlagMessage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsCommentOwner indicates an expected call of IsCommentOwner.
+func (mr *MockCreatorServiceClientMockRecorder) IsCommentOwner(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsCommentOwner", reflect.TypeOf((*MockCreatorServiceClient)(nil).IsCommentOwner), varargs...)
 }
 
 // IsCreator mocks base method.
@@ -475,6 +615,26 @@ func (mr *MockCreatorServiceClientMockRecorder) IsCreator(ctx, in interface{}, o
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsCreator", reflect.TypeOf((*MockCreatorServiceClient)(nil).IsCreator), varargs...)
+}
+
+// IsPostAvailable mocks base method.
+func (m *MockCreatorServiceClient) IsPostAvailable(ctx context.Context, in *generated.PostUserMessage, opts ...grpc.CallOption) (*proto.Empty, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "IsPostAvailable", varargs...)
+	ret0, _ := ret[0].(*proto.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsPostAvailable indicates an expected call of IsPostAvailable.
+func (mr *MockCreatorServiceClientMockRecorder) IsPostAvailable(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPostAvailable", reflect.TypeOf((*MockCreatorServiceClient)(nil).IsPostAvailable), varargs...)
 }
 
 // IsPostOwner mocks base method.
@@ -515,6 +675,86 @@ func (mr *MockCreatorServiceClientMockRecorder) RemoveLike(ctx, in interface{}, 
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveLike", reflect.TypeOf((*MockCreatorServiceClient)(nil).RemoveLike), varargs...)
+}
+
+// RemoveLikeComment mocks base method.
+func (m *MockCreatorServiceClient) RemoveLikeComment(ctx context.Context, in *generated.Comment, opts ...grpc.CallOption) (*generated.Like, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "RemoveLikeComment", varargs...)
+	ret0, _ := ret[0].(*generated.Like)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RemoveLikeComment indicates an expected call of RemoveLikeComment.
+func (mr *MockCreatorServiceClientMockRecorder) RemoveLikeComment(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveLikeComment", reflect.TypeOf((*MockCreatorServiceClient)(nil).RemoveLikeComment), varargs...)
+}
+
+// Statistics mocks base method.
+func (m *MockCreatorServiceClient) Statistics(ctx context.Context, in *generated.StatisticsInput, opts ...grpc.CallOption) (*generated.Stat, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Statistics", varargs...)
+	ret0, _ := ret[0].(*generated.Stat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Statistics indicates an expected call of Statistics.
+func (mr *MockCreatorServiceClientMockRecorder) Statistics(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Statistics", reflect.TypeOf((*MockCreatorServiceClient)(nil).Statistics), varargs...)
+}
+
+// StatisticsFirstDate mocks base method.
+func (m *MockCreatorServiceClient) StatisticsFirstDate(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*generated.FirstDate, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "StatisticsFirstDate", varargs...)
+	ret0, _ := ret[0].(*generated.FirstDate)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StatisticsFirstDate indicates an expected call of StatisticsFirstDate.
+func (mr *MockCreatorServiceClientMockRecorder) StatisticsFirstDate(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StatisticsFirstDate", reflect.TypeOf((*MockCreatorServiceClient)(nil).StatisticsFirstDate), varargs...)
+}
+
+// UpdateBalance mocks base method.
+func (m *MockCreatorServiceClient) UpdateBalance(ctx context.Context, in *generated.CreatorTransfer, opts ...grpc.CallOption) (*generated.CreatorBalance, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateBalance", varargs...)
+	ret0, _ := ret[0].(*generated.CreatorBalance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateBalance indicates an expected call of UpdateBalance.
+func (mr *MockCreatorServiceClientMockRecorder) UpdateBalance(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateBalance", reflect.TypeOf((*MockCreatorServiceClient)(nil).UpdateBalance), varargs...)
 }
 
 // UpdateCoverPhoto mocks base method.
@@ -630,6 +870,21 @@ func (mr *MockCreatorServiceServerMockRecorder) AddLike(arg0, arg1 interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddLike", reflect.TypeOf((*MockCreatorServiceServer)(nil).AddLike), arg0, arg1)
 }
 
+// AddLikeComment mocks base method.
+func (m *MockCreatorServiceServer) AddLikeComment(arg0 context.Context, arg1 *generated.Comment) (*generated.Like, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddLikeComment", arg0, arg1)
+	ret0, _ := ret[0].(*generated.Like)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddLikeComment indicates an expected call of AddLikeComment.
+func (mr *MockCreatorServiceServerMockRecorder) AddLikeComment(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddLikeComment", reflect.TypeOf((*MockCreatorServiceServer)(nil).AddLikeComment), arg0, arg1)
+}
+
 // CheckIfCreator mocks base method.
 func (m *MockCreatorServiceServer) CheckIfCreator(arg0 context.Context, arg1 *proto.UUIDMessage) (*proto.UUIDResponse, error) {
 	m.ctrl.T.Helper()
@@ -660,6 +915,21 @@ func (mr *MockCreatorServiceServerMockRecorder) CreateAim(arg0, arg1 interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAim", reflect.TypeOf((*MockCreatorServiceServer)(nil).CreateAim), arg0, arg1)
 }
 
+// CreateComment mocks base method.
+func (m *MockCreatorServiceServer) CreateComment(arg0 context.Context, arg1 *generated.Comment) (*proto.Empty, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateComment", arg0, arg1)
+	ret0, _ := ret[0].(*proto.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateComment indicates an expected call of CreateComment.
+func (mr *MockCreatorServiceServerMockRecorder) CreateComment(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateComment", reflect.TypeOf((*MockCreatorServiceServer)(nil).CreateComment), arg0, arg1)
+}
+
 // CreatePost mocks base method.
 func (m *MockCreatorServiceServer) CreatePost(arg0 context.Context, arg1 *generated.PostCreationData) (*proto.Empty, error) {
 	m.ctrl.T.Helper()
@@ -688,6 +958,21 @@ func (m *MockCreatorServiceServer) CreateSubscription(arg0 context.Context, arg1
 func (mr *MockCreatorServiceServerMockRecorder) CreateSubscription(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSubscription", reflect.TypeOf((*MockCreatorServiceServer)(nil).CreateSubscription), arg0, arg1)
+}
+
+// CreatorNotificationInfo mocks base method.
+func (m *MockCreatorServiceServer) CreatorNotificationInfo(arg0 context.Context, arg1 *proto.UUIDMessage) (*generated.NotificationCreatorInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreatorNotificationInfo", arg0, arg1)
+	ret0, _ := ret[0].(*generated.NotificationCreatorInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreatorNotificationInfo indicates an expected call of CreatorNotificationInfo.
+func (mr *MockCreatorServiceServerMockRecorder) CreatorNotificationInfo(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatorNotificationInfo", reflect.TypeOf((*MockCreatorServiceServer)(nil).CreatorNotificationInfo), arg0, arg1)
 }
 
 // DeleteAttachment mocks base method.
@@ -733,6 +1018,21 @@ func (m *MockCreatorServiceServer) DeleteAttachmentsFiles(arg0 context.Context, 
 func (mr *MockCreatorServiceServerMockRecorder) DeleteAttachmentsFiles(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAttachmentsFiles", reflect.TypeOf((*MockCreatorServiceServer)(nil).DeleteAttachmentsFiles), arg0, arg1)
+}
+
+// DeleteComment mocks base method.
+func (m *MockCreatorServiceServer) DeleteComment(arg0 context.Context, arg1 *generated.Comment) (*proto.Empty, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteComment", arg0, arg1)
+	ret0, _ := ret[0].(*proto.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteComment indicates an expected call of DeleteComment.
+func (mr *MockCreatorServiceServerMockRecorder) DeleteComment(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteComment", reflect.TypeOf((*MockCreatorServiceServer)(nil).DeleteComment), arg0, arg1)
 }
 
 // DeleteCoverPhoto mocks base method.
@@ -795,6 +1095,21 @@ func (mr *MockCreatorServiceServerMockRecorder) DeleteSubscription(arg0, arg1 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSubscription", reflect.TypeOf((*MockCreatorServiceServer)(nil).DeleteSubscription), arg0, arg1)
 }
 
+// EditComment mocks base method.
+func (m *MockCreatorServiceServer) EditComment(arg0 context.Context, arg1 *generated.Comment) (*proto.Empty, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EditComment", arg0, arg1)
+	ret0, _ := ret[0].(*proto.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EditComment indicates an expected call of EditComment.
+func (mr *MockCreatorServiceServerMockRecorder) EditComment(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EditComment", reflect.TypeOf((*MockCreatorServiceServer)(nil).EditComment), arg0, arg1)
+}
+
 // EditPost mocks base method.
 func (m *MockCreatorServiceServer) EditPost(arg0 context.Context, arg1 *generated.PostEditData) (*proto.Empty, error) {
 	m.ctrl.T.Helper()
@@ -855,6 +1170,21 @@ func (mr *MockCreatorServiceServerMockRecorder) GetAllCreators(arg0, arg1 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCreators", reflect.TypeOf((*MockCreatorServiceServer)(nil).GetAllCreators), arg0, arg1)
 }
 
+// GetCreatorBalance mocks base method.
+func (m *MockCreatorServiceServer) GetCreatorBalance(arg0 context.Context, arg1 *proto.UUIDMessage) (*generated.CreatorBalance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCreatorBalance", arg0, arg1)
+	ret0, _ := ret[0].(*generated.CreatorBalance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCreatorBalance indicates an expected call of GetCreatorBalance.
+func (mr *MockCreatorServiceServerMockRecorder) GetCreatorBalance(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCreatorBalance", reflect.TypeOf((*MockCreatorServiceServer)(nil).GetCreatorBalance), arg0, arg1)
+}
+
 // GetFeed mocks base method.
 func (m *MockCreatorServiceServer) GetFeed(arg0 context.Context, arg1 *proto.UUIDMessage) (*generated.PostsMessage, error) {
 	m.ctrl.T.Helper()
@@ -901,10 +1231,10 @@ func (mr *MockCreatorServiceServerMockRecorder) GetPage(arg0, arg1 interface{}) 
 }
 
 // GetPost mocks base method.
-func (m *MockCreatorServiceServer) GetPost(arg0 context.Context, arg1 *generated.PostUserMessage) (*generated.PostMessage, error) {
+func (m *MockCreatorServiceServer) GetPost(arg0 context.Context, arg1 *generated.PostUserMessage) (*generated.PostWithComments, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPost", arg0, arg1)
-	ret0, _ := ret[0].(*generated.PostMessage)
+	ret0, _ := ret[0].(*generated.PostWithComments)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -913,6 +1243,21 @@ func (m *MockCreatorServiceServer) GetPost(arg0 context.Context, arg1 *generated
 func (mr *MockCreatorServiceServerMockRecorder) GetPost(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPost", reflect.TypeOf((*MockCreatorServiceServer)(nil).GetPost), arg0, arg1)
+}
+
+// IsCommentOwner mocks base method.
+func (m *MockCreatorServiceServer) IsCommentOwner(arg0 context.Context, arg1 *generated.Comment) (*generated.FlagMessage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsCommentOwner", arg0, arg1)
+	ret0, _ := ret[0].(*generated.FlagMessage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsCommentOwner indicates an expected call of IsCommentOwner.
+func (mr *MockCreatorServiceServerMockRecorder) IsCommentOwner(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsCommentOwner", reflect.TypeOf((*MockCreatorServiceServer)(nil).IsCommentOwner), arg0, arg1)
 }
 
 // IsCreator mocks base method.
@@ -928,6 +1273,21 @@ func (m *MockCreatorServiceServer) IsCreator(arg0 context.Context, arg1 *generat
 func (mr *MockCreatorServiceServerMockRecorder) IsCreator(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsCreator", reflect.TypeOf((*MockCreatorServiceServer)(nil).IsCreator), arg0, arg1)
+}
+
+// IsPostAvailable mocks base method.
+func (m *MockCreatorServiceServer) IsPostAvailable(arg0 context.Context, arg1 *generated.PostUserMessage) (*proto.Empty, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsPostAvailable", arg0, arg1)
+	ret0, _ := ret[0].(*proto.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsPostAvailable indicates an expected call of IsPostAvailable.
+func (mr *MockCreatorServiceServerMockRecorder) IsPostAvailable(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsPostAvailable", reflect.TypeOf((*MockCreatorServiceServer)(nil).IsPostAvailable), arg0, arg1)
 }
 
 // IsPostOwner mocks base method.
@@ -958,6 +1318,66 @@ func (m *MockCreatorServiceServer) RemoveLike(arg0 context.Context, arg1 *genera
 func (mr *MockCreatorServiceServerMockRecorder) RemoveLike(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveLike", reflect.TypeOf((*MockCreatorServiceServer)(nil).RemoveLike), arg0, arg1)
+}
+
+// RemoveLikeComment mocks base method.
+func (m *MockCreatorServiceServer) RemoveLikeComment(arg0 context.Context, arg1 *generated.Comment) (*generated.Like, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveLikeComment", arg0, arg1)
+	ret0, _ := ret[0].(*generated.Like)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RemoveLikeComment indicates an expected call of RemoveLikeComment.
+func (mr *MockCreatorServiceServerMockRecorder) RemoveLikeComment(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveLikeComment", reflect.TypeOf((*MockCreatorServiceServer)(nil).RemoveLikeComment), arg0, arg1)
+}
+
+// Statistics mocks base method.
+func (m *MockCreatorServiceServer) Statistics(arg0 context.Context, arg1 *generated.StatisticsInput) (*generated.Stat, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Statistics", arg0, arg1)
+	ret0, _ := ret[0].(*generated.Stat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Statistics indicates an expected call of Statistics.
+func (mr *MockCreatorServiceServerMockRecorder) Statistics(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Statistics", reflect.TypeOf((*MockCreatorServiceServer)(nil).Statistics), arg0, arg1)
+}
+
+// StatisticsFirstDate mocks base method.
+func (m *MockCreatorServiceServer) StatisticsFirstDate(arg0 context.Context, arg1 *proto.UUIDMessage) (*generated.FirstDate, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StatisticsFirstDate", arg0, arg1)
+	ret0, _ := ret[0].(*generated.FirstDate)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StatisticsFirstDate indicates an expected call of StatisticsFirstDate.
+func (mr *MockCreatorServiceServerMockRecorder) StatisticsFirstDate(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StatisticsFirstDate", reflect.TypeOf((*MockCreatorServiceServer)(nil).StatisticsFirstDate), arg0, arg1)
+}
+
+// UpdateBalance mocks base method.
+func (m *MockCreatorServiceServer) UpdateBalance(arg0 context.Context, arg1 *generated.CreatorTransfer) (*generated.CreatorBalance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateBalance", arg0, arg1)
+	ret0, _ := ret[0].(*generated.CreatorBalance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateBalance indicates an expected call of UpdateBalance.
+func (mr *MockCreatorServiceServerMockRecorder) UpdateBalance(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateBalance", reflect.TypeOf((*MockCreatorServiceServer)(nil).UpdateBalance), arg0, arg1)
 }
 
 // UpdateCoverPhoto mocks base method.

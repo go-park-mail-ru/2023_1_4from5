@@ -1,16 +1,17 @@
 package grpcCreator
 
 import (
-	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/attachment"
+	comment "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/comment"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/post"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/subscription"
 	"github.com/google/uuid"
 	"golang.org/x/net/context"
+	"time"
 )
 
 //go:generate mockgen -source=./generated/creator_grpc.pb.go -destination=../../mocks/creator_grpc.go -package=mock
@@ -20,15 +21,17 @@ type GrpcCreatorHandler struct {
 	puc post.PostUsecase
 	auc attachment.AttachmentUsecase
 	suc subscription.SubscriptionUsecase
+	cuc comment.CommentUsecase
 	generatedCreator.CreatorServiceServer
 }
 
-func NewGrpcCreatorHandler(uc creator.CreatorUsecase, puc post.PostUsecase, auc attachment.AttachmentUsecase, suc subscription.SubscriptionUsecase) *GrpcCreatorHandler {
+func NewGrpcCreatorHandler(uc creator.CreatorUsecase, puc post.PostUsecase, auc attachment.AttachmentUsecase, suc subscription.SubscriptionUsecase, cuc comment.CommentUsecase) *GrpcCreatorHandler {
 	return &GrpcCreatorHandler{
 		uc:  uc,
 		puc: puc,
 		auc: auc,
 		suc: suc,
+		cuc: cuc,
 	}
 }
 
@@ -91,16 +94,17 @@ func (h GrpcCreatorHandler) GetFeed(ctx context.Context, in *generatedCommon.UUI
 	var postsProto generatedCreator.PostsMessage
 	for i, post := range feed {
 		postsProto.Posts = append(postsProto.Posts, &generatedCreator.Post{
-			Id:           post.Id.String(),
-			CreatorID:    post.Creator.String(),
-			Creation:     post.Creation.String(),
-			CreatorName:  post.CreatorName,
-			LikesCount:   post.LikesCount,
-			CreatorPhoto: post.CreatorPhoto.String(),
-			Title:        post.Title,
-			Text:         post.Text,
-			IsAvailable:  true,
-			IsLiked:      post.IsLiked,
+			Id:            post.Id.String(),
+			CreatorID:     post.Creator.String(),
+			Creation:      post.Creation.Format(time.RFC3339),
+			CreatorName:   post.CreatorName,
+			LikesCount:    post.LikesCount,
+			CommentsCount: post.CommentsCount,
+			CreatorPhoto:  post.CreatorPhoto.String(),
+			Title:         post.Title,
+			Text:          post.Text,
+			IsAvailable:   true,
+			IsLiked:       post.IsLiked,
 		})
 
 		for _, attach := range post.Attachments {
@@ -128,7 +132,6 @@ func (h GrpcCreatorHandler) GetPage(ctx context.Context, in *generatedCreator.Us
 	}
 
 	page, err := h.uc.GetPage(ctx, userID, creatorID)
-	fmt.Println(page.IsMyPage)
 
 	if err != nil {
 		return &generatedCreator.CreatorPage{Error: err.Error()}, nil
@@ -168,16 +171,17 @@ func (h GrpcCreatorHandler) GetPage(ctx context.Context, in *generatedCreator.Us
 	}
 	for i, post := range page.Posts {
 		creatorPage.Posts = append(creatorPage.Posts, &generatedCreator.Post{
-			Id:           post.Id.String(),
-			CreatorID:    post.Creator.String(),
-			Creation:     post.Creation.String(),
-			CreatorName:  post.CreatorName,
-			LikesCount:   post.LikesCount,
-			CreatorPhoto: post.CreatorPhoto.String(),
-			Title:        post.Title,
-			Text:         post.Text,
-			IsAvailable:  post.IsAvailable,
-			IsLiked:      post.IsLiked,
+			Id:            post.Id.String(),
+			CreatorID:     post.Creator.String(),
+			Creation:      post.Creation.Format(time.RFC3339),
+			CreatorName:   post.CreatorName,
+			LikesCount:    post.LikesCount,
+			CommentsCount: post.CommentsCount,
+			CreatorPhoto:  post.CreatorPhoto.String(),
+			Title:         post.Title,
+			Text:          post.Text,
+			IsAvailable:   post.IsAvailable,
+			IsLiked:       post.IsLiked,
 		})
 
 		for _, attach := range post.Attachments {
@@ -267,6 +271,19 @@ func (h GrpcCreatorHandler) CheckIfCreator(ctx context.Context, in *generatedCom
 	return &generatedCommon.UUIDResponse{Error: "", Value: creatorID.String()}, nil
 }
 
+func (h GrpcCreatorHandler) CreatorNotificationInfo(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedCreator.NotificationCreatorInfo, error) {
+	creatorID, err := uuid.Parse(in.Value)
+	if err != nil {
+		return &generatedCreator.NotificationCreatorInfo{Error: err.Error()}, nil
+	}
+
+	info, err := h.uc.CreatorNotificationInfo(ctx, creatorID)
+	if err != nil {
+		return &generatedCreator.NotificationCreatorInfo{Error: err.Error()}, nil
+	}
+	return &generatedCreator.NotificationCreatorInfo{Error: "", Name: info.Name, Photo: info.Photo.String()}, nil
+}
+
 func (h GrpcCreatorHandler) CreatePost(ctx context.Context, in *generatedCreator.PostCreationData) (*generatedCommon.Empty, error) {
 	ID, err := uuid.Parse(in.Id)
 	if err != nil {
@@ -348,6 +365,18 @@ func (h GrpcCreatorHandler) DeleteAttachmentsByPostID(ctx context.Context, in *g
 	return &generatedCommon.Empty{Error: ""}, nil
 }
 
+func (h GrpcCreatorHandler) StatisticsFirstDate(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedCreator.FirstDate, error) {
+	creatorID, err := uuid.Parse(in.Value)
+	if err != nil {
+		return &generatedCreator.FirstDate{Error: err.Error()}, nil
+	}
+	firstDate, err := h.uc.StatisticsFirstDate(ctx, creatorID)
+	if err != nil {
+		return &generatedCreator.FirstDate{Error: err.Error()}, nil
+	}
+	return &generatedCreator.FirstDate{Error: "", Date: firstDate}, nil
+}
+
 func (h GrpcCreatorHandler) DeleteAttachment(ctx context.Context, in *generatedCreator.PostAttachMessage) (*generatedCommon.Empty, error) {
 	postID, err := uuid.Parse(in.PostID)
 	if err != nil {
@@ -417,6 +446,24 @@ func (h GrpcCreatorHandler) IsPostOwner(ctx context.Context, in *generatedCreato
 	return &generatedCreator.FlagMessage{Flag: flag, Error: ""}, nil
 }
 
+func (h GrpcCreatorHandler) IsPostAvailable(ctx context.Context, in *generatedCreator.PostUserMessage) (*generatedCommon.Empty, error) {
+	postID, err := uuid.Parse(in.PostID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+
+	userID, err := uuid.Parse(in.UserID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+
+	err = h.puc.IsPostAvailable(ctx, userID, postID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
 func (h GrpcCreatorHandler) DeletePost(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedCommon.Empty, error) {
 	postID, err := uuid.Parse(in.Value)
 	if err != nil {
@@ -430,41 +477,88 @@ func (h GrpcCreatorHandler) DeletePost(ctx context.Context, in *generatedCommon.
 	return &generatedCommon.Empty{Error: ""}, nil
 }
 
-func (h GrpcCreatorHandler) GetPost(ctx context.Context, in *generatedCreator.PostUserMessage) (*generatedCreator.PostMessage, error) {
+func (h GrpcCreatorHandler) GetCreatorBalance(ctx context.Context, in *generatedCommon.UUIDMessage) (*generatedCreator.CreatorBalance, error) {
+	creatorID, err := uuid.Parse(in.Value)
+	if err != nil {
+		return &generatedCreator.CreatorBalance{Error: err.Error()}, nil
+	}
+
+	balance, err := h.uc.GetCreatorBalance(ctx, creatorID)
+	if err != nil {
+		return &generatedCreator.CreatorBalance{Error: err.Error()}, nil
+	}
+	return &generatedCreator.CreatorBalance{Error: "", Balance: balance}, nil
+}
+
+func (h GrpcCreatorHandler) UpdateBalance(ctx context.Context, in *generatedCreator.CreatorTransfer) (*generatedCreator.CreatorBalance, error) {
+	creatorID, err := uuid.Parse(in.CreatorID)
+	if err != nil {
+		return &generatedCreator.CreatorBalance{Error: err.Error()}, nil
+	}
+
+	balance, err := h.uc.UpdateBalance(ctx, models.CreatorTransfer{
+		Money:       in.Money,
+		CreatorID:   creatorID,
+		PhoneNumber: "",
+	})
+	if err != nil {
+		return &generatedCreator.CreatorBalance{Error: err.Error()}, nil
+	}
+	return &generatedCreator.CreatorBalance{Error: "", Balance: balance}, nil
+}
+
+func (h GrpcCreatorHandler) GetPost(ctx context.Context, in *generatedCreator.PostUserMessage) (*generatedCreator.PostWithComments, error) {
 	postID, err := uuid.Parse(in.PostID)
 	if err != nil {
-		return &generatedCreator.PostMessage{Error: err.Error()}, nil
+		return &generatedCreator.PostWithComments{Error: err.Error()}, nil
 	}
 
 	userID, err := uuid.Parse(in.UserID)
 	if err != nil {
-		return &generatedCreator.PostMessage{Error: err.Error()}, nil
+		return &generatedCreator.PostWithComments{Error: err.Error()}, nil
 	}
 
 	post, err := h.puc.GetPost(ctx, postID, userID)
 	if err != nil {
-		return &generatedCreator.PostMessage{Error: err.Error()}, nil
+		return &generatedCreator.PostWithComments{Error: err.Error()}, nil
 	}
 
 	var attachs []*generatedCreator.Attachment
 
-	for _, v := range post.Attachments {
+	for _, v := range post.Post.Attachments {
 		attachs = append(attachs, &generatedCreator.Attachment{ID: v.Id.String(), Type: v.Type})
 	}
 
-	return &generatedCreator.PostMessage{Error: "", Post: &generatedCreator.Post{
-		Id:              post.Id.String(),
-		CreatorID:       post.Creator.String(),
-		Creation:        post.Creation.String(),
-		CreatorName:     post.CreatorName,
-		LikesCount:      post.LikesCount,
-		CreatorPhoto:    post.CreatorPhoto.String(),
-		Title:           post.Title,
-		Text:            post.Text,
-		IsAvailable:     post.IsAvailable,
+	var comments []*generatedCreator.Comment
+
+	for _, v := range post.Comments {
+		comments = append(comments, &generatedCreator.Comment{
+			Id:         v.CommentID.String(),
+			UserId:     v.UserID.String(),
+			Username:   v.Username,
+			UserPhoto:  v.UserPhoto.String(),
+			PostID:     v.PostID.String(),
+			Text:       v.Text,
+			Creation:   v.Creation.Format(time.RFC3339),
+			LikesCount: v.LikesCount,
+			IsOwner:    v.IsOwner,
+			IsLiked:    v.IsLiked,
+		})
+	}
+
+	return &generatedCreator.PostWithComments{Error: "", Post: &generatedCreator.Post{
+		Id:              post.Post.Id.String(),
+		CreatorID:       post.Post.Creator.String(),
+		Creation:        post.Post.Creation.Format(time.RFC3339),
+		CreatorName:     post.Post.CreatorName,
+		LikesCount:      post.Post.LikesCount,
+		CreatorPhoto:    post.Post.CreatorPhoto.String(),
+		Title:           post.Post.Title,
+		Text:            post.Post.Text,
+		IsAvailable:     post.Post.IsAvailable,
 		PostAttachments: attachs,
-		IsLiked:         post.IsLiked,
-	}}, nil
+		IsLiked:         post.Post.IsLiked,
+	}, Comments: comments}, nil
 }
 
 func (h GrpcCreatorHandler) EditPost(ctx context.Context, in *generatedCreator.PostEditData) (*generatedCommon.Empty, error) {
@@ -650,4 +744,180 @@ func (h GrpcCreatorHandler) DeleteSubscription(ctx context.Context, in *generate
 		return &generatedCommon.Empty{Error: err.Error()}, nil
 	}
 	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) CreateComment(ctx context.Context, in *generatedCreator.Comment) (*generatedCommon.Empty, error) {
+	commentId, err := uuid.Parse(in.Id)
+	if err != nil {
+		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
+	}
+	userId, err := uuid.Parse(in.UserId)
+	if err != nil {
+		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
+	}
+	postId, err := uuid.Parse(in.PostID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
+	}
+	err = h.cuc.CreateComment(ctx, models.Comment{
+		CommentID: commentId,
+		UserID:    userId,
+		PostID:    postId,
+		Text:      in.Text,
+	})
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) DeleteComment(ctx context.Context, in *generatedCreator.Comment) (*generatedCommon.Empty, error) {
+	commentId, err := uuid.Parse(in.Id)
+	if err != nil {
+		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
+	}
+	postId, err := uuid.Parse(in.PostID)
+	if err != nil {
+		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
+	}
+	err = h.cuc.DeleteComment(ctx, models.Comment{
+		CommentID: commentId,
+		PostID:    postId,
+	})
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) EditComment(ctx context.Context, in *generatedCreator.Comment) (*generatedCommon.Empty, error) {
+	commentId, err := uuid.Parse(in.Id)
+	if err != nil {
+		return &generatedCommon.Empty{Error: models.WrongData.Error()}, nil
+	}
+
+	err = h.cuc.EditComment(ctx, models.Comment{
+		CommentID: commentId,
+		Text:      in.Text,
+	})
+	if err != nil {
+		return &generatedCommon.Empty{Error: err.Error()}, nil
+	}
+	return &generatedCommon.Empty{Error: ""}, nil
+}
+
+func (h GrpcCreatorHandler) AddLikeComment(ctx context.Context, in *generatedCreator.Comment) (*generatedCreator.Like, error) {
+	commentId, err := uuid.Parse(in.Id)
+	if err != nil {
+		return &generatedCreator.Like{Error: models.WrongData.Error()}, nil
+	}
+	userId, err := uuid.Parse(in.UserId)
+	if err != nil {
+		return &generatedCreator.Like{Error: models.WrongData.Error()}, nil
+	}
+	postId, err := uuid.Parse(in.PostID)
+	if err != nil {
+		return &generatedCreator.Like{Error: models.WrongData.Error()}, nil
+	}
+
+	likesCount, err := h.cuc.AddLike(ctx, models.Comment{
+		CommentID: commentId,
+		UserID:    userId,
+		PostID:    postId,
+	})
+
+	if err != nil {
+		return &generatedCreator.Like{Error: err.Error()}, nil
+	}
+	return &generatedCreator.Like{Error: "", LikesCount: likesCount}, nil
+}
+
+func (h GrpcCreatorHandler) RemoveLikeComment(ctx context.Context, in *generatedCreator.Comment) (*generatedCreator.Like, error) {
+	commentId, err := uuid.Parse(in.Id)
+	if err != nil {
+		return &generatedCreator.Like{Error: models.WrongData.Error()}, nil
+	}
+	userId, err := uuid.Parse(in.UserId)
+	if err != nil {
+		return &generatedCreator.Like{Error: models.WrongData.Error()}, nil
+	}
+
+	likesCount, err := h.cuc.RemoveLike(ctx, models.Comment{
+		CommentID: commentId,
+		UserID:    userId,
+	})
+
+	if err != nil {
+		return &generatedCreator.Like{Error: err.Error()}, nil
+	}
+	return &generatedCreator.Like{Error: "", LikesCount: likesCount}, nil
+}
+
+func (h GrpcCreatorHandler) IsCommentOwner(ctx context.Context, in *generatedCreator.Comment) (*generatedCreator.FlagMessage, error) {
+	commentId, err := uuid.Parse(in.Id)
+	if err != nil {
+		return &generatedCreator.FlagMessage{
+			Flag:  false,
+			Error: models.WrongData.Error(),
+		}, nil
+	}
+	userId, err := uuid.Parse(in.UserId)
+	if err != nil {
+		return &generatedCreator.FlagMessage{
+			Flag:  false,
+			Error: models.WrongData.Error(),
+		}, nil
+	}
+
+	flag, err := h.cuc.IsCommentOwner(ctx, models.Comment{
+		CommentID: commentId,
+		UserID:    userId,
+	})
+	if err != nil {
+		return &generatedCreator.FlagMessage{
+			Flag:  flag,
+			Error: err.Error(),
+		}, nil
+	}
+	return &generatedCreator.FlagMessage{
+		Flag:  flag,
+		Error: "",
+	}, nil
+}
+
+func (h GrpcCreatorHandler) Statistics(ctx context.Context, in *generatedCreator.StatisticsInput) (*generatedCreator.Stat, error) {
+	creatorId, err := uuid.Parse(in.CreatorId)
+	if err != nil {
+		return &generatedCreator.Stat{Error: models.WrongData.Error()}, nil
+	}
+
+	firstDate, err := time.Parse(time.RFC3339, in.FirstDate)
+	if err != nil {
+		return &generatedCreator.Stat{Error: models.WrongData.Error()}, nil
+	}
+	secondDate, err := time.Parse(time.RFC3339, in.SecondDate)
+	if err != nil {
+		return &generatedCreator.Stat{Error: models.WrongData.Error()}, nil
+	}
+
+	stat, err := h.uc.Statistics(ctx, models.StatisticsDates{
+		CreatorId:   creatorId,
+		FirstMonth:  firstDate,
+		SecondMonth: secondDate,
+	})
+
+	if err != nil {
+		return &generatedCreator.Stat{Error: err.Error()}, nil
+	}
+	return &generatedCreator.Stat{
+		CreatorId:              stat.CreatorId.String(),
+		PostsPerMonth:          stat.PostsPerMonth,
+		SubscriptionsBought:    stat.SubscriptionsBought,
+		DonationsCount:         stat.DonationsCount,
+		MoneyFromDonations:     stat.MoneyFromDonations,
+		MoneyFromSubscriptions: stat.MoneyFromSubscriptions,
+		NewFollowers:           stat.NewFollowers,
+		LikesCount:             stat.LikesCount,
+		Error:                  "",
+	}, nil
 }

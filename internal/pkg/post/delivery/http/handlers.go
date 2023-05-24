@@ -6,6 +6,7 @@ import (
 	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notification"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/google/uuid"
@@ -19,21 +20,23 @@ import (
 )
 
 type PostHandler struct {
-	authClient    generatedAuth.AuthServiceClient
-	creatorClient generatedCreator.CreatorServiceClient
-	logger        *zap.SugaredLogger
+	authClient      generatedAuth.AuthServiceClient
+	creatorClient   generatedCreator.CreatorServiceClient
+	logger          *zap.SugaredLogger
+	notificationApp notification.NotificationApp
 }
 
-func NewPostHandler(auc generatedAuth.AuthServiceClient, csc generatedCreator.CreatorServiceClient, logger *zap.SugaredLogger) *PostHandler {
+func NewPostHandler(auc generatedAuth.AuthServiceClient, csc generatedCreator.CreatorServiceClient, logger *zap.SugaredLogger, app notification.NotificationApp) *PostHandler {
 	return &PostHandler{
-		authClient:    auc,
-		creatorClient: csc,
-		logger:        logger,
+		authClient:      auc,
+		creatorClient:   csc,
+		logger:          logger,
+		notificationApp: app,
 	}
 }
 
+// nolint:gocognit
 func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
-
 	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
 	if err != nil {
 		utils.Response(w, http.StatusUnauthorized, nil)
@@ -295,7 +298,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 				utils.Response(w, http.StatusInternalServerError, nil)
 				return
 			}
-			errMessage, err = h.creatorClient.DeletePost(r.Context(), &generatedCommon.UUIDMessage{Value: postData.Id.String()})
+			_, err = h.creatorClient.DeletePost(r.Context(), &generatedCommon.UUIDMessage{Value: postData.Id.String()})
 			if err != nil {
 				h.logger.Error(err)
 			}
@@ -318,7 +321,7 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			errMessage, err = h.creatorClient.DeletePost(r.Context(), &generatedCommon.UUIDMessage{Value: postData.Id.String()})
+			_, err = h.creatorClient.DeletePost(r.Context(), &generatedCommon.UUIDMessage{Value: postData.Id.String()})
 			if err != nil {
 				h.logger.Error(err)
 			}
@@ -327,6 +330,34 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 		}
 		_ = f.Close()
 	}
+
+	creatorInfo, err := h.creatorClient.CreatorNotificationInfo(r.Context(), &generatedCommon.UUIDMessage{Value: postData.Creator.String()})
+
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if len(creatorInfo.Error) != 0 {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	notification := models.Notification{
+		Topic: fmt.Sprintf("%s-%s", postData.Creator, "user"),
+		Title: "Новый пост",
+		Body:  fmt.Sprintf("У автора %s вышел новый пост \"%s\"", creatorInfo.Name, postData.Title),
+		Photo: fmt.Sprintf("%s%s.jpg", models.PhotoURL, creatorInfo.Photo),
+	}
+
+	err = h.notificationApp.SendUserNotification(notification, r.Context())
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
 	utils.Response(w, http.StatusOK, nil)
 }
 
@@ -567,8 +598,11 @@ func (h *PostHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
-	userDataJWT, _ := token.ExtractJWTTokenMetadata(r)
-
+	var userID uuid.UUID
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+	if err == nil {
+		userID = userDataJWT.Id
+	}
 	postIDtmp, ok := mux.Vars(r)["post-uuid"]
 	if !ok {
 		utils.Response(w, http.StatusBadRequest, nil)
@@ -581,7 +615,7 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	postProto, err := h.creatorClient.GetPost(r.Context(), &generatedCreator.PostUserMessage{
-		UserID: userDataJWT.Id.String(),
+		UserID: userID.String(),
 		PostID: postID.String(),
 	})
 
@@ -604,15 +638,15 @@ func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var post models.Post
-	err = post.PostToModel(postProto.Post)
+	var post models.PostWithComments
+	err = post.PostWithCommentsToModel(postProto)
 	if err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
 
-	post.Sanitize()
+	post.Post.Sanitize()
 
 	utils.Response(w, http.StatusOK, post)
 }
@@ -882,7 +916,7 @@ func (h *PostHandler) AddAttach(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if out.Error != "" {
-		var attachProto = []*generatedCreator.Attachment{&generatedCreator.Attachment{ID: attach.Id.String(), Type: attach.Type}}
+		var attachProto = []*generatedCreator.Attachment{{ID: attach.Id.String(), Type: attach.Type}}
 		_, err = h.creatorClient.DeleteAttachmentsFiles(r.Context(), &generatedCreator.Attachments{Attachments: attachProto})
 
 		if err != nil {

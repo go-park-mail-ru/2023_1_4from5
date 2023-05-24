@@ -8,6 +8,11 @@ import (
 
 // easyjson -all ./internal/models/creator.go
 
+const (
+	RequestPaymentURL = "https://yoomoney.ru/api/request-payment"
+	ProcessPaymentURL = "https://yoomoney.ru/api/process-payment"
+)
+
 type Creator struct {
 	Id             uuid.UUID `json:"creator_id"`
 	UserId         uuid.UUID `json:"user_id"`
@@ -17,6 +22,10 @@ type Creator struct {
 	FollowersCount int64     `json:"followers_count"`
 	Description    string    `json:"description"`
 	PostsCount     int64     `json:"posts_count"`
+}
+
+type PaymentResponse struct {
+	RequestID string `json:"request_id"`
 }
 
 type CreatorPage struct {
@@ -31,14 +40,20 @@ type CreatorPage struct {
 type Aim struct {
 	Creator     uuid.UUID `json:"creator_id"`
 	Description string    `json:"description"`
-	MoneyNeeded int64     `json:"money_needed"`
-	MoneyGot    int64     `json:"money_got"`
+	MoneyNeeded float32   `json:"money_needed"`
+	MoneyGot    float32   `json:"money_got"`
 }
 
 type UpdateCreatorInfo struct {
 	Description string    `json:"description"`
 	CreatorName string    `json:"creator_name"`
 	CreatorID   uuid.UUID `json:"-"`
+}
+
+type CreatorTransfer struct {
+	Money       float32   `json:"money"`
+	CreatorID   uuid.UUID `json:"-"`
+	PhoneNumber string    `json:"phone_number"`
 }
 
 func (creator *Creator) Sanitize() {
@@ -50,14 +65,14 @@ func (aim *Aim) Sanitize() {
 	aim.Description = html.EscapeString(aim.Description)
 }
 
-func (page *CreatorPage) Sanitize() {
-	page.CreatorInfo.Sanitize()
-	page.Aim.Sanitize()
-	for i := range page.Posts {
-		page.Posts[i].Sanitize()
+func (creatorPage *CreatorPage) Sanitize() {
+	creatorPage.CreatorInfo.Sanitize()
+	creatorPage.Aim.Sanitize()
+	for i := range creatorPage.Posts {
+		creatorPage.Posts[i].Sanitize()
 	}
-	for i := range page.Subscriptions {
-		page.Subscriptions[i].Sanitize()
+	for i := range creatorPage.Subscriptions {
+		creatorPage.Subscriptions[i].Sanitize()
 	}
 }
 

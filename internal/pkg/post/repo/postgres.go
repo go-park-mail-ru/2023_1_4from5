@@ -25,11 +25,16 @@ const (
 	UpdateLikeCount            = `UPDATE "post" SET likes_count = likes_count + $1 WHERE post_id = $2 RETURNING likes_count;`
 	IsLiked                    = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2;`
 	DeleteLikes                = `DELETE FROM "like_post" WHERE post_id = $1;`
+	DeleteComments             = `DELETE FROM "comment" WHERE post_id = $1;`
 	IsPostAvailableWithSub     = `SELECT user_id FROM "user_subscription" INNER JOIN "post_subscription" p on "user_subscription".subscription_id = p.subscription_id WHERE user_id = $1 AND post_id = $2 AND expire_date > now()`
 	IsPostAvailableForEveryone = `SELECT post_id FROM post_subscription WHERE post_id = $1`
 	IsCreator                  = `SELECT user_id FROM "creator" WHERE creator_id = $1;`
-	GetPost                    = `SELECT "post".post_id, "post".creator_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE "post".post_id = $1 GROUP BY "post".post_id, creation_date, title, post_text;`
+	GetPost                    = `SELECT "post".post_id, "post".creator_id, creation_date, title, post_text, likes_count, "post".comments_count, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE "post".post_id = $1 GROUP BY "post".post_id, creation_date, title, post_text;`
 	GetSubInfo                 = `SELECT creator_id, month_cost, title, description FROM "subscription" WHERE subscription_id = $1;`
+	GetComments                = `SELECT comment_id, u.user_id, u.display_name, u.profile_photo, c.post_id, c.comment_text, c.creation_date, c.likes_count FROM comment c JOIN "user" u on c.user_id = u.user_id WHERE post_id = $1;`
+	IsLikedComment             = `SELECT comment_id FROM "like_comment" WHERE comment_id = $1 AND user_id = $2;`
+	GetUserIdComments          = `SELECT user_id FROM "comment" WHERE comment_id = $1;`
+	GetCreatorPhoto            = `SELECT profile_photo FROM "creator" WHERE creator_id = $1`
 )
 
 type PostRepo struct {
@@ -88,34 +93,22 @@ func (r *PostRepo) CreatePost(ctx context.Context, postData models.PostCreationD
 	}
 
 	for _, attach := range postData.Attachments {
-		if row, err = tx.QueryContext(ctx, InsertAttach, attach.Id, postData.Id, attach.Type); err != nil {
+		if _, err = tx.ExecContext(ctx, InsertAttach, attach.Id, postData.Id, attach.Type); err != nil {
 			_ = tx.Rollback()
-			r.logger.Error(err)
-			return models.InternalError
-		}
-		if err = row.Close(); err != nil {
 			r.logger.Error(err)
 			return models.InternalError
 		}
 	}
 
-	if row, err = tx.QueryContext(ctx, IncPostCount, postData.Creator); err != nil {
+	if _, err = tx.ExecContext(ctx, IncPostCount, postData.Creator); err != nil {
 		_ = tx.Rollback()
-		r.logger.Error(err)
-		return models.InternalError
-	}
-	if err = row.Close(); err != nil {
 		r.logger.Error(err)
 		return models.InternalError
 	}
 
 	for _, sub := range postData.AvailableSubscriptions {
-		if row, err = tx.QueryContext(ctx, AddSubscriptionsToPost, postData.Id, sub); err != nil {
+		if _, err = tx.ExecContext(ctx, AddSubscriptionsToPost, postData.Id, sub); err != nil {
 			_ = tx.Rollback()
-			r.logger.Error(err)
-			return models.InternalError
-		}
-		if err = row.Close(); err != nil {
 			r.logger.Error(err)
 			return models.InternalError
 		}
@@ -150,6 +143,45 @@ func (r *PostRepo) GetSubsByID(ctx context.Context, subsIDs ...uuid.UUID) ([]mod
 	return subsInfo, nil
 }
 
+func (r *PostRepo) GetComments(ctx context.Context, postID, userID uuid.UUID) ([]models.Comment, error) {
+	comments := make([]models.Comment, 0)
+	rows, err := r.db.QueryContext(ctx, GetComments, postID)
+	if err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
+		return nil, models.InternalError
+	}
+	defer rows.Close()
+	for rows.Next() {
+		comment := models.Comment{}
+
+		err = rows.Scan(&comment.CommentID, &comment.UserID, &comment.Username, &comment.UserPhoto, &comment.PostID, &comment.Text, &comment.Creation, &comment.LikesCount)
+		if err != nil {
+			r.logger.Error(err)
+			return nil, models.InternalError
+		}
+
+		//check for liked
+		var commentId = uuid.UUID{}
+		row := r.db.QueryRowContext(ctx, IsLikedComment, comment.CommentID, userID)
+		if err := row.Scan(&commentId); err != nil && !errors.Is(sql.ErrNoRows, err) {
+			r.logger.Error(err)
+			return nil, models.InternalError
+		} else if err == nil {
+			comment.IsLiked = true
+		}
+
+		//check for owning
+		isCommentOwner, err := r.IsCommentOwner(ctx, comment.CommentID, userID)
+		if err != nil {
+			return nil, err
+		}
+		comment.IsOwner = isCommentOwner
+
+		comments = append(comments, comment)
+	}
+	return comments, nil
+}
+
 func (r *PostRepo) GetPost(ctx context.Context, postID, userID uuid.UUID) (models.Post, error) {
 	var post models.Post
 	var postTextTmp sql.NullString
@@ -158,7 +190,7 @@ func (r *PostRepo) GetPost(ctx context.Context, postID, userID uuid.UUID) (model
 	subs := make([]uuid.UUID, 0)
 	row := r.db.QueryRowContext(ctx, GetPost, postID)
 	err := row.Scan(&post.Id, &post.Creator, &post.Creation, &post.Title,
-		&postTextTmp, pq.Array(&attachs), pq.Array(&types), pq.Array(&subs)) //подписки, при которыз пост доступен
+		&postTextTmp, &post.LikesCount, &post.CommentsCount, pq.Array(&attachs), pq.Array(&types), pq.Array(&subs)) //подписки, при которыз пост доступен
 	if err != nil && errors.Is(sql.ErrNoRows, err) {
 		return models.Post{}, models.WrongData
 	}
@@ -168,12 +200,32 @@ func (r *PostRepo) GetPost(ctx context.Context, postID, userID uuid.UUID) (model
 	}
 	post.Text = postTextTmp.String
 
-	post.Attachments = make([]models.Attachment, len(attachs))
+	row = r.db.QueryRowContext(ctx, GetCreatorPhoto, post.Creator)
+	if err = row.Scan(&post.CreatorPhoto); err != nil {
+		r.logger.Error(err)
+		return models.Post{}, models.InternalError
+	}
+
 	for i, v := range attachs {
-		post.Attachments[i].Type = types[i].String
-		post.Attachments[i].Id = v
+		if v == uuid.Nil {
+			continue
+		}
+		post.Attachments = append(post.Attachments, models.Attachment{
+			Id:   v,
+			Type: types[i].String,
+		})
 	}
 	post.Subscriptions, err = r.GetSubsByID(ctx, subs...)
+
+	row = r.db.QueryRowContext(ctx, IsLiked, postID, userID)
+	var postUUID, userUUID uuid.UUID
+	if err := row.Scan(&postUUID, &userUUID); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
+		return models.Post{}, models.InternalError
+	} else if err == nil { // уже есть запись об этом лайке
+		post.IsLiked = true
+	}
+
 	return post, err
 }
 
@@ -198,35 +250,31 @@ func (r *PostRepo) DeletePost(ctx context.Context, postID uuid.UUID) error {
 		r.logger.Error(err)
 		return models.InternalError
 	}
-	row, err := tx.QueryContext(ctx, DeleteLikes, postID)
+
+	_, err = tx.ExecContext(ctx, DeleteComments, postID)
 	if err != nil {
 		_ = tx.Rollback()
-		r.logger.Error(err)
-		return models.InternalError
-	}
-	if err = row.Close(); err != nil {
 		r.logger.Error(err)
 		return models.InternalError
 	}
 
-	row, err = tx.QueryContext(ctx, DeletePostSubscription, postID)
+	_, err = tx.ExecContext(ctx, DeleteLikes, postID)
 	if err != nil {
 		_ = tx.Rollback()
-		r.logger.Error(err)
-		return models.InternalError
-	}
-	if err = row.Close(); err != nil {
 		r.logger.Error(err)
 		return models.InternalError
 	}
 
-	row, err = tx.QueryContext(ctx, DeletePost, postID)
+	_, err = tx.ExecContext(ctx, DeletePostSubscription, postID)
 	if err != nil {
 		_ = tx.Rollback()
 		r.logger.Error(err)
 		return models.InternalError
 	}
-	if err = row.Close(); err != nil {
+
+	_, err = tx.ExecContext(ctx, DeletePost, postID)
+	if err != nil {
+		_ = tx.Rollback()
 		r.logger.Error(err)
 		return models.InternalError
 	}
@@ -338,34 +386,23 @@ func (r *PostRepo) EditPost(ctx context.Context, postData models.PostEditData) e
 		return models.InternalError
 	}
 
-	row, err := tx.QueryContext(ctx, UpdatePostInfo, postData.Title, postData.Text, postData.Id)
+	_, err = tx.ExecContext(ctx, UpdatePostInfo, postData.Title, postData.Text, postData.Id)
 	if err != nil {
 		_ = tx.Rollback()
 		r.logger.Error(err)
 		return models.InternalError
 	}
-	if err = row.Close(); err != nil {
-		r.logger.Error(err)
-		return models.InternalError
-	}
 
-	if row, err = tx.QueryContext(ctx, DeletePostSubscriptions, postData.Id); err != nil {
+	if _, err = tx.ExecContext(ctx, DeletePostSubscriptions, postData.Id); err != nil {
 		_ = tx.Rollback()
 		r.logger.Error(err)
 		return models.InternalError
 	}
-	if err = row.Close(); err != nil {
-		r.logger.Error(err)
-		return models.InternalError
-	}
+
 	for _, sub := range postData.AvailableSubscriptions {
-		row, err := tx.QueryContext(ctx, AddSubscriptionsToPost, postData.Id, sub)
+		_, err = tx.ExecContext(ctx, AddSubscriptionsToPost, postData.Id, sub)
 		if err != nil {
 			_ = tx.Rollback()
-			r.logger.Error(err)
-			return models.InternalError
-		}
-		if err = row.Close(); err != nil {
 			r.logger.Error(err)
 			return models.InternalError
 		}
@@ -377,4 +414,21 @@ func (r *PostRepo) EditPost(ctx context.Context, postData models.PostEditData) e
 	}
 
 	return nil
+}
+
+func (r *PostRepo) IsCommentOwner(ctx context.Context, commentID, userID uuid.UUID) (bool, error) {
+	row := r.db.QueryRowContext(ctx, GetUserIdComments, commentID)
+
+	userIdTmp := uuid.UUID{}
+
+	if err := row.Scan(&userIdTmp); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
+		return false, models.InternalError
+	} else if errors.Is(sql.ErrNoRows, err) {
+		return false, models.WrongData
+	}
+	if userIdTmp != userID {
+		return false, nil
+	}
+	return true, nil
 }

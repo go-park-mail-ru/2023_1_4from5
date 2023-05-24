@@ -313,7 +313,7 @@ func TestAuthHandler_Logout(t *testing.T) {
 	os.Setenv("TOKEN_SECRET", "TEST")
 	tkn := &usecase.Tokenator{}
 	bdy, _ := tkn.GetJWTToken(context.Background(), models.User{Login: testUsers[1].Login, Id: uuid.New()})
-	name := "SSID"
+	var name = "SSID"
 	expires := time.Now().UTC().Add(time.Hour)
 	value := bdy
 

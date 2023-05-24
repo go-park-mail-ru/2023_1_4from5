@@ -11,7 +11,7 @@ func FileLogger(filename string) (*zap.Logger, error) {
 	config.EncodeTime = zapcore.ISO8601TimeEncoder
 	fileEncoder := zapcore.NewJSONEncoder(config)
 	consoleEncoder := zapcore.NewConsoleEncoder(config)
-	err := os.Remove(filename)
+	_ = os.Remove(filename)
 	logFile, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return nil, err

@@ -17,17 +17,20 @@ const (
 	UpdatePassword       = `UPDATE "user" SET password_hash = $1, user_version = user_version+1 WHERE user_id = $2;`
 	UpdateProfileInfo    = `UPDATE "user" SET login = $1, display_name = $2 WHERE user_id = $3;`
 	UpdateAuthorAimMoney = `UPDATE "creator" SET money_got = money_got + $1 WHERE creator_id = $2 RETURNING money_got;`
-	AddDonate            = `INSERT INTO "donation"(user_id, creator_id, money_count) VALUES ($1, $2, $3);`
+	AddDonate            = `INSERT INTO "donation"(creator_id, money_count) VALUES ($1, $2);`
 	BecameCreator        = `INSERT INTO "creator"(creator_id, user_id, name, description) VALUES ($1, $2, $3, $4);`
 	Follow               = `INSERT INTO "follow" (user_id, creator_id) VALUES ($1, $2);`
 	Unfollow             = `DELETE FROM "follow" WHERE user_id = $1 AND creator_id = $2;`
 	CheckIfFollow        = `SELECT user_id FROM "follow" WHERE user_id = $1 AND creator_id = $2;`
 	UpdateSubscription   = `UPDATE "user_subscription" SET expire_date = expire_date + $1 * INTERVAL '1 MONTH' WHERE user_id = $2 AND subscription_id = $3 RETURNING user_id;`
 	Subscribe            = `INSERT INTO "user_subscription" VALUES ($1, $2, now() + $3 * INTERVAL '1 MONTH');`
-	CheckIfSubExists     = `SELECT subscription_id FROM subscription WHERE subscription_id = $1;`
-	AddPaymentInfo       = `INSERT INTO "user_payments" (user_id, subscription_id, payment_timestamp, money) VALUES ($1, $2, now(), $3);`
+	CheckIfSubExists     = `SELECT title, creator_id FROM subscription WHERE subscription_id = $1;`
+	AddPaymentInfo       = `INSERT INTO "user_payments" (user_id, subscription_id, payment_timestamp, month_count, payment_info, money) VALUES ($1, $2, now(), $3, $4, 0);`
+	CheckPaymentInfo     = `SELECT user_id, subscription_id, month_count FROM "user_payments" WHERE payment_info = $1;`
+	UpdatePaymentInfo    = `UPDATE "user_payments" SET money = $1 WHERE payment_info = $2`
 	UserSubscriptions    = `SELECT us.subscription_id, c.creator_id, name, profile_photo, month_cost, title, subscription.description FROM "subscription" join user_subscription us on subscription.subscription_id = us.subscription_id join creator c on c.creator_id = subscription.creator_id WHERE us.user_id = $1;`
 	DeletePhoto          = `UPDATE "user" SET profile_photo = null WHERE user_id = $1`
+	GetCreatorIDFromSub  = `SELECT creator_id FROM subscription WHERE subscription_id = $1 `
 	FollowsList          = `SELECT c.creator_id, name, profile_photo, description FROM "follow" join creator c on c.creator_id = follow.creator_id WHERE follow.user_id = $1;`
 )
 
@@ -122,52 +125,85 @@ func (ur *UserRepo) Unfollow(ctx context.Context, userId, creatorId uuid.UUID) e
 	return nil
 }
 
-func (ur *UserRepo) Subscribe(ctx context.Context, subscription models.SubscriptionDetails) error {
-	tx, err := ur.db.BeginTx(ctx, nil)
-	if err != nil {
+func (ur *UserRepo) AddPaymentInfo(ctx context.Context, subscription models.SubscriptionDetails) error {
+	row := ur.db.QueryRowContext(ctx, AddPaymentInfo, subscription.UserID, subscription.Id, subscription.MonthCount, subscription.PaymentInfo)
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		ur.logger.Error(err)
 		return models.InternalError
 	}
-	// если подписка уже есть обновляем expire date
+	return nil
+}
 
+func (ur *UserRepo) GetCreatorID(ctx context.Context, subscriptionID uuid.UUID) (uuid.UUID, error) {
+	var creatorID uuid.UUID
+	row := ur.db.QueryRowContext(ctx, GetCreatorIDFromSub, subscriptionID)
+	if err := row.Scan(&creatorID); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		ur.logger.Error(err)
+		return uuid.Nil, models.InternalError
+	}
+	return creatorID, nil
+}
+
+func (ur *UserRepo) CheckPaymentInfo(ctx context.Context, paymentInfo uuid.UUID) (models.SubscriptionDetails, error) {
+	var subscription models.SubscriptionDetails
+	row := ur.db.QueryRowContext(ctx, CheckPaymentInfo, paymentInfo)
+	if err := row.Scan(&subscription.UserID, &subscription.Id, &subscription.MonthCount); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		ur.logger.Error(err)
+		return models.SubscriptionDetails{}, models.InternalError
+	} else if errors.Is(err, sql.ErrNoRows) {
+		return models.SubscriptionDetails{}, models.NotFound
+	}
+	return subscription, nil
+}
+
+func (ur *UserRepo) UpdatePaymentInfo(ctx context.Context, money float32, paymentInfo uuid.UUID) error {
+	row := ur.db.QueryRowContext(ctx, UpdatePaymentInfo, money, paymentInfo)
+	if err := row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		ur.logger.Error(err)
+		return models.InternalError
+	}
+	return nil
+}
+
+func (ur *UserRepo) Subscribe(ctx context.Context, subscription models.SubscriptionDetails) (models.NotificationSubInfo, error) {
+	tx, err := ur.db.BeginTx(ctx, nil)
+	if err != nil {
+		ur.logger.Error(err)
+		return models.NotificationSubInfo{}, models.InternalError
+	}
+	// если подписка уже есть обновляем expire date
 	row := ur.db.QueryRowContext(ctx, UpdateSubscription, subscription.MonthCount, subscription.UserID, subscription.Id)
 	var userIDtmp uuid.UUID
+	var subNotification models.NotificationSubInfo
 	if err := row.Scan(&userIDtmp); err != nil && !errors.Is(err, sql.ErrNoRows) {
 		ur.logger.Error(err)
 		_ = tx.Rollback()
-		return models.InternalError
+		return models.NotificationSubInfo{}, models.InternalError
 	} else if errors.Is(err, sql.ErrNoRows) { // если нет, то добавляем о ней запись
 		row = ur.db.QueryRowContext(ctx, CheckIfSubExists, subscription.Id)
-		if err = row.Scan(&subscription.Id); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		if err = row.Scan(&subNotification.SubscriptionName, &subNotification.CreatorID); err != nil && !errors.Is(err, sql.ErrNoRows) {
 			ur.logger.Error(err)
 			_ = tx.Rollback()
-			return models.InternalError
+			return models.NotificationSubInfo{}, models.InternalError
 		} else if errors.Is(err, sql.ErrNoRows) { // такой подписки нет
 			_ = tx.Rollback()
-			return models.WrongData
+			return models.NotificationSubInfo{}, models.WrongData
 		}
 
 		row = ur.db.QueryRowContext(ctx, Subscribe, subscription.UserID, subscription.Id, subscription.MonthCount)
 		if err = row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
 			ur.logger.Error(err)
 			_ = tx.Rollback()
-			return models.InternalError
+			return models.NotificationSubInfo{}, models.InternalError
 		}
-	}
-
-	row = ur.db.QueryRowContext(ctx, AddPaymentInfo, subscription.UserID, subscription.Id, subscription.Money)
-	if err = row.Scan(); err != nil && !errors.Is(err, sql.ErrNoRows) {
-		ur.logger.Error(err)
-		_ = tx.Rollback()
-		return models.InternalError
 	}
 
 	if err = tx.Commit(); err != nil {
 		ur.logger.Error(err)
-		return models.InternalError
+		return models.NotificationSubInfo{}, models.InternalError
 	}
 
-	return nil
+	return subNotification, nil
 }
 
 func (ur *UserRepo) UpdatePassword(ctx context.Context, id uuid.UUID, password string) error {
@@ -188,13 +224,13 @@ func (ur *UserRepo) UpdateProfileInfo(ctx context.Context, profileInfo models.Up
 	return nil
 }
 
-func (ur *UserRepo) Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int64, error) {
+func (ur *UserRepo) Donate(ctx context.Context, donateInfo models.Donate) (float32, error) {
 	tx, err := ur.db.BeginTx(ctx, nil)
 	if err != nil {
 		ur.logger.Error(err)
 		return 0, models.InternalError
 	}
-	var newMoney int64
+	var newMoney float32
 	row := tx.QueryRowContext(ctx, UpdateAuthorAimMoney, donateInfo.MoneyCount, donateInfo.CreatorID)
 
 	if err = row.Scan(&newMoney); err != nil && !errors.Is(sql.ErrNoRows, err) {
@@ -206,7 +242,7 @@ func (ur *UserRepo) Donate(ctx context.Context, donateInfo models.Donate, userID
 		return 0, models.WrongData
 	}
 
-	tx.QueryRowContext(ctx, AddDonate, userID, donateInfo.CreatorID, donateInfo.MoneyCount)
+	tx.QueryRowContext(ctx, AddDonate, donateInfo.CreatorID, donateInfo.MoneyCount)
 
 	if err = tx.Commit(); err != nil {
 		ur.logger.Error(err)

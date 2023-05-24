@@ -14,14 +14,15 @@ type UserUsecase interface {
 	DeletePhoto(ctx context.Context, userId uuid.UUID) error
 	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
 	UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error
-	Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int64, error)
+	Donate(ctx context.Context, donateInfo models.Donate) (float32, error)
 	CheckIfCreator(ctx context.Context, userId uuid.UUID) (uuid.UUID, bool, error)
 	BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error)
 	Follow(ctx context.Context, userId, creatorId uuid.UUID) error
-	Subscribe(ctx context.Context, subscription models.SubscriptionDetails) error
+	Subscribe(ctx context.Context, paymentInfo uuid.UUID, money float32) (models.NotificationSubInfo, error)
 	Unfollow(ctx context.Context, userId, creatorId uuid.UUID) error
 	UserSubscriptions(ctx context.Context, userId uuid.UUID) ([]models.Subscription, error)
 	UserFollows(ctx context.Context, userId uuid.UUID) ([]models.Follow, error)
+	AddPaymentInfo(ctx context.Context, subscription models.SubscriptionDetails) error
 }
 
 type UserRepo interface {
@@ -29,14 +30,18 @@ type UserRepo interface {
 	UpdateProfilePhoto(ctx context.Context, userID uuid.UUID, path uuid.UUID) error
 	UpdatePassword(ctx context.Context, id uuid.UUID, password string) error
 	UpdateProfileInfo(ctx context.Context, profileInfo models.UpdateProfileInfo, id uuid.UUID) error
-	Donate(ctx context.Context, donateInfo models.Donate, userID uuid.UUID) (int64, error)
+	Donate(ctx context.Context, donateInfo models.Donate) (float32, error)
 	CheckIfCreator(ctx context.Context, userId uuid.UUID) (uuid.UUID, bool, error)
 	BecomeCreator(ctx context.Context, creatorInfo models.BecameCreatorInfo, userId uuid.UUID) (uuid.UUID, error)
 	Follow(ctx context.Context, userId, creatorId uuid.UUID) error
 	CheckIfFollow(ctx context.Context, userId, creatorId uuid.UUID) (bool, error)
-	Subscribe(ctx context.Context, subscription models.SubscriptionDetails) error
+	Subscribe(ctx context.Context, subscription models.SubscriptionDetails) (models.NotificationSubInfo, error)
 	Unfollow(ctx context.Context, userId, creatorId uuid.UUID) error
 	UserSubscriptions(ctx context.Context, userId uuid.UUID) ([]models.Subscription, error)
 	DeletePhoto(ctx context.Context, userId uuid.UUID) error
 	UserFollows(ctx context.Context, userId uuid.UUID) ([]models.Follow, error)
+	AddPaymentInfo(ctx context.Context, subscription models.SubscriptionDetails) error
+	CheckPaymentInfo(ctx context.Context, paymentInfo uuid.UUID) (models.SubscriptionDetails, error)
+	UpdatePaymentInfo(ctx context.Context, money float32, paymentInfo uuid.UUID) error
+	GetCreatorID(ctx context.Context, subscriptionID uuid.UUID) (uuid.UUID, error)
 }

@@ -100,11 +100,11 @@ type UpdateProfileInfo struct {
 
 type Donate struct {
 	CreatorID  uuid.UUID `json:"creator_id"`
-	MoneyCount int64     `json:"money_count"`
+	MoneyCount float32   `json:"money_count"`
 }
 
-func (creatorInfo *BecameCreatorInfo) IsValid() bool {
-	return (len(creatorInfo.Name) > 0 && len(creatorInfo.Name) < 40) && (len(creatorInfo.Description) > 0 && len(creatorInfo.Description) < 500)
+func (becameCreatorInfo *BecameCreatorInfo) IsValid() bool {
+	return (len(becameCreatorInfo.Name) > 0 && len(becameCreatorInfo.Name) < 40) && (len(becameCreatorInfo.Description) > 0 && len(becameCreatorInfo.Description) < 500)
 }
 
 func (user *User) Sanitize() {

@@ -9,26 +9,32 @@ import (
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"go.uber.org/zap"
+	"time"
 )
 
 const (
-	CreatorInfo        = `SELECT user_id, name, cover_photo, followers_count, description, posts_count, aim, money_got, money_needed, profile_photo FROM "creator" WHERE creator_id=$1;`
-	GetCreatorSubs     = `SELECT subscription_id, month_cost, title, description, is_available FROM "subscription" WHERE creator_id=$1;`
-	GetAllCreators     = `SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM "creator" LIMIT 100;`
-	CreatorPosts       = `SELECT "post".post_id, creation_date, title, post_text, likes_count, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE creator_id = $1 GROUP BY "post".post_id, creation_date, title, post_text ORDER BY creation_date DESC;`
-	UserSubscriptions  = `SELECT array_agg(subscription_id) FROM "user_subscription" WHERE user_id=$1;`
-	IsLiked            = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2`
-	GetSubInfo         = `SELECT creator_id, month_cost, title, description FROM "subscription" WHERE subscription_id = $1;`
-	AddAim             = `UPDATE creator SET aim = $1,  money_got = $2, money_needed = $3 WHERE creator_id = $4;`
-	CheckIfFollow      = `SELECT user_id FROM "follow" WHERE user_id = $1 AND creator_id = $2;`
-	FindCreators       = `SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM creator WHERE (make_tsvector(name, 'A'::"char") || make_tsvector(description, 'B'::"char")) @@ (plainto_tsquery('ru', $1) || plainto_tsquery('english', $1)) or LOWER(name) like LOWER($1) or LOWER(description) like LOWER($1) ORDER BY make_tsrank(name, $1, 'russian'::regconfig), make_tsrank(description, $1, 'russian'::regconfig) DESC LIMIT 30;`
-	CheckIfCreator     = `SELECT creator_id FROM "creator" WHERE user_id = $1`
-	UpdateCreatorData  = `UPDATE creator SET name = $1, description = $2 WHERE creator_id = $3`
-	Feed               = `SELECT DISTINCT p.post_id, p.creator_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), c.name, c.profile_photo, c.creator_id, p.likes_count FROM follow f JOIN post p on p.creator_id = f.creator_id JOIN creator c on f.creator_id = c.creator_id LEFT JOIN post_subscription ps on p.post_id = ps.post_id JOIN user_subscription us on f.user_id = us.user_id and (ps.subscription_id = us.subscription_id or ps.subscription_id is null) LEFT JOIN "attachment" a on p.post_id = a.post_id WHERE f.user_id = $1 GROUP BY c.name, p.creator_id, creation_date, title, post_text, p.post_id, c.profile_photo, c.creator_id ORDER BY creation_date DESC LIMIT 50;`
-	UpdateProfilePhoto = `UPDATE "creator" SET profile_photo = $1 WHERE creator_id = $2;`
-	UpdateCoverPhoto   = `UPDATE "creator" SET cover_photo = $1 WHERE creator_id = $2;`
-	DeleteCoverPhoto   = `UPDATE "creator" SET cover_photo = null WHERE creator_id = $1`
-	DeleteProfilePhoto = `UPDATE "creator" SET profile_photo = null WHERE creator_id = $1`
+	CreatorInfo             = `SELECT user_id, name, cover_photo, followers_count, description, posts_count, aim, money_got, money_needed, profile_photo FROM "creator" WHERE creator_id=$1;`
+	GetCreatorSubs          = `SELECT subscription_id, month_cost, title, description, is_available FROM "subscription" WHERE creator_id=$1;`
+	GetAllCreators          = `SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM "creator" LIMIT 100;`
+	CreatorPosts            = `SELECT "post".post_id, creation_date, title, post_text, likes_count, comments_count, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE creator_id = $1 GROUP BY "post".post_id, creation_date, title, post_text ORDER BY creation_date DESC;`
+	UserSubscriptions       = `SELECT array_agg(subscription_id) FROM "user_subscription" WHERE user_id=$1;`
+	IsLiked                 = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2`
+	GetSubInfo              = `SELECT creator_id, month_cost, title, description FROM "subscription" WHERE subscription_id = $1;`
+	AddAim                  = `UPDATE creator SET aim = $1,  money_got = $2, money_needed = $3 WHERE creator_id = $4;`
+	CheckIfFollow           = `SELECT user_id FROM "follow" WHERE user_id = $1 AND creator_id = $2;`
+	FindCreators            = `SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM creator WHERE (make_tsvector(name, 'A'::"char") || make_tsvector(description, 'B'::"char")) @@ (plainto_tsquery('ru', $1) || plainto_tsquery('english', $1)) or LOWER(name) like LOWER($1) or LOWER(description) like LOWER($1) ORDER BY make_tsrank(name, $1, 'russian'::regconfig), make_tsrank(description, $1, 'russian'::regconfig) DESC LIMIT 30;`
+	CheckIfCreator          = `SELECT creator_id FROM "creator" WHERE user_id = $1`
+	UpdateCreatorData       = `UPDATE creator SET name = $1, description = $2 WHERE creator_id = $3`
+	Feed                    = `SELECT t.post_id, t.creator_id, creation_date, title, post_text, array_agg(attachment_id), array_agg(attachment_type), t.name, t.profile_photo, t.likes_count, t.comments_count FROM ( SELECT DISTINCT p.post_id, p.creator_id, creation_date, title, post_text, c.name, c.profile_photo, p.likes_count, p.comments_count FROM follow f JOIN post p on p.creator_id = f.creator_id JOIN creator c on f.creator_id = c.creator_id LEFT JOIN post_subscription ps on p.post_id = ps.post_id JOIN user_subscription us on f.user_id = us.user_id and (ps.subscription_id = us.subscription_id or ps.subscription_id is null) WHERE f.user_id = $1 GROUP BY c.name, p.creator_id, creation_date, title, post_text, p.post_id, c.profile_photo, c.creator_id LIMIT 50) as t LEFT JOIN attachment a on a.post_id = t.post_id GROUP BY t.name, t.creator_id, creation_date, title, post_text, t.post_id, t.profile_photo, t.likes_count, t.comments_count ORDER BY creation_date DESC;`
+	UpdateProfilePhoto      = `UPDATE "creator" SET profile_photo = $1 WHERE creator_id = $2;`
+	UpdateCoverPhoto        = `UPDATE "creator" SET cover_photo = $1 WHERE creator_id = $2;`
+	DeleteCoverPhoto        = `UPDATE "creator" SET cover_photo = null WHERE creator_id = $1`
+	DeleteProfilePhoto      = `UPDATE "creator" SET profile_photo = null WHERE creator_id = $1`
+	GetStatistics           = `SELECT coalesce(sum(posts_per_month), 0), coalesce(sum(subscriptions_bought), 0), coalesce(sum(donations_count), 0), coalesce(sum(money_from_donations), 0), coalesce(sum(money_from_subscriptions),0), coalesce(sum(new_followers), 0), coalesce(sum(likes_count), 0), coalesce(sum(comments_count), 0) FROM "statistics" AS s WHERE creator_id = $1 AND  date_trunc('month'::text, s.month::date)::date BETWEEN date_trunc('month'::text, $2::date)::date AND  date_trunc('month'::text, $3::date)::date;`
+	CreatorNotificationInfo = `SELECT profile_photo, name FROM creator WHERE creator_id = $1;`
+	FirstStatisticsDate     = `SELECT MIN(month) FROM statistics WHERE creator_id = $1;`
+	CreatorBalance          = `SELECT balance FROM creator WHERE creator_id = $1;`
+	UpdateBalance           = `UPDATE creator SET balance = balance - $1 WHERE creator_id = $2 RETURNING balance;`
 )
 
 type CreatorRepo struct {
@@ -54,6 +60,26 @@ func (r *CreatorRepo) CheckIfFollow(ctx context.Context, userId, creatorId uuid.
 	return true, nil
 }
 
+func (r *CreatorRepo) CreatorNotificationInfo(ctx context.Context, creatorID uuid.UUID) (models.NotificationCreatorInfo, error) {
+	var info models.NotificationCreatorInfo
+	row := r.db.QueryRowContext(ctx, CreatorNotificationInfo, creatorID)
+	if err := row.Scan(&info.Photo, &info.Name); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		r.logger.Error(err)
+		return models.NotificationCreatorInfo{}, models.InternalError
+	}
+	return info, nil
+}
+
+func (ur *CreatorRepo) UpdateBalance(ctx context.Context, transfer models.CreatorTransfer) (float32, error) {
+	var newBalance float32
+	row := ur.db.QueryRowContext(ctx, UpdateBalance, transfer.Money, transfer.CreatorID)
+	if err := row.Scan(&newBalance); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		ur.logger.Error(err)
+		return 0, models.InternalError
+	}
+	return newBalance, nil
+}
+
 func (r *CreatorRepo) GetUserSubscriptions(ctx context.Context, userId uuid.UUID) ([]uuid.UUID, error) {
 	userSubscriptions := make([]uuid.UUID, 0)
 	row := r.db.QueryRowContext(ctx, UserSubscriptions, userId)
@@ -62,6 +88,26 @@ func (r *CreatorRepo) GetUserSubscriptions(ctx context.Context, userId uuid.UUID
 		return nil, models.InternalError
 	}
 	return userSubscriptions, nil
+}
+
+func (r *CreatorRepo) StatisticsFirstDate(ctx context.Context, creatorID uuid.UUID) (string, error) {
+	var firstDate string
+	row := r.db.QueryRowContext(ctx, FirstStatisticsDate, creatorID)
+	if err := row.Scan(&firstDate); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
+		return "", models.InternalError
+	}
+	return firstDate, nil
+}
+
+func (r *CreatorRepo) GetCreatorBalance(ctx context.Context, creatorID uuid.UUID) (float32, error) {
+	var balance float32
+	row := r.db.QueryRowContext(ctx, CreatorBalance, creatorID)
+	if err := row.Scan(&balance); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
+		return 0, models.InternalError
+	}
+	return balance, nil
 }
 
 func (r *CreatorRepo) IsLiked(ctx context.Context, userID uuid.UUID, postID uuid.UUID) (bool, error) {
@@ -135,7 +181,7 @@ func (r *CreatorRepo) CreatorPosts(ctx context.Context, creatorId uuid.UUID) ([]
 		attachs := make([]uuid.UUID, 0)
 		types := make([]sql.NullString, 0)
 		err = rows.Scan(&post.Id, &post.Creation, &post.Title,
-			&post.Text, &post.LikesCount, pq.Array(&attachs), pq.Array(&types), pq.Array(&availableSubscriptions)) //подписки, при которыз пост доступен
+			&post.Text, &post.LikesCount, &post.CommentsCount, pq.Array(&attachs), pq.Array(&types), pq.Array(&availableSubscriptions)) //подписки, при которыз пост доступен
 		if err != nil {
 			r.logger.Error(err)
 			return nil, models.InternalError
@@ -333,7 +379,7 @@ func (r *CreatorRepo) GetFeed(ctx context.Context, userID uuid.UUID) ([]models.P
 		attachs := make([]uuid.UUID, 0)
 		types := make([]sql.NullString, 0)
 		err = rows.Scan(&post.Id, &post.Creator, &post.Creation,
-			&post.Title, &post.Text, pq.Array(&attachs), pq.Array(&types), &post.CreatorName, &post.CreatorPhoto, &post.Creator, &post.LikesCount)
+			&post.Title, &post.Text, pq.Array(&attachs), pq.Array(&types), &post.CreatorName, &post.CreatorPhoto, &post.LikesCount, &post.CommentsCount)
 		if err != nil {
 			r.logger.Error(err)
 			return nil, models.InternalError
@@ -393,4 +439,21 @@ func (r *CreatorRepo) DeleteProfilePhoto(ctx context.Context, creatorId uuid.UUI
 		return models.InternalError
 	}
 	return nil
+}
+
+func (r *CreatorRepo) Statistics(ctx context.Context, statsInput models.StatisticsDates) (models.Statistics, error) {
+	var stat models.Statistics
+
+	row := r.db.QueryRowContext(ctx, GetStatistics, statsInput.CreatorId, statsInput.FirstMonth.Format(time.RFC3339), statsInput.SecondMonth.Format(time.RFC3339))
+	err := row.Scan(&stat.PostsPerMonth, &stat.SubscriptionsBought, &stat.DonationsCount, &stat.MoneyFromDonations, &stat.MoneyFromSubscriptions, &stat.NewFollowers, &stat.LikesCount, &stat.CommentsCount)
+	if err != nil && errors.Is(sql.ErrNoRows, err) {
+		return models.Statistics{}, models.WrongData
+	}
+	if err != nil {
+		fmt.Println(err)
+		r.logger.Error(err)
+		return models.Statistics{}, models.InternalError
+	}
+
+	return stat, nil
 }

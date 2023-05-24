@@ -10,13 +10,14 @@ import (
 
 type PostUsecase interface {
 	CreatePost(ctx context.Context, postData models.PostCreationData) error
-	GetPost(ctx context.Context, postID, userID uuid.UUID) (models.Post, error)
+	GetPost(ctx context.Context, postID, userID uuid.UUID) (models.PostWithComments, error)
 	DeletePost(ctx context.Context, postID uuid.UUID) error
 	IsPostOwner(ctx context.Context, userId uuid.UUID, postId uuid.UUID) (bool, error)
 	AddLike(ctx context.Context, userID uuid.UUID, postID uuid.UUID) (models.Like, error)
 	RemoveLike(ctx context.Context, userID uuid.UUID, postID uuid.UUID) (models.Like, error)
 	IsCreator(ctx context.Context, userID uuid.UUID, creatorID uuid.UUID) (bool, error)
 	EditPost(ctx context.Context, postData models.PostEditData) error
+	IsPostAvailable(ctx context.Context, postID, userID uuid.UUID) error
 }
 type PostRepo interface {
 	CreatePost(ctx context.Context, postData models.PostCreationData) error
@@ -29,4 +30,5 @@ type PostRepo interface {
 	IsCreator(ctx context.Context, userID uuid.UUID, creatorID uuid.UUID) (bool, error)
 	IsPostAvailable(ctx context.Context, userID, postID uuid.UUID) error
 	EditPost(ctx context.Context, postData models.PostEditData) error
+	GetComments(ctx context.Context, postID, userID uuid.UUID) ([]models.Comment, error)
 }

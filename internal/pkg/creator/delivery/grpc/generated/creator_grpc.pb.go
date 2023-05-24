@@ -32,9 +32,10 @@ type CreatorServiceClient interface {
 	CreateAim(ctx context.Context, in *Aim, opts ...grpc.CallOption) (*proto.Empty, error)
 	CheckIfCreator(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.UUIDResponse, error)
 	CreatePost(ctx context.Context, in *PostCreationData, opts ...grpc.CallOption) (*proto.Empty, error)
-	GetPost(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*PostMessage, error)
+	GetPost(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*PostWithComments, error)
 	DeletePost(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.Empty, error)
 	IsPostOwner(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*FlagMessage, error)
+	IsCommentOwner(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*FlagMessage, error)
 	AddLike(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*Like, error)
 	RemoveLike(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*Like, error)
 	EditPost(ctx context.Context, in *PostEditData, opts ...grpc.CallOption) (*proto.Empty, error)
@@ -44,12 +45,23 @@ type CreatorServiceClient interface {
 	AddAttach(ctx context.Context, in *PostAttachMessage, opts ...grpc.CallOption) (*proto.Empty, error)
 	GetFileExtension(ctx context.Context, in *KeywordMessage, opts ...grpc.CallOption) (*Extension, error)
 	UpdateProfilePhoto(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.UUIDResponse, error)
+	CreatorNotificationInfo(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*NotificationCreatorInfo, error)
 	DeleteProfilePhoto(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.Empty, error)
 	UpdateCoverPhoto(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.UUIDResponse, error)
 	DeleteCoverPhoto(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.Empty, error)
 	CreateSubscription(ctx context.Context, in *proto.Subscription, opts ...grpc.CallOption) (*proto.Empty, error)
 	DeleteSubscription(ctx context.Context, in *SubscriptionCreatorMessage, opts ...grpc.CallOption) (*proto.Empty, error)
 	EditSubscription(ctx context.Context, in *proto.Subscription, opts ...grpc.CallOption) (*proto.Empty, error)
+	CreateComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*proto.Empty, error)
+	DeleteComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*proto.Empty, error)
+	EditComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*proto.Empty, error)
+	AddLikeComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*Like, error)
+	RemoveLikeComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*Like, error)
+	IsPostAvailable(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*proto.Empty, error)
+	Statistics(ctx context.Context, in *StatisticsInput, opts ...grpc.CallOption) (*Stat, error)
+	StatisticsFirstDate(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*FirstDate, error)
+	GetCreatorBalance(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*CreatorBalance, error)
+	UpdateBalance(ctx context.Context, in *CreatorTransfer, opts ...grpc.CallOption) (*CreatorBalance, error)
 }
 
 type creatorServiceClient struct {
@@ -141,8 +153,8 @@ func (c *creatorServiceClient) CreatePost(ctx context.Context, in *PostCreationD
 	return out, nil
 }
 
-func (c *creatorServiceClient) GetPost(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*PostMessage, error) {
-	out := new(PostMessage)
+func (c *creatorServiceClient) GetPost(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*PostWithComments, error) {
+	out := new(PostWithComments)
 	err := c.cc.Invoke(ctx, "/CreatorService/GetPost", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -162,6 +174,15 @@ func (c *creatorServiceClient) DeletePost(ctx context.Context, in *proto.UUIDMes
 func (c *creatorServiceClient) IsPostOwner(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*FlagMessage, error) {
 	out := new(FlagMessage)
 	err := c.cc.Invoke(ctx, "/CreatorService/IsPostOwner", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) IsCommentOwner(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*FlagMessage, error) {
+	out := new(FlagMessage)
+	err := c.cc.Invoke(ctx, "/CreatorService/IsCommentOwner", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -249,6 +270,15 @@ func (c *creatorServiceClient) UpdateProfilePhoto(ctx context.Context, in *proto
 	return out, nil
 }
 
+func (c *creatorServiceClient) CreatorNotificationInfo(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*NotificationCreatorInfo, error) {
+	out := new(NotificationCreatorInfo)
+	err := c.cc.Invoke(ctx, "/CreatorService/CreatorNotificationInfo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *creatorServiceClient) DeleteProfilePhoto(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*proto.Empty, error) {
 	out := new(proto.Empty)
 	err := c.cc.Invoke(ctx, "/CreatorService/DeleteProfilePhoto", in, out, opts...)
@@ -303,6 +333,96 @@ func (c *creatorServiceClient) EditSubscription(ctx context.Context, in *proto.S
 	return out, nil
 }
 
+func (c *creatorServiceClient) CreateComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*proto.Empty, error) {
+	out := new(proto.Empty)
+	err := c.cc.Invoke(ctx, "/CreatorService/CreateComment", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) DeleteComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*proto.Empty, error) {
+	out := new(proto.Empty)
+	err := c.cc.Invoke(ctx, "/CreatorService/DeleteComment", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) EditComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*proto.Empty, error) {
+	out := new(proto.Empty)
+	err := c.cc.Invoke(ctx, "/CreatorService/EditComment", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) AddLikeComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*Like, error) {
+	out := new(Like)
+	err := c.cc.Invoke(ctx, "/CreatorService/AddLikeComment", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) RemoveLikeComment(ctx context.Context, in *Comment, opts ...grpc.CallOption) (*Like, error) {
+	out := new(Like)
+	err := c.cc.Invoke(ctx, "/CreatorService/RemoveLikeComment", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) IsPostAvailable(ctx context.Context, in *PostUserMessage, opts ...grpc.CallOption) (*proto.Empty, error) {
+	out := new(proto.Empty)
+	err := c.cc.Invoke(ctx, "/CreatorService/IsPostAvailable", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) Statistics(ctx context.Context, in *StatisticsInput, opts ...grpc.CallOption) (*Stat, error) {
+	out := new(Stat)
+	err := c.cc.Invoke(ctx, "/CreatorService/Statistics", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) StatisticsFirstDate(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*FirstDate, error) {
+	out := new(FirstDate)
+	err := c.cc.Invoke(ctx, "/CreatorService/StatisticsFirstDate", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) GetCreatorBalance(ctx context.Context, in *proto.UUIDMessage, opts ...grpc.CallOption) (*CreatorBalance, error) {
+	out := new(CreatorBalance)
+	err := c.cc.Invoke(ctx, "/CreatorService/GetCreatorBalance", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *creatorServiceClient) UpdateBalance(ctx context.Context, in *CreatorTransfer, opts ...grpc.CallOption) (*CreatorBalance, error) {
+	out := new(CreatorBalance)
+	err := c.cc.Invoke(ctx, "/CreatorService/UpdateBalance", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CreatorServiceServer is the server API for CreatorService service.
 // All implementations must embed UnimplementedCreatorServiceServer
 // for forward compatibility
@@ -316,9 +436,10 @@ type CreatorServiceServer interface {
 	CreateAim(context.Context, *Aim) (*proto.Empty, error)
 	CheckIfCreator(context.Context, *proto.UUIDMessage) (*proto.UUIDResponse, error)
 	CreatePost(context.Context, *PostCreationData) (*proto.Empty, error)
-	GetPost(context.Context, *PostUserMessage) (*PostMessage, error)
+	GetPost(context.Context, *PostUserMessage) (*PostWithComments, error)
 	DeletePost(context.Context, *proto.UUIDMessage) (*proto.Empty, error)
 	IsPostOwner(context.Context, *PostUserMessage) (*FlagMessage, error)
+	IsCommentOwner(context.Context, *Comment) (*FlagMessage, error)
 	AddLike(context.Context, *PostUserMessage) (*Like, error)
 	RemoveLike(context.Context, *PostUserMessage) (*Like, error)
 	EditPost(context.Context, *PostEditData) (*proto.Empty, error)
@@ -328,12 +449,23 @@ type CreatorServiceServer interface {
 	AddAttach(context.Context, *PostAttachMessage) (*proto.Empty, error)
 	GetFileExtension(context.Context, *KeywordMessage) (*Extension, error)
 	UpdateProfilePhoto(context.Context, *proto.UUIDMessage) (*proto.UUIDResponse, error)
+	CreatorNotificationInfo(context.Context, *proto.UUIDMessage) (*NotificationCreatorInfo, error)
 	DeleteProfilePhoto(context.Context, *proto.UUIDMessage) (*proto.Empty, error)
 	UpdateCoverPhoto(context.Context, *proto.UUIDMessage) (*proto.UUIDResponse, error)
 	DeleteCoverPhoto(context.Context, *proto.UUIDMessage) (*proto.Empty, error)
 	CreateSubscription(context.Context, *proto.Subscription) (*proto.Empty, error)
 	DeleteSubscription(context.Context, *SubscriptionCreatorMessage) (*proto.Empty, error)
 	EditSubscription(context.Context, *proto.Subscription) (*proto.Empty, error)
+	CreateComment(context.Context, *Comment) (*proto.Empty, error)
+	DeleteComment(context.Context, *Comment) (*proto.Empty, error)
+	EditComment(context.Context, *Comment) (*proto.Empty, error)
+	AddLikeComment(context.Context, *Comment) (*Like, error)
+	RemoveLikeComment(context.Context, *Comment) (*Like, error)
+	IsPostAvailable(context.Context, *PostUserMessage) (*proto.Empty, error)
+	Statistics(context.Context, *StatisticsInput) (*Stat, error)
+	StatisticsFirstDate(context.Context, *proto.UUIDMessage) (*FirstDate, error)
+	GetCreatorBalance(context.Context, *proto.UUIDMessage) (*CreatorBalance, error)
+	UpdateBalance(context.Context, *CreatorTransfer) (*CreatorBalance, error)
 	mustEmbedUnimplementedCreatorServiceServer()
 }
 
@@ -368,7 +500,7 @@ func (UnimplementedCreatorServiceServer) CheckIfCreator(context.Context, *proto.
 func (UnimplementedCreatorServiceServer) CreatePost(context.Context, *PostCreationData) (*proto.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePost not implemented")
 }
-func (UnimplementedCreatorServiceServer) GetPost(context.Context, *PostUserMessage) (*PostMessage, error) {
+func (UnimplementedCreatorServiceServer) GetPost(context.Context, *PostUserMessage) (*PostWithComments, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPost not implemented")
 }
 func (UnimplementedCreatorServiceServer) DeletePost(context.Context, *proto.UUIDMessage) (*proto.Empty, error) {
@@ -376,6 +508,9 @@ func (UnimplementedCreatorServiceServer) DeletePost(context.Context, *proto.UUID
 }
 func (UnimplementedCreatorServiceServer) IsPostOwner(context.Context, *PostUserMessage) (*FlagMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsPostOwner not implemented")
+}
+func (UnimplementedCreatorServiceServer) IsCommentOwner(context.Context, *Comment) (*FlagMessage, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IsCommentOwner not implemented")
 }
 func (UnimplementedCreatorServiceServer) AddLike(context.Context, *PostUserMessage) (*Like, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddLike not implemented")
@@ -404,6 +539,9 @@ func (UnimplementedCreatorServiceServer) GetFileExtension(context.Context, *Keyw
 func (UnimplementedCreatorServiceServer) UpdateProfilePhoto(context.Context, *proto.UUIDMessage) (*proto.UUIDResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateProfilePhoto not implemented")
 }
+func (UnimplementedCreatorServiceServer) CreatorNotificationInfo(context.Context, *proto.UUIDMessage) (*NotificationCreatorInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreatorNotificationInfo not implemented")
+}
 func (UnimplementedCreatorServiceServer) DeleteProfilePhoto(context.Context, *proto.UUIDMessage) (*proto.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteProfilePhoto not implemented")
 }
@@ -421,6 +559,36 @@ func (UnimplementedCreatorServiceServer) DeleteSubscription(context.Context, *Su
 }
 func (UnimplementedCreatorServiceServer) EditSubscription(context.Context, *proto.Subscription) (*proto.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EditSubscription not implemented")
+}
+func (UnimplementedCreatorServiceServer) CreateComment(context.Context, *Comment) (*proto.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateComment not implemented")
+}
+func (UnimplementedCreatorServiceServer) DeleteComment(context.Context, *Comment) (*proto.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteComment not implemented")
+}
+func (UnimplementedCreatorServiceServer) EditComment(context.Context, *Comment) (*proto.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EditComment not implemented")
+}
+func (UnimplementedCreatorServiceServer) AddLikeComment(context.Context, *Comment) (*Like, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddLikeComment not implemented")
+}
+func (UnimplementedCreatorServiceServer) RemoveLikeComment(context.Context, *Comment) (*Like, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveLikeComment not implemented")
+}
+func (UnimplementedCreatorServiceServer) IsPostAvailable(context.Context, *PostUserMessage) (*proto.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IsPostAvailable not implemented")
+}
+func (UnimplementedCreatorServiceServer) Statistics(context.Context, *StatisticsInput) (*Stat, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Statistics not implemented")
+}
+func (UnimplementedCreatorServiceServer) StatisticsFirstDate(context.Context, *proto.UUIDMessage) (*FirstDate, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StatisticsFirstDate not implemented")
+}
+func (UnimplementedCreatorServiceServer) GetCreatorBalance(context.Context, *proto.UUIDMessage) (*CreatorBalance, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCreatorBalance not implemented")
+}
+func (UnimplementedCreatorServiceServer) UpdateBalance(context.Context, *CreatorTransfer) (*CreatorBalance, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateBalance not implemented")
 }
 func (UnimplementedCreatorServiceServer) mustEmbedUnimplementedCreatorServiceServer() {}
 
@@ -651,6 +819,24 @@ func _CreatorService_IsPostOwner_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CreatorService_IsCommentOwner_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Comment)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).IsCommentOwner(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/IsCommentOwner",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).IsCommentOwner(ctx, req.(*Comment))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CreatorService_AddLike_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PostUserMessage)
 	if err := dec(in); err != nil {
@@ -813,6 +999,24 @@ func _CreatorService_UpdateProfilePhoto_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CreatorService_CreatorNotificationInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(proto.UUIDMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).CreatorNotificationInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/CreatorNotificationInfo",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).CreatorNotificationInfo(ctx, req.(*proto.UUIDMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CreatorService_DeleteProfilePhoto_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(proto.UUIDMessage)
 	if err := dec(in); err != nil {
@@ -921,6 +1125,186 @@ func _CreatorService_EditSubscription_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CreatorService_CreateComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Comment)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).CreateComment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/CreateComment",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).CreateComment(ctx, req.(*Comment))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_DeleteComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Comment)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).DeleteComment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/DeleteComment",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).DeleteComment(ctx, req.(*Comment))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_EditComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Comment)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).EditComment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/EditComment",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).EditComment(ctx, req.(*Comment))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_AddLikeComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Comment)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).AddLikeComment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/AddLikeComment",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).AddLikeComment(ctx, req.(*Comment))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_RemoveLikeComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Comment)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).RemoveLikeComment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/RemoveLikeComment",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).RemoveLikeComment(ctx, req.(*Comment))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_IsPostAvailable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PostUserMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).IsPostAvailable(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/IsPostAvailable",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).IsPostAvailable(ctx, req.(*PostUserMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_Statistics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StatisticsInput)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).Statistics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/Statistics",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).Statistics(ctx, req.(*StatisticsInput))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_StatisticsFirstDate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(proto.UUIDMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).StatisticsFirstDate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/StatisticsFirstDate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).StatisticsFirstDate(ctx, req.(*proto.UUIDMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_GetCreatorBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(proto.UUIDMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).GetCreatorBalance(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/GetCreatorBalance",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).GetCreatorBalance(ctx, req.(*proto.UUIDMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CreatorService_UpdateBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreatorTransfer)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CreatorServiceServer).UpdateBalance(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CreatorService/UpdateBalance",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CreatorServiceServer).UpdateBalance(ctx, req.(*CreatorTransfer))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CreatorService_ServiceDesc is the grpc.ServiceDesc for CreatorService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -977,6 +1361,10 @@ var CreatorService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CreatorService_IsPostOwner_Handler,
 		},
 		{
+			MethodName: "IsCommentOwner",
+			Handler:    _CreatorService_IsCommentOwner_Handler,
+		},
+		{
 			MethodName: "AddLike",
 			Handler:    _CreatorService_AddLike_Handler,
 		},
@@ -1013,6 +1401,10 @@ var CreatorService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CreatorService_UpdateProfilePhoto_Handler,
 		},
 		{
+			MethodName: "CreatorNotificationInfo",
+			Handler:    _CreatorService_CreatorNotificationInfo_Handler,
+		},
+		{
 			MethodName: "DeleteProfilePhoto",
 			Handler:    _CreatorService_DeleteProfilePhoto_Handler,
 		},
@@ -1035,6 +1427,46 @@ var CreatorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EditSubscription",
 			Handler:    _CreatorService_EditSubscription_Handler,
+		},
+		{
+			MethodName: "CreateComment",
+			Handler:    _CreatorService_CreateComment_Handler,
+		},
+		{
+			MethodName: "DeleteComment",
+			Handler:    _CreatorService_DeleteComment_Handler,
+		},
+		{
+			MethodName: "EditComment",
+			Handler:    _CreatorService_EditComment_Handler,
+		},
+		{
+			MethodName: "AddLikeComment",
+			Handler:    _CreatorService_AddLikeComment_Handler,
+		},
+		{
+			MethodName: "RemoveLikeComment",
+			Handler:    _CreatorService_RemoveLikeComment_Handler,
+		},
+		{
+			MethodName: "IsPostAvailable",
+			Handler:    _CreatorService_IsPostAvailable_Handler,
+		},
+		{
+			MethodName: "Statistics",
+			Handler:    _CreatorService_Statistics_Handler,
+		},
+		{
+			MethodName: "StatisticsFirstDate",
+			Handler:    _CreatorService_StatisticsFirstDate_Handler,
+		},
+		{
+			MethodName: "GetCreatorBalance",
+			Handler:    _CreatorService_GetCreatorBalance_Handler,
+		},
+		{
+			MethodName: "UpdateBalance",
+			Handler:    _CreatorService_UpdateBalance_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

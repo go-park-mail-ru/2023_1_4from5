@@ -1,10 +1,13 @@
 package http
 
 import (
+	"context"
+	"crypto/sha1"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notification"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	generatedUser "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/user/delivery/grpc/generated"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
@@ -15,21 +18,74 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
 type UserHandler struct {
-	userClient generatedUser.UserServiceClient
-	authClient generatedAuth.AuthServiceClient
-	logger     *zap.SugaredLogger
+	userClient      generatedUser.UserServiceClient
+	authClient      generatedAuth.AuthServiceClient
+	notificationApp notification.NotificationApp
+	logger          *zap.SugaredLogger
 }
 
-func NewUserHandler(userClient generatedUser.UserServiceClient, auc generatedAuth.AuthServiceClient, logger *zap.SugaredLogger) *UserHandler {
+func NewUserHandler(userClient generatedUser.UserServiceClient, auc generatedAuth.AuthServiceClient, na notification.NotificationApp, logger *zap.SugaredLogger) *UserHandler {
 	return &UserHandler{
-		userClient: userClient,
-		authClient: auc,
-		logger:     logger,
+		userClient:      userClient,
+		authClient:      auc,
+		notificationApp: na,
+		logger:          logger,
 	}
+}
+
+func (h *UserHandler) SubscribeUserToNotifications(w http.ResponseWriter, r *http.Request) {
+	creatorID, ok := mux.Vars(r)["creator-uuid"]
+	if !ok {
+		fmt.Println("wrong")
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	token := models.NotificationToken{}
+	err := easyjson.UnmarshalFromReader(r.Body, &token)
+	if err != nil {
+		fmt.Println(err)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	err = h.notificationApp.AddUserToNotificationTopic(fmt.Sprintf("%s-%s", creatorID, "user"), token, context.Background())
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, nil)
+}
+
+func (h *UserHandler) UnsubscribeUserNotifications(w http.ResponseWriter, r *http.Request) {
+	creatorID, ok := mux.Vars(r)["creator-uuid"]
+	if !ok {
+		fmt.Println("wrong")
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	token := models.NotificationToken{}
+	err := easyjson.UnmarshalFromReader(r.Body, &token)
+	if err != nil {
+		fmt.Println(err)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	err = h.notificationApp.RemoveUserFromNotificationTopic(fmt.Sprintf("%s-%s", creatorID, "user"), token, context.Background())
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	utils.Response(w, http.StatusOK, nil)
 }
 
 func (h *UserHandler) Follow(w http.ResponseWriter, r *http.Request) {
@@ -387,74 +443,6 @@ func (h *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 	utils.Response(w, http.StatusOK, nil)
 }
 
-func (h *UserHandler) Donate(w http.ResponseWriter, r *http.Request) {
-	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
-
-	if err != nil {
-		utils.Response(w, http.StatusUnauthorized, nil)
-		return
-	}
-
-	uv, err := h.authClient.CheckUserVersion(r.Context(), &generatedAuth.AccessDetails{
-		Login:       userDataJWT.Login,
-		Id:          userDataJWT.Id.String(),
-		UserVersion: userDataJWT.UserVersion,
-	})
-	if err != nil {
-		utils.Response(w, http.StatusInternalServerError, nil)
-		return
-	}
-	if len(uv.Error) != 0 {
-		utils.Cookie(w, "", "SSID")
-		utils.Response(w, http.StatusForbidden, nil)
-		return
-	}
-
-	if r.Method == http.MethodGet {
-		tokenCSRF, err := token.GetCSRFToken(models.User{Login: userDataJWT.Login, Id: userDataJWT.Id, UserVersion: userDataJWT.UserVersion})
-		if err != nil {
-			utils.Response(w, http.StatusUnauthorized, nil)
-			return
-		}
-		utils.ResponseWithCSRF(w, tokenCSRF)
-		utils.Response(w, http.StatusOK, nil)
-		return
-	}
-	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
-	if err != nil || *userDataCSRF != *userDataJWT {
-		utils.Response(w, http.StatusForbidden, nil)
-		return
-	}
-
-	donateInfo := models.Donate{}
-
-	err = easyjson.UnmarshalFromReader(r.Body, &donateInfo)
-	if err != nil || donateInfo.MoneyCount < 1 {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
-
-	newMoneyCount, err := h.userClient.Donate(r.Context(), &generatedUser.DonateMessage{MoneyCount: donateInfo.MoneyCount,
-		CreatorID: donateInfo.CreatorID.String(),
-		UserID:    userDataJWT.Id.String()})
-
-	if err != nil {
-		h.logger.Error(err)
-		utils.Response(w, http.StatusInternalServerError, nil)
-		return
-	}
-
-	if newMoneyCount.Error == models.WrongData.Error() {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
-	if newMoneyCount.Error != "" {
-		utils.Response(w, http.StatusInternalServerError, nil)
-		return
-	}
-	utils.Response(w, http.StatusOK, newMoneyCount.MoneyCount)
-}
-
 func (h *UserHandler) UpdateData(w http.ResponseWriter, r *http.Request) {
 	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
 
@@ -654,7 +642,135 @@ func (h *UserHandler) UserSubscriptions(w http.ResponseWriter, r *http.Request) 
 	utils.Response(w, http.StatusOK, subs)
 }
 
-func (h *UserHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
+func GetPaymentStringMap() map[string]string {
+	result := map[string]string{
+		"notification_type": "",
+		"operation_id":      "",
+		"amount":            "",
+		"currency":          "",
+		"datetime":          "",
+		"sender":            "",
+		"codepro":           "",
+		"label":             "",
+	}
+	return result
+}
+
+func (h *UserHandler) Payment(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	//check sha-1
+	paymentStringMap := GetPaymentStringMap()
+
+	sha1Hash := ""
+	for key, value := range r.Form {
+		if key == "sha1_hash" {
+			sha1Hash = value[0]
+		}
+		if _, ok := paymentStringMap[key]; ok {
+			paymentStringMap[key] = value[0]
+		}
+	}
+
+	paymentSecret, flag := os.LookupEnv("PAYMENT_SECRET")
+	if !flag {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	paymentString := strings.Join([]string{paymentStringMap["notification_type"],
+		paymentStringMap["operation_id"], paymentStringMap["amount"], paymentStringMap["currency"], paymentStringMap["datetime"], paymentStringMap["sender"],
+		paymentStringMap["codepro"], paymentSecret, paymentStringMap["label"]}, "&")
+
+	hash := sha1.New()
+	hash.Write([]byte(paymentString))
+	paymentStringSHA := hash.Sum(nil)
+	if fmt.Sprintf("%x", paymentStringSHA) != sha1Hash {
+		utils.Response(w, http.StatusForbidden, nil)
+		return
+	}
+
+	paymentInfo := models.PaymentDetails{}
+	str := strings.Split(paymentStringMap["label"], ";")
+	paymentInfo.Operation = str[0]
+	paymentInfo.CreatorId, err = uuid.Parse(str[1])
+	if err != nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	if tmp, err := strconv.ParseFloat(paymentStringMap["amount"], 32); err != nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	} else {
+		paymentInfo.Money = float32(tmp)
+	}
+
+	if paymentInfo.Operation == "subscribe" {
+
+		out, err := h.userClient.Subscribe(r.Context(), &generatedUser.PaymentInfo{PaymentID: paymentInfo.CreatorId.String(),
+			Money: paymentInfo.Money})
+
+		if err != nil {
+			h.logger.Error(err)
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+
+		if out.Error == models.InternalError.Error() {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+
+		if out.Error == models.WrongData.Error() {
+			utils.Response(w, http.StatusBadRequest, nil)
+			return
+		}
+
+		_ = h.notificationApp.SendUserNotification(models.Notification{
+			Topic: fmt.Sprintf("%s-%s", out.CreatorID, "creator"),
+			Title: "Новая подписка",
+			Body:  fmt.Sprintf("На вас была оформлена подписка %s", out.Name),
+		}, r.Context())
+
+		utils.Response(w, http.StatusOK, nil)
+	} else if paymentInfo.Operation == "donate" {
+
+		newMoneyCount, err := h.userClient.Donate(r.Context(), &generatedUser.DonateMessage{
+			MoneyCount: paymentInfo.Money,
+			CreatorID:  paymentInfo.CreatorId.String()})
+
+		if err != nil {
+			h.logger.Error(err)
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+
+		if newMoneyCount.Error == models.WrongData.Error() {
+			utils.Response(w, http.StatusBadRequest, nil)
+			return
+		}
+		if newMoneyCount.Error != "" {
+			utils.Response(w, http.StatusInternalServerError, nil)
+			return
+		}
+
+		_ = h.notificationApp.SendUserNotification(models.Notification{
+			Topic: fmt.Sprintf("%s-%s", paymentInfo.CreatorId.String(), "creator"),
+			Title: "Новый донат",
+			Body:  fmt.Sprintf("Вам пришёл новый донат на сумму %f", paymentInfo.Money),
+		}, r.Context())
+
+		utils.Response(w, http.StatusOK, nil)
+	} else {
+		utils.Response(w, http.StatusBadRequest, nil)
+	}
+}
+
+func (h *UserHandler) AddPaymentInfo(w http.ResponseWriter, r *http.Request) {
 	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
 
 	//TODO: проверить соответствие количества денег(и вообще в идеале не класть его и считать из month_count, и вообще должен лететь токен киви какой-нибудь)
@@ -687,7 +803,7 @@ func (h *UserHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 		utils.ResponseWithCSRF(w, tokenCSRF)
 		return
 	}
-	// check CSRF token
+
 	userDataCSRF, err := token.ExtractCSRFTokenMetadata(r)
 	if err != nil || *userDataCSRF != *userDataJWT {
 		utils.Response(w, http.StatusForbidden, nil)
@@ -709,6 +825,7 @@ func (h *UserHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 	subscription := models.SubscriptionDetails{}
 
 	err = easyjson.UnmarshalFromReader(r.Body, &subscription)
+
 	if err != nil {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
@@ -719,12 +836,14 @@ func (h *UserHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err := h.userClient.Subscribe(r.Context(), &generatedUser.SubscriptionDetails{
-		CreatorID:  subscription.CreatorId.String(),
-		UserID:     userDataJWT.Id.String(),
-		Id:         subUUID,
-		MonthCount: subscription.MonthCount,
-		Money:      subscription.Money})
+	subscription.PaymentInfo = uuid.New()
+	fmt.Println(subscription)
+	out, err := h.userClient.AddPaymentInfo(r.Context(), &generatedUser.SubscriptionDetails{
+		CreatorID:   subscription.CreatorId.String(),
+		UserID:      userDataJWT.Id.String(),
+		Id:          subUUID,
+		MonthCount:  subscription.MonthCount,
+		PaymentInfo: subscription.PaymentInfo.String()})
 
 	if err != nil {
 		h.logger.Error(err)
@@ -742,7 +861,7 @@ func (h *UserHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.Response(w, http.StatusOK, nil)
+	utils.Response(w, http.StatusOK, subscription.PaymentInfo)
 }
 
 func (h *UserHandler) DeleteProfilePhoto(w http.ResponseWriter, r *http.Request) {

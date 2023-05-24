@@ -1,11 +1,14 @@
 package http
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	generatedAuth "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/delivery/grpc/generated"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
+	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notification"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/utils"
 	"github.com/google/uuid"
@@ -16,20 +19,290 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 )
 
 type CreatorHandler struct {
-	creatorClient generatedCreator.CreatorServiceClient
-	authClient    generatedAuth.AuthServiceClient
-	logger        *zap.SugaredLogger
+	creatorClient   generatedCreator.CreatorServiceClient
+	authClient      generatedAuth.AuthServiceClient
+	notificationApp notification.NotificationApp
+	logger          *zap.SugaredLogger
 }
 
-func NewCreatorHandler(creatorClient generatedCreator.CreatorServiceClient, authClient generatedAuth.AuthServiceClient, logger *zap.SugaredLogger) *CreatorHandler {
+func NewCreatorHandler(creatorClient generatedCreator.CreatorServiceClient, authClient generatedAuth.AuthServiceClient, na notification.NotificationApp, logger *zap.SugaredLogger) *CreatorHandler {
 	return &CreatorHandler{
-		creatorClient: creatorClient,
-		authClient:    authClient,
-		logger:        logger,
+		creatorClient:   creatorClient,
+		authClient:      authClient,
+		notificationApp: na,
+		logger:          logger,
 	}
+}
+
+func (h *CreatorHandler) GetBalance(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	creatorID, err := h.creatorClient.CheckIfCreator(r.Context(), &generatedCommon.UUIDMessage{Value: userDataJWT.Id.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if creatorID.Error == models.NotFound.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if creatorID.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	balance, err := h.creatorClient.GetCreatorBalance(r.Context(), &generatedCommon.UUIDMessage{Value: creatorID.Value})
+
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if balance.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, balance.Balance)
+}
+
+func (h *CreatorHandler) TransferMoney(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	creatorID, err := h.creatorClient.CheckIfCreator(r.Context(), &generatedCommon.UUIDMessage{Value: userDataJWT.Id.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if creatorID.Error == models.NotFound.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if creatorID.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	transfer := models.CreatorTransfer{}
+	err = easyjson.UnmarshalFromReader(r.Body, &transfer)
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	balance, err := h.creatorClient.GetCreatorBalance(r.Context(), &generatedCommon.UUIDMessage{Value: creatorID.Value})
+
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if balance.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if balance.Balance < transfer.Money {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	reqID, err := h.requestPayment(transfer)
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if err = h.processPayment(reqID); err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	balance, err = h.creatorClient.UpdateBalance(r.Context(), &generatedCreator.CreatorTransfer{
+		CreatorID: creatorID.Value,
+		Money:     transfer.Money,
+	})
+
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if balance.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, balance)
+}
+
+func (h *CreatorHandler) requestPayment(transfer models.CreatorTransfer) (models.PaymentResponse, error) {
+	paymentToken, flag := os.LookupEnv("PAYMENT_TOKEN")
+	if !flag {
+		return models.PaymentResponse{}, errors.New("no payment token")
+	}
+
+	method := "POST"
+	payload := strings.NewReader("pattern_id=p2p&to=" + transfer.PhoneNumber + "&identifier_type=phone" + "&amount=" + fmt.Sprintf("%f", transfer.Money) + "&comment=Payment%20to%20authorID%3D%3CUUID%3E&message=Payment%20from%20SubMe")
+
+	client := &http.Client{}
+	req, err := http.NewRequest(method, models.RequestPaymentURL, payload)
+
+	if err != nil {
+		h.logger.Error(err)
+		return models.PaymentResponse{}, err
+	}
+	req.Header.Add("Authorization", "Bearer "+paymentToken)
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	res, err := client.Do(req)
+	if err != nil {
+		h.logger.Error(err)
+		return models.PaymentResponse{}, err
+	}
+
+	var reqID models.PaymentResponse
+	err = easyjson.UnmarshalFromReader(res.Body, &reqID)
+	if err != nil {
+		h.logger.Error(err)
+		return models.PaymentResponse{}, err
+	}
+	return reqID, nil
+}
+
+func (h *CreatorHandler) processPayment(reqID models.PaymentResponse) error {
+	method := "POST"
+	paymentToken, flag := os.LookupEnv("PAYMENT_TOKEN")
+	if !flag {
+		return errors.New("no payment token")
+	}
+
+	payload2 := strings.NewReader(fmt.Sprintf("request_id=%s", reqID.RequestID))
+
+	req, err := http.NewRequest(method, models.ProcessPaymentURL, payload2)
+	if err != nil {
+		h.logger.Error(err)
+		return err
+	}
+	req.Header.Add("Authorization", "Bearer "+paymentToken)
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		h.logger.Error(err)
+		return err
+	}
+	defer res.Body.Close()
+	return nil
+}
+
+func (h *CreatorHandler) SubscribeCreatorToNotifications(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	token := models.NotificationToken{}
+	err = easyjson.UnmarshalFromReader(r.Body, &token)
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	creatorID, err := h.creatorClient.CheckIfCreator(r.Context(), &generatedCommon.UUIDMessage{Value: userDataJWT.Id.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if creatorID.Error == models.NotFound.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if creatorID.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	err = h.notificationApp.AddUserToNotificationTopic(fmt.Sprintf("%s-%s", creatorID.Value, "creator"), token, context.Background())
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, nil)
+}
+
+func (h *CreatorHandler) UnsubscribeCreatorNotifications(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	token := models.NotificationToken{}
+	err = easyjson.UnmarshalFromReader(r.Body, &token)
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	creatorID, err := h.creatorClient.CheckIfCreator(r.Context(), &generatedCommon.UUIDMessage{Value: userDataJWT.Id.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if creatorID.Error == models.NotFound.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if creatorID.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	err = h.notificationApp.RemoveUserFromNotificationTopic(fmt.Sprintf("%s-%s", creatorID.Value, "creator"), token, context.Background())
+	if err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, nil)
 }
 
 func (h *CreatorHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
@@ -848,4 +1121,106 @@ func (h *CreatorHandler) DeleteProfilePhoto(w http.ResponseWriter, r *http.Reque
 	}
 
 	utils.Response(w, http.StatusOK, nil)
+}
+
+func (h *CreatorHandler) StatisticsFirstDate(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	creatorID, err := h.creatorClient.CheckIfCreator(r.Context(), &generatedCommon.UUIDMessage{Value: userDataJWT.Id.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if creatorID.Error == models.NotFound.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if creatorID.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	date, err := h.creatorClient.StatisticsFirstDate(r.Context(), &generatedCommon.UUIDMessage{Value: creatorID.Value})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if date.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	utils.Response(w, http.StatusOK, date.Date)
+
+}
+
+func (h *CreatorHandler) Statistics(w http.ResponseWriter, r *http.Request) {
+	userDataJWT, err := token.ExtractJWTTokenMetadata(r)
+	if err != nil {
+		utils.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
+	monthGap := models.StatisticsDates{}
+	err = easyjson.UnmarshalFromReader(r.Body, &monthGap)
+	if err != nil {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	if monthGap.FirstMonth.Unix() > monthGap.SecondMonth.Unix() {
+		utils.Response(w, http.StatusBadRequest, "First month can't be bigger than second")
+		return
+	}
+
+	creatorID, err := h.creatorClient.CheckIfCreator(r.Context(), &generatedCommon.UUIDMessage{Value: userDataJWT.Id.String()})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if creatorID.Error == models.NotFound.Error() {
+		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if creatorID.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	stat, err := h.creatorClient.Statistics(r.Context(), &generatedCreator.StatisticsInput{
+		CreatorId:  creatorID.Value,
+		FirstDate:  monthGap.FirstMonth.Format(time.RFC3339),
+		SecondDate: monthGap.SecondMonth.Format(time.RFC3339),
+	})
+	if err != nil {
+		h.logger.Error(err)
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	if stat.Error != "" {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	var statistics models.Statistics
+
+	if err = statistics.StatToModel(stat); err != nil {
+		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+
+	statistics.CreatorId, _ = uuid.Parse(creatorID.Value)
+
+	utils.Response(w, http.StatusOK, statistics)
 }

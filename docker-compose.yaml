@@ -27,7 +27,7 @@ services:
       - "8021:8021"
     volumes:
       - type: bind
-        source: /home/ubuntu/frontend/2023_1_4from5/public/images
+        source: /home/ubuntu/frontend/2023_1_4from5/public/images/user
         target: /images
       - type: bind
         source: /var/log
@@ -48,7 +48,7 @@ services:
       - "8031:8031"
     volumes:
       - type: bind
-        source: /home/ubuntu/frontend/2023_1_4from5/public/images
+        source: /home/ubuntu/frontend/2023_1_4from5/public/images/user
         target: /images
       - type: bind
         source: /var/log
@@ -88,7 +88,7 @@ services:
       - "8000:8000"
     volumes:
       - type: bind
-        source: /home/ubuntu/frontend/2023_1_4from5/public/images
+        source: /home/ubuntu/frontend/2023_1_4from5/public/images/user
         target: /images
       - type: bind
         source: /var/log

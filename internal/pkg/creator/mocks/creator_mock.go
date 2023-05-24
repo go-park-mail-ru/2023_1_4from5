@@ -65,6 +65,21 @@ func (mr *MockCreatorUsecaseMockRecorder) CreateAim(ctx, aimInfo interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAim", reflect.TypeOf((*MockCreatorUsecase)(nil).CreateAim), ctx, aimInfo)
 }
 
+// CreatorNotificationInfo mocks base method.
+func (m *MockCreatorUsecase) CreatorNotificationInfo(ctx context.Context, creatorID uuid.UUID) (models.NotificationCreatorInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreatorNotificationInfo", ctx, creatorID)
+	ret0, _ := ret[0].(models.NotificationCreatorInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreatorNotificationInfo indicates an expected call of CreatorNotificationInfo.
+func (mr *MockCreatorUsecaseMockRecorder) CreatorNotificationInfo(ctx, creatorID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatorNotificationInfo", reflect.TypeOf((*MockCreatorUsecase)(nil).CreatorNotificationInfo), ctx, creatorID)
+}
+
 // DeleteCoverPhoto mocks base method.
 func (m *MockCreatorUsecase) DeleteCoverPhoto(ctx context.Context, creatorId uuid.UUID) error {
 	m.ctrl.T.Helper()
@@ -123,6 +138,21 @@ func (mr *MockCreatorUsecaseMockRecorder) GetAllCreators(ctx interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCreators", reflect.TypeOf((*MockCreatorUsecase)(nil).GetAllCreators), ctx)
 }
 
+// GetCreatorBalance mocks base method.
+func (m *MockCreatorUsecase) GetCreatorBalance(ctx context.Context, creatorID uuid.UUID) (float32, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCreatorBalance", ctx, creatorID)
+	ret0, _ := ret[0].(float32)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCreatorBalance indicates an expected call of GetCreatorBalance.
+func (mr *MockCreatorUsecaseMockRecorder) GetCreatorBalance(ctx, creatorID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCreatorBalance", reflect.TypeOf((*MockCreatorUsecase)(nil).GetCreatorBalance), ctx, creatorID)
+}
+
 // GetFeed mocks base method.
 func (m *MockCreatorUsecase) GetFeed(ctx context.Context, userID uuid.UUID) ([]models.Post, error) {
 	m.ctrl.T.Helper()
@@ -151,6 +181,51 @@ func (m *MockCreatorUsecase) GetPage(ctx context.Context, userID, creatorID uuid
 func (mr *MockCreatorUsecaseMockRecorder) GetPage(ctx, userID, creatorID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPage", reflect.TypeOf((*MockCreatorUsecase)(nil).GetPage), ctx, userID, creatorID)
+}
+
+// Statistics mocks base method.
+func (m *MockCreatorUsecase) Statistics(ctx context.Context, statsInput models.StatisticsDates) (models.Statistics, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Statistics", ctx, statsInput)
+	ret0, _ := ret[0].(models.Statistics)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Statistics indicates an expected call of Statistics.
+func (mr *MockCreatorUsecaseMockRecorder) Statistics(ctx, statsInput interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Statistics", reflect.TypeOf((*MockCreatorUsecase)(nil).Statistics), ctx, statsInput)
+}
+
+// StatisticsFirstDate mocks base method.
+func (m *MockCreatorUsecase) StatisticsFirstDate(ctx context.Context, creatorID uuid.UUID) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StatisticsFirstDate", ctx, creatorID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StatisticsFirstDate indicates an expected call of StatisticsFirstDate.
+func (mr *MockCreatorUsecaseMockRecorder) StatisticsFirstDate(ctx, creatorID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StatisticsFirstDate", reflect.TypeOf((*MockCreatorUsecase)(nil).StatisticsFirstDate), ctx, creatorID)
+}
+
+// UpdateBalance mocks base method.
+func (m *MockCreatorUsecase) UpdateBalance(ctx context.Context, transfer models.CreatorTransfer) (float32, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateBalance", ctx, transfer)
+	ret0, _ := ret[0].(float32)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateBalance indicates an expected call of UpdateBalance.
+func (mr *MockCreatorUsecaseMockRecorder) UpdateBalance(ctx, transfer interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateBalance", reflect.TypeOf((*MockCreatorUsecase)(nil).UpdateBalance), ctx, transfer)
 }
 
 // UpdateCoverPhoto mocks base method.
@@ -249,6 +324,21 @@ func (mr *MockCreatorRepoMockRecorder) CreateAim(ctx, aimInfo interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAim", reflect.TypeOf((*MockCreatorRepo)(nil).CreateAim), ctx, aimInfo)
 }
 
+// CreatorNotificationInfo mocks base method.
+func (m *MockCreatorRepo) CreatorNotificationInfo(ctx context.Context, creatorID uuid.UUID) (models.NotificationCreatorInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreatorNotificationInfo", ctx, creatorID)
+	ret0, _ := ret[0].(models.NotificationCreatorInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreatorNotificationInfo indicates an expected call of CreatorNotificationInfo.
+func (mr *MockCreatorRepoMockRecorder) CreatorNotificationInfo(ctx, creatorID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatorNotificationInfo", reflect.TypeOf((*MockCreatorRepo)(nil).CreatorNotificationInfo), ctx, creatorID)
+}
+
 // DeleteCoverPhoto mocks base method.
 func (m *MockCreatorRepo) DeleteCoverPhoto(ctx context.Context, creatorId uuid.UUID) error {
 	m.ctrl.T.Helper()
@@ -307,6 +397,21 @@ func (mr *MockCreatorRepoMockRecorder) GetAllCreators(ctx interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCreators", reflect.TypeOf((*MockCreatorRepo)(nil).GetAllCreators), ctx)
 }
 
+// GetCreatorBalance mocks base method.
+func (m *MockCreatorRepo) GetCreatorBalance(ctx context.Context, creatorID uuid.UUID) (float32, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCreatorBalance", ctx, creatorID)
+	ret0, _ := ret[0].(float32)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCreatorBalance indicates an expected call of GetCreatorBalance.
+func (mr *MockCreatorRepoMockRecorder) GetCreatorBalance(ctx, creatorID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCreatorBalance", reflect.TypeOf((*MockCreatorRepo)(nil).GetCreatorBalance), ctx, creatorID)
+}
+
 // GetCreatorSubs mocks base method.
 func (m *MockCreatorRepo) GetCreatorSubs(ctx context.Context, creatorID uuid.UUID) ([]models.Subscription, error) {
 	m.ctrl.T.Helper()
@@ -350,6 +455,51 @@ func (m *MockCreatorRepo) GetPage(ctx context.Context, userID, creatorID uuid.UU
 func (mr *MockCreatorRepoMockRecorder) GetPage(ctx, userID, creatorID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPage", reflect.TypeOf((*MockCreatorRepo)(nil).GetPage), ctx, userID, creatorID)
+}
+
+// Statistics mocks base method.
+func (m *MockCreatorRepo) Statistics(ctx context.Context, statsInput models.StatisticsDates) (models.Statistics, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Statistics", ctx, statsInput)
+	ret0, _ := ret[0].(models.Statistics)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Statistics indicates an expected call of Statistics.
+func (mr *MockCreatorRepoMockRecorder) Statistics(ctx, statsInput interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Statistics", reflect.TypeOf((*MockCreatorRepo)(nil).Statistics), ctx, statsInput)
+}
+
+// StatisticsFirstDate mocks base method.
+func (m *MockCreatorRepo) StatisticsFirstDate(ctx context.Context, creatorID uuid.UUID) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StatisticsFirstDate", ctx, creatorID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StatisticsFirstDate indicates an expected call of StatisticsFirstDate.
+func (mr *MockCreatorRepoMockRecorder) StatisticsFirstDate(ctx, creatorID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StatisticsFirstDate", reflect.TypeOf((*MockCreatorRepo)(nil).StatisticsFirstDate), ctx, creatorID)
+}
+
+// UpdateBalance mocks base method.
+func (m *MockCreatorRepo) UpdateBalance(ctx context.Context, transfer models.CreatorTransfer) (float32, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateBalance", ctx, transfer)
+	ret0, _ := ret[0].(float32)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateBalance indicates an expected call of UpdateBalance.
+func (mr *MockCreatorRepoMockRecorder) UpdateBalance(ctx, transfer interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateBalance", reflect.TypeOf((*MockCreatorRepo)(nil).UpdateBalance), ctx, transfer)
 }
 
 // UpdateCoverPhoto mocks base method.

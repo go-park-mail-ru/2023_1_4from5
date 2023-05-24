@@ -13,6 +13,7 @@ import (
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/auth/usecase"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	mockCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/mocks"
+	mockNotification "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/notification/mocks"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/token"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
@@ -60,7 +61,7 @@ func TestNewPostHandler(t *testing.T) {
 
 	authClient := mockAuth.NewMockAuthServiceClient(ctl)
 	creatorClient := mockCreator.NewMockCreatorServiceClient(ctl)
-
+	notify := mockNotification.NewMockNotificationApp(ctl)
 	logger, err := zap.NewProduction()
 	if err != nil {
 		t.Error(err.Error())
@@ -73,11 +74,8 @@ func TestNewPostHandler(t *testing.T) {
 	}(logger)
 	zapSugar := logger.Sugar()
 
-	testHandler := NewPostHandler(authClient, creatorClient, zapSugar)
-	if testHandler.authClient != authClient {
-		t.Error("bad constructor")
-	}
-	if testHandler.creatorClient != creatorClient {
+	testHandler := NewPostHandler(authClient, creatorClient, zapSugar, notify)
+	if testHandler.authClient != authClient || testHandler.creatorClient != creatorClient || testHandler.notificationApp != notify {
 		t.Error("bad constructor")
 	}
 }
@@ -577,6 +575,7 @@ func TestPostHandler_CreatePost(t *testing.T) {
 	}(logger)
 	zapSugar := logger.Sugar()
 
+	notify := mockNotification.NewMockNotificationApp(ctl)
 	authClient := mockAuth.NewMockAuthServiceClient(ctl)
 	creatorClient := mockCreator.NewMockCreatorServiceClient(ctl)
 
@@ -1041,9 +1040,115 @@ func TestPostHandler_CreatePost(t *testing.T) {
 				}, nil)
 				creatorClient.EXPECT().CreatePost(gomock.Any(), gomock.Any()).Return(&generatedCommon.Empty{Error: ""}, nil)
 				r.Header.Add("Content-Type", writer.FormDataContentType())
+				creatorClient.EXPECT().CreatorNotificationInfo(gomock.Any(), gomock.Any()).Return(&generated.NotificationCreatorInfo{
+					Name:  "test",
+					Photo: uuid.New().String(),
+					Error: "",
+				}, nil)
+				notify.EXPECT().SendUserNotification(gomock.Any(), gomock.Any()).Return(nil)
 				return r
 			},
 			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "InternalErr from creator info",
+			mock: func() *http.Request {
+				body := new(bytes.Buffer)
+
+				writer := multipart.NewWriter(body)
+
+				defer writer.Close()
+
+				partPath, _ := writer.CreateFormField("creator")
+				_, err := partPath.Write([]byte(uuid.New().String()))
+				if err != nil {
+					t.Error(err)
+				}
+				partText, _ := writer.CreateFormField("text")
+				_, err = partText.Write([]byte(uuid.New().String()))
+				if err != nil {
+					t.Error(err)
+				}
+				partTitle, _ := writer.CreateFormField("title")
+				_, err = partTitle.Write([]byte(uuid.New().String()))
+				if err != nil {
+					t.Error(err)
+				}
+
+				r := httptest.NewRequest("POST", "/post/create",
+					body)
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().IsCreator(gomock.Any(), gomock.Any()).Return(&generated.FlagMessage{
+					Flag:  true,
+					Error: "",
+				}, nil)
+				creatorClient.EXPECT().CreatePost(gomock.Any(), gomock.Any()).Return(&generatedCommon.Empty{Error: ""}, nil)
+				r.Header.Add("Content-Type", writer.FormDataContentType())
+				creatorClient.EXPECT().CreatorNotificationInfo(gomock.Any(), gomock.Any()).Return(&generated.NotificationCreatorInfo{
+					Name:  "test",
+					Photo: uuid.New().String(),
+					Error: "",
+				}, errors.New("test"))
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name: "InternalErr from creator info",
+			mock: func() *http.Request {
+				body := new(bytes.Buffer)
+
+				writer := multipart.NewWriter(body)
+
+				defer writer.Close()
+
+				partPath, _ := writer.CreateFormField("creator")
+				_, err := partPath.Write([]byte(uuid.New().String()))
+				if err != nil {
+					t.Error(err)
+				}
+				partText, _ := writer.CreateFormField("text")
+				_, err = partText.Write([]byte(uuid.New().String()))
+				if err != nil {
+					t.Error(err)
+				}
+				partTitle, _ := writer.CreateFormField("title")
+				_, err = partTitle.Write([]byte(uuid.New().String()))
+				if err != nil {
+					t.Error(err)
+				}
+
+				r := httptest.NewRequest("POST", "/post/create",
+					body)
+
+				setJWTToken(r, bdy)
+				setCSRFToken(r, tokenCSRF)
+
+				authClient.EXPECT().CheckUserVersion(gomock.Any(), gomock.Any()).Return(&generatedAuth.UserVersion{
+					UserVersion: int64(1),
+					Error:       "",
+				}, nil)
+				creatorClient.EXPECT().IsCreator(gomock.Any(), gomock.Any()).Return(&generated.FlagMessage{
+					Flag:  true,
+					Error: "",
+				}, nil)
+				creatorClient.EXPECT().CreatePost(gomock.Any(), gomock.Any()).Return(&generatedCommon.Empty{Error: ""}, nil)
+				r.Header.Add("Content-Type", writer.FormDataContentType())
+				creatorClient.EXPECT().CreatorNotificationInfo(gomock.Any(), gomock.Any()).Return(&generated.NotificationCreatorInfo{
+					Name:  "test",
+					Photo: uuid.New().String(),
+					Error: "err",
+				}, nil)
+				return r
+			},
+			expectedStatus: http.StatusInternalServerError,
 		},
 		{
 			name: "err from create post service",
@@ -1094,9 +1199,10 @@ func TestPostHandler_CreatePost(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			h := &PostHandler{
-				authClient:    authClient,
-				creatorClient: creatorClient,
-				logger:        zapSugar,
+				authClient:      authClient,
+				creatorClient:   creatorClient,
+				logger:          zapSugar,
+				notificationApp: notify,
 			}
 			w := httptest.NewRecorder()
 			r := test.mock()
@@ -1107,7 +1213,6 @@ func TestPostHandler_CreatePost(t *testing.T) {
 	}
 }
 
-var newPostErr = models.PostEditData{Title: "testavbjkwkjebojweabkvsn;awlvmnbjerkvjawlvnkaoeibr aelsvjoerbjvkas,zjfonwileabuvtsyhexfnsrjdfyxdhfsehrjm", Text: "testtest"}
 var newPost = models.PostEditData{Title: "test", Text: "testtest"}
 
 func TestPostHandler_EditPost(t *testing.T) {

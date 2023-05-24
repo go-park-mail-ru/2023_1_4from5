@@ -3,7 +3,6 @@ package models
 // easyjson -all ./internal/models/post.go
 
 import (
-	"fmt"
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	"github.com/google/uuid"
 	"html"
@@ -17,12 +16,18 @@ type Post struct {
 	CreatorName   string         `json:"creator_name,omitempty"`
 	Creation      time.Time      `json:"creation_date"`
 	LikesCount    int64          `json:"likes_count"`
+	CommentsCount int64          `json:"comments_count"`
 	Title         string         `json:"title"`
 	Text          string         `json:"text"`
 	IsAvailable   bool           `json:"is_available"`
 	IsLiked       bool           `json:"is_liked"`
 	Attachments   []Attachment   `json:"attachments"`
 	Subscriptions []Subscription `json:"subscriptions"`
+}
+
+type PostWithComments struct {
+	Post     Post      `json:"post"`
+	Comments []Comment `json:"comments"`
 }
 
 //easyjson:skip
@@ -42,8 +47,8 @@ type PostEditData struct {
 	AvailableSubscriptions []uuid.UUID `json:"available_subscriptions"`
 }
 
-func (post PostCreationData) IsValid() bool {
-	return len(post.Text) != 0 || len(post.Title) != 0 || post.Attachments != nil
+func (postCreationData PostCreationData) IsValid() bool {
+	return len(postCreationData.Text) != 0 || len(postCreationData.Title) != 0 || postCreationData.Attachments != nil
 }
 
 func (post *Post) Sanitize() {
@@ -51,6 +56,13 @@ func (post *Post) Sanitize() {
 	post.Text = html.EscapeString(post.Text)
 	for i := range post.Subscriptions {
 		post.Subscriptions[i].Sanitize()
+	}
+}
+
+func (postWithComments *PostWithComments) Sanitize() {
+	postWithComments.Post.Sanitize()
+	for i := range postWithComments.Comments {
+		postWithComments.Comments[i].Sanitize()
 	}
 }
 
@@ -63,14 +75,14 @@ func (post *Post) PostToModel(postInfo *generatedCreator.Post) error {
 	if err != nil {
 		return err
 	}
+
 	creatorPhoto, err := uuid.Parse(postInfo.CreatorPhoto)
 	if err != nil {
 		return err
 	}
 
-	reg, err := time.Parse("2006-01-02 15:04:05 -0700 -0700", postInfo.Creation)
+	reg, err := time.Parse(time.RFC3339, postInfo.Creation)
 	if err != nil {
-		fmt.Println("date")
 		return err
 	}
 
@@ -80,6 +92,7 @@ func (post *Post) PostToModel(postInfo *generatedCreator.Post) error {
 	post.CreatorName = postInfo.CreatorName
 	post.Creation = reg
 	post.LikesCount = postInfo.LikesCount
+	post.CommentsCount = postInfo.CommentsCount
 	post.Title = postInfo.Title
 	post.Text = postInfo.Text
 	post.IsAvailable = postInfo.IsAvailable
@@ -102,5 +115,22 @@ func (post *Post) PostToModel(postInfo *generatedCreator.Post) error {
 		}
 		post.Attachments = append(post.Attachments, attachment)
 	}
+	return nil
+}
+
+func (postWithComments *PostWithComments) PostWithCommentsToModel(postInfo *generatedCreator.PostWithComments) error {
+	err := postWithComments.Post.PostToModel(postInfo.Post)
+	if err != nil {
+		return err
+	}
+	for _, com := range postInfo.Comments {
+		var comment Comment
+		err = comment.CommentToModel(com)
+		if err != nil {
+			return err
+		}
+		postWithComments.Comments = append(postWithComments.Comments, comment)
+	}
+
 	return nil
 }
