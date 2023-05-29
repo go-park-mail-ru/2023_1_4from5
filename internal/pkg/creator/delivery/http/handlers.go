@@ -877,8 +877,13 @@ func (h *CreatorHandler) UpdateCreatorData(w http.ResponseWriter, r *http.Reques
 	}
 
 	err = easyjson.UnmarshalFromReader(r.Body, &updCreator)
-	if err != nil || !(updCreator.IsValid()) {
+	if err != nil {
 		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if err = updCreator.IsValid(); err != nil {
+		utils.Response(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
