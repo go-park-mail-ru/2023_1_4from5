@@ -19,25 +19,25 @@ type User struct {
 	UserVersion  int64     `json:"user_version"`
 }
 
-func (user User) UserLoginIsValid() bool {
+func (user User) UserLoginIsValid() error {
 	if !(len(user.Login) >= 7 && len(user.Login) < 40) {
-		return false
+		return WrongLoginLength
 	}
 	for _, c := range user.Login {
 		if !unicode.IsLetter(c) && !unicode.IsDigit(c) && !(c == '.') && !(c == '_') && !(c == '-') {
-			return false
+			return WrongLoginSymbols
 		}
 	}
-	return true
+	return nil
 }
 
-func (user User) UserPasswordIsValid() bool {
+func (user User) UserPasswordIsValid() error {
 	if len(user.PasswordHash) >= 40 {
-		return false
+		return WrongPasswordLength
 	}
 	for _, c := range user.PasswordHash {
 		if !unicode.IsLetter(c) && !unicode.IsDigit(c) && !unicode.IsPunct(c) {
-			return false
+			return WrongPasswordSymbols
 		}
 	}
 
@@ -54,20 +54,49 @@ func (user User) UserPasswordIsValid() bool {
 			hasNumber = true
 		}
 	}
-	return hasMinLen && hasNumber
-
+	if !hasMinLen {
+		return WrongPasswordLength
+	}
+	if !hasNumber {
+		return PasswordHasNoNumber
+	}
+	return nil
 }
 
-func (user User) UserNameIsValid() bool {
-	return len(user.Name) > 0 && len(user.Name) < 40
+func (user User) UserNameIsValid() error {
+	if len(user.Name) <= 0 || len(user.Name) > 60 {
+		return WrongNameLength
+	}
+	hasLetter := false
+	for _, c := range user.Name {
+		if !unicode.IsLetter(c) && !unicode.IsDigit(c) && !(c == '.') && !(c == '_') && !(c == '-') && !(c == ' ') {
+			return WrongNameSymbols
+		}
+		if unicode.IsLetter(c) {
+			hasLetter = true
+		}
+	}
+	if !hasLetter {
+		return WrongNameHasNoLetter
+	}
+	return nil
 }
 
-func (user User) UserAuthIsValid() bool {
-	return user.UserLoginIsValid() && user.UserPasswordIsValid()
+func (user User) UserAuthIsValid() error {
+	if err := user.UserLoginIsValid(); err != nil {
+		return err
+	}
+	return user.UserPasswordIsValid()
 }
 
-func (user User) UserIsValid() bool {
-	return user.UserLoginIsValid() && user.UserPasswordIsValid() && user.UserNameIsValid()
+func (user User) UserIsValid() error {
+	if err := user.UserLoginIsValid(); err != nil {
+		return err
+	}
+	if err := user.UserPasswordIsValid(); err != nil {
+		return err
+	}
+	return user.UserNameIsValid()
 }
 
 type LoginUser struct {
@@ -103,8 +132,26 @@ type Donate struct {
 	MoneyCount float32   `json:"money_count"`
 }
 
-func (becameCreatorInfo *BecameCreatorInfo) IsValid() bool {
-	return (len(becameCreatorInfo.Name) > 0 && len(becameCreatorInfo.Name) < 40) && (len(becameCreatorInfo.Description) > 0 && len(becameCreatorInfo.Description) < 500)
+func (becameCreatorInfo *BecameCreatorInfo) IsValid() error {
+	if len(becameCreatorInfo.Name) > 0 && len(becameCreatorInfo.Name) < 80 {
+		return WrongCreatorNameLength
+	}
+	if len(becameCreatorInfo.Description) >= 0 && len(becameCreatorInfo.Description) < 500 {
+		return WrongCreatorDescriptionLength
+	}
+	hasLetter := false
+	for _, c := range becameCreatorInfo.Name {
+		if !unicode.IsLetter(c) && !unicode.IsDigit(c) && !(c == '.') && !(c == '_') && !(c == '-') && !(c == ' ') {
+			return WrongCreatorNameSymbols
+		}
+		if unicode.IsLetter(c) {
+			hasLetter = true
+		}
+	}
+	if !hasLetter {
+		return WrongCreatorNameHasNoLetter
+	}
+	return nil
 }
 
 func (user *User) Sanitize() {

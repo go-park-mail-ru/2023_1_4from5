@@ -25,10 +25,16 @@ func NewAuthHandler(cl generatedAuth.AuthServiceClient, logger *zap.SugaredLogge
 func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 	user := models.LoginUser{}
 	err := easyjson.UnmarshalFromReader(r.Body, &user)
-	if err != nil || !(models.User{Login: user.Login, PasswordHash: user.PasswordHash}).UserAuthIsValid() {
+	if err != nil {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
+
+	if err = (models.User{Login: user.Login, PasswordHash: user.PasswordHash}).UserAuthIsValid(); err != nil {
+		utils.Response(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
 	token, err := h.client.SignIn(r.Context(), &generatedAuth.LoginUser{
 		Login:        user.Login,
 		PasswordHash: user.PasswordHash,
@@ -69,8 +75,13 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	err := easyjson.UnmarshalFromReader(r.Body, &user)
-	if err != nil || !user.UserIsValid() {
+	if err != nil {
 		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if err = user.UserIsValid(); err != nil {
+		utils.Response(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
