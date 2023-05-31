@@ -133,10 +133,10 @@ type Donate struct {
 }
 
 func (becameCreatorInfo *BecameCreatorInfo) IsValid() error {
-	if len(becameCreatorInfo.Name) > 0 && len(becameCreatorInfo.Name) < 80 {
+	if len(becameCreatorInfo.Name) == 0 && len(becameCreatorInfo.Name) > 80 {
 		return WrongCreatorNameLength
 	}
-	if len(becameCreatorInfo.Description) >= 0 && len(becameCreatorInfo.Description) < 500 {
+	if len(becameCreatorInfo.Description) > 500 {
 		return WrongCreatorDescriptionLength
 	}
 	hasLetter := false

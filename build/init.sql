@@ -248,7 +248,10 @@ CREATE TABLE "statistics"
 CREATE OR REPLACE FUNCTION check_if_bucket_exists(creator uuid, month_val timestamp) RETURNS boolean AS
 $$
 BEGIN
-    RETURN (SELECT EXISTS(SELECT 1 FROM "statistics" WHERE creator_id = creator AND date_trunc('month', month) = month_val));
+    RETURN (SELECT EXISTS(SELECT 1
+                          FROM "statistics"
+                          WHERE creator_id = creator
+                            AND date_trunc('month', month) = month_val));
 END
 $$ LANGUAGE 'plpgsql' IMMUTABLE;
 
