@@ -74,8 +74,8 @@ func (h *SubscriptionHandler) CreateSubscription(w http.ResponseWriter, r *http.
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	if !subscriptionInfo.IsValid() {
-		utils.Response(w, http.StatusBadRequest, nil)
+	if err = subscriptionInfo.IsValid(); err != nil {
+		utils.Response(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -261,8 +261,8 @@ func (h *SubscriptionHandler) EditSubscription(w http.ResponseWriter, r *http.Re
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
-	if !subscriptionInfo.IsValid() {
-		utils.Response(w, http.StatusBadRequest, nil)
+	if err = subscriptionInfo.IsValid(); err != nil {
+		utils.Response(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	if subscriptionInfo.Creator == uuid.Nil {

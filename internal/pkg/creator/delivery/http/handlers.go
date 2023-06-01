@@ -769,8 +769,8 @@ func (h *CreatorHandler) CreateAim(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(aimInfo.Description) > 100 {
-		utils.Response(w, http.StatusBadRequest, nil)
+	if err = aimInfo.IsValid(); err != nil {
+		utils.Response(w, http.StatusBadRequest, err.Error())
 		return
 	}
 

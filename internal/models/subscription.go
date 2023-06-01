@@ -6,6 +6,12 @@ import (
 	generatedCommon "github.com/go-park-mail-ru/2023_1_4from5/internal/models/proto"
 	"github.com/google/uuid"
 	"html"
+	"unicode"
+)
+
+const (
+	subscriptionNameMaxLength        = 40
+	subscriptionDescriptionMaxLength = 200
 )
 
 type Subscription struct {
@@ -52,8 +58,24 @@ func (follow *Follow) Sanitize() {
 	follow.Description = html.EscapeString(follow.Description)
 }
 
-func (subscription *Subscription) IsValid() bool {
-	return 0 < len(subscription.Title) && len(subscription.Title) < 41 && len(subscription.Description) < 201
+func (subscription *Subscription) IsValid() error {
+	if len([]rune(subscription.Title)) > subscriptionNameMaxLength {
+		return WrongSubscriptionTitleLength
+	}
+	if len([]rune(subscription.Description)) > subscriptionDescriptionMaxLength {
+		return WrongSubscriptionDescriptionLength
+	}
+	for _, c := range subscription.Title {
+		if !unicode.IsLetter(c) && !(c >= 32 && c <= 126) {
+			return WrongSubscriptionTitleSymbols
+		}
+	}
+	for _, c := range subscription.Description {
+		if !unicode.IsLetter(c) && !(c >= 32 && c <= 126) && c != 10 && c != 13 {
+			return WrongSubscriptionDescriptionSymbols
+		}
+	}
+	return nil
 }
 
 func (subscription *Subscription) ProtoSubscriptionToModel(sub *generatedCommon.Subscription) error {

@@ -122,27 +122,19 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, ok = postValues["text"]
-	if !ok {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
+	if ok {
+		postData.Text = postValues["text"][0]
 	}
-	postData.Text = postValues["text"][0]
-	if len(postData.Text) > 4000 {
-		utils.Response(w, http.StatusBadRequest, nil)
-		return
-	}
-
 	_, ok = postValues["title"]
 	if !ok {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
 	postData.Title = postValues["title"][0]
-	if len(postData.Title) > 80 {
-		utils.Response(w, http.StatusBadRequest, nil)
+	if err = postData.IsValid(); err != nil {
+		utils.Response(w, http.StatusBadRequest, err.Error())
 		return
 	}
-
 	if _, ok := r.MultipartForm.File["attachments"]; ok {
 		h.logger.Info("Got attachs")
 		if len(r.MultipartForm.File["attachments"]) > models.MaxFiles {
@@ -731,8 +723,8 @@ func (h *PostHandler) EditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(postEditData.Title) > 40 || len(postEditData.Text) > 4000 || len(postEditData.Title) == 0 {
-		utils.Response(w, http.StatusBadRequest, nil)
+	if err = (models.PostCreationData{Title: postEditData.Title, Text: postEditData.Text}).IsValid(); err != nil {
+		utils.Response(w, http.StatusBadRequest, err.Error())
 		return
 	}
 

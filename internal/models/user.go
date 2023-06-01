@@ -8,6 +8,15 @@ import (
 )
 
 // easyjson -all ./internal/models/user.go
+const (
+	creatorNameMaxLength        = 40
+	userLoginMaxLength          = 40
+	userLoginMinLength          = 7
+	userPasswordMaxLength       = 20
+	userPasswordMinLength       = 7
+	userNameMaxLength           = 40
+	creatorDescriptionMaxLength = 500
+)
 
 type User struct {
 	Id           uuid.UUID `json:"id"`
@@ -20,7 +29,7 @@ type User struct {
 }
 
 func (user User) UserLoginIsValid() error {
-	if !(len(user.Login) >= 7 && len(user.Login) < 40) {
+	if !(len([]rune(user.Login)) >= userLoginMinLength && len([]rune(user.Login)) < userLoginMaxLength) {
 		return WrongLoginLength
 	}
 	for _, c := range user.Login {
@@ -32,7 +41,7 @@ func (user User) UserLoginIsValid() error {
 }
 
 func (user User) UserPasswordIsValid() error {
-	if len(user.PasswordHash) >= 40 {
+	if len([]rune(user.PasswordHash)) >= userPasswordMaxLength {
 		return WrongPasswordLength
 	}
 	for _, c := range user.PasswordHash {
@@ -45,7 +54,7 @@ func (user User) UserPasswordIsValid() error {
 		hasMinLen = false
 		hasNumber = false
 	)
-	if len(user.PasswordHash) >= 7 {
+	if len([]rune(user.PasswordHash)) >= userPasswordMinLength {
 		hasMinLen = true
 	}
 
@@ -64,7 +73,7 @@ func (user User) UserPasswordIsValid() error {
 }
 
 func (user User) UserNameIsValid() error {
-	if len(user.Name) <= 0 || len(user.Name) > 60 {
+	if len(user.Name) == 0 || len([]rune(user.Name)) > userNameMaxLength {
 		return WrongNameLength
 	}
 	hasLetter := false
@@ -133,15 +142,15 @@ type Donate struct {
 }
 
 func (becameCreatorInfo *BecameCreatorInfo) IsValid() error {
-	if len(becameCreatorInfo.Name) == 0 && len(becameCreatorInfo.Name) > 80 {
+	if len(becameCreatorInfo.Name) == 0 || len([]rune(becameCreatorInfo.Name)) > creatorNameMaxLength {
 		return WrongCreatorNameLength
 	}
-	if len(becameCreatorInfo.Description) > 500 {
+	if len([]rune(becameCreatorInfo.Description)) > creatorDescriptionMaxLength {
 		return WrongCreatorDescriptionLength
 	}
 	hasLetter := false
 	for _, c := range becameCreatorInfo.Name {
-		if !unicode.IsLetter(c) && !unicode.IsDigit(c) && !(c == '.') && !(c == '_') && !(c == '-') && !(c == ' ') {
+		if !unicode.IsLetter(c) && !(c >= 32 && c <= 126) {
 			return WrongCreatorNameSymbols
 		}
 		if unicode.IsLetter(c) {
