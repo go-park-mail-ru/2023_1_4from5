@@ -16,7 +16,7 @@ const (
 	CreatorInfo             = `SELECT user_id, name, cover_photo, followers_count, description, posts_count, aim, money_got, money_needed, profile_photo FROM "creator" WHERE creator_id=$1;`
 	GetCreatorSubs          = `SELECT subscription_id, month_cost, title, description, is_available FROM "subscription" WHERE creator_id=$1;`
 	GetAllCreators          = `SELECT creator_id, user_id, name, cover_photo, followers_count, description, posts_count, profile_photo FROM "creator" LIMIT 100;`
-	CreatorPosts            = `SELECT "post".post_id, creation_date, title, post_text, likes_count, comments_count, array_agg(attachment_id), array_agg(attachment_type), array_agg(DISTINCT subscription_id) FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN "post_subscription" ps on "post".post_id = ps.post_id WHERE creator_id = $1 GROUP BY "post".post_id, creation_date, title, post_text ORDER BY creation_date DESC;`
+	CreatorPosts            = `SELECT "post".post_id,creation_date,title,post_text,likes_count,comments_count,array_agg(attachment_id),array_agg(attachment_type),subs FROM "post" LEFT JOIN "attachment" a on "post".post_id = a.post_id LEFT JOIN ( SELECT array_agg(DISTINCT subscription_id) as "subs", post_id FROM post_subscription s GROUP BY s.post_id ) as b on a.post_id = b.post_id WHERE creator_id = $1 GROUP BY "post".post_id, creation_date, title, post_text, subs ORDER BY creation_date DESC;`
 	UserSubscriptions       = `SELECT array_agg(subscription_id) FROM "user_subscription" WHERE user_id=$1;`
 	IsLiked                 = `SELECT post_id, user_id FROM "like_post" WHERE post_id = $1 AND user_id = $2`
 	GetSubInfo              = `SELECT creator_id, month_cost, title, description FROM "subscription" WHERE subscription_id = $1;`
