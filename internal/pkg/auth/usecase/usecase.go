@@ -40,7 +40,7 @@ func (u *AuthUsecase) SignIn(ctx context.Context, user models.LoginUser) (string
 	if dbErr == nil && err == nil {
 		return token, nil
 	}
-	return "", models.NotFound
+	return "", dbErr
 }
 
 func (u *AuthUsecase) CheckUser(ctx context.Context, user models.User) (models.User, error) {

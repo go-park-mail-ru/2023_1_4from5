@@ -473,3 +473,19 @@ CREATE TRIGGER update_creator_balance
     ON user_payments
     FOR EACH ROW
 EXECUTE PROCEDURE update_balance();
+
+CREATE OR REPLACE FUNCTION update_balance2() RETURNS TRIGGER AS
+$update_balance$
+BEGIN
+    UPDATE creator
+    SET balance = balance + NEW.money_count
+    WHERE creator_id = new.creator_id;
+    RETURN NEW;
+END;
+$update_balance$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_creator_balance2
+    AFTER INSERT
+    ON donation
+    FOR EACH ROW
+EXECUTE PROCEDURE update_balance2();

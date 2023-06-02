@@ -44,6 +44,10 @@ func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 		utils.Response(w, http.StatusInternalServerError, nil)
 		return
 	}
+	if token.Error == models.NotFound.Error() {
+		utils.Response(w, http.StatusUnauthorized, "no user with such login")
+		return
+	}
 	if len(token.Error) != 0 {
 		utils.Response(w, http.StatusUnauthorized, nil)
 		return
@@ -92,7 +96,7 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		ProfilePhoto: user.ProfilePhoto.String(),
 		PasswordHash: user.PasswordHash,
 		Registration: user.Registration.String(),
-		UserVersion:  int64(user.UserVersion),
+		UserVersion:  user.UserVersion,
 	})
 
 	if err != nil {
@@ -103,7 +107,7 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 
 	if len(token.Cookie) == 0 {
 		if token.Error == models.WrongData.Error() {
-			utils.Response(w, http.StatusConflict, nil)
+			utils.Response(w, http.StatusConflict, "user with such login already exists")
 			return
 		}
 		utils.Response(w, http.StatusInternalServerError, nil)
