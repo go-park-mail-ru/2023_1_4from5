@@ -61,10 +61,12 @@ services:
 
   postgres:
     image: postgres:14
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: "subme"
-      POSTGRES_USER: "submeuser"
-      POSTGRES_PASSWORD: "submepassword"
+        POSTGRES_DB: ${DB_NAME}
+        POSTGRES_USER: ${DB_USER}
+        POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
