@@ -146,6 +146,19 @@ create table attachment
     attachment_type varchar(40)
 );
 
+
+--Вспомогательная таблица для реализации связи многие ко многим
+--Комментарий может лайкать множество пользователей, один пользователь может лайкать множество комментариев
+create table like_comment
+(
+    comment_id uuid not null
+        constraint like_comment_comment_comment_id_fk
+            references comment (comment_id),
+    user_id    uuid not null
+        constraint like_comment_user_user_id_fk
+            references "user" (user_id)
+);
+
 --Вспомогательная таблица для реализации связи многие ко многим
 --У поста может быть много лайков, один пользователь может лайкать разные посты
 create table like_post
