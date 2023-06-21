@@ -17,7 +17,7 @@ create table "user"
 (
     user_id           uuid        not null
         constraint user_pk
-            primary key,
+            primary key, -- уникальный идентификатор пользователя
     user_version      integer     not null default 0,
     login             varchar(40) not null
         constraint login_pk
@@ -34,7 +34,7 @@ create table creator
 (
     creator_id      uuid              not null
         constraint creator_pk
-            primary key,
+            primary key, -- уникальный идентификатор автора, созданного пользователем
     user_id         uuid              not null
         constraint creator_user_user_id_fk
             references "user" (user_id),
@@ -54,7 +54,7 @@ create table subscription
 (
     subscription_id uuid        not null
         constraint subscription_pk
-            primary key,
+            primary key, -- уникальный идентификатор подписки, созданной автором
     creator_id      uuid        not null
         constraint subscription_creator_creator_id_fk
             references creator (creator_id),
@@ -73,7 +73,7 @@ create table user_subscription
     subscription_id uuid      not null
         constraint user_subscription_subscription_subscription_id_fk references subscription (subscription_id),
     expire_date     timestamp not null default now() + INTERVAL '1 month',
-    PRIMARY KEY (user_id, subscription_id)
+    primary key (user_id, subscription_id) -- уникальный идентификатор подписки, приобретённой пользователем, пара ключей (user_id+subscription_id)
 );
 
 --Таблица соответствует 3НФ
@@ -92,7 +92,7 @@ create table user_payments
 --Аналогично аттрибут comments_count
 create table post
 (
-    post_id        uuid not null
+    post_id        uuid not null --уникальный идентификатор поста
         constraint post_pk
             primary key,
     creator_id     uuid not null
@@ -114,14 +114,14 @@ create table post_subscription
         constraint post_subscription_user_user_id_fk references post (post_id),
     subscription_id uuid not null
         constraint post_subscription_subscription_subscription_id_fk references subscription (subscription_id),
-    primary key (post_id, subscription_id)
+    primary key (post_id, subscription_id) -- уникальный идентификатор подписки, пара ключей (post_id+subscription_id)
 );
 
 --Таблица подвергалась денормализации
 --Аттрибут likes_count был добавлен для того, чтобы избежать запросов на SELECT COUNT(*) FROM like_comment WHERE...
 create table comment
 (
-    comment_id    uuid         not null
+    comment_id    uuid         not null --уникальный идентификатор комментария
         constraint comment_pk
             primary key,
     post_id       uuid         not null
@@ -138,8 +138,8 @@ create table comment
 --Таблица соответствует 3НФ
 create table attachment
 (
-    attachment_id   uuid not null
-        constraint attachment_pk
+    attachment_id   uuid not null --уникальный идентификатор картинки, он же и является названием,
+        constraint attachment_pk  --с которым она хранится на сервере
             primary key,
     post_id         uuid not null
         constraint attachment_post_post_id_fk references "post" (post_id),
@@ -156,19 +156,7 @@ create table like_post
     user_id uuid not null
         constraint like_post_user_user_id_fk
             references "user" (user_id),
-    primary key (post_id, user_id)
-);
-
---Вспомогательная таблица для реализации связи многие ко многим
---Комментарий может лайкать множество пользователей, один пользователь может лайкать множество комментариев
-create table like_comment
-(
-    comment_id uuid not null
-        constraint like_comment_comment_comment_id_fk
-            references comment (comment_id),
-    user_id    uuid not null
-        constraint like_comment_user_user_id_fk
-            references "user" (user_id)
+    primary key (post_id, user_id) -- уникальный идентификатор лайка, пара ключей (user_id+post_id)
 );
 
 --Вспомогательная таблица для реализации связи многие ко многим
@@ -181,14 +169,14 @@ create table follow
     creator_id uuid not null
         constraint follow_creator_creator_id_fk
             references "creator" (creator_id),
-    primary key (user_id, creator_id)
+    primary key (user_id, creator_id) -- уникальный идентификатор отслеживания, пара ключей (user_id+creator_id)
 );
 
 --Таблица для хранения статистики авторов, одна строка соответствует записи
 --о статистике автора за конкретный месяц,  позволяет избежать множества запросов вида SELECT COUNT(*) и SELECT SUM()
 CREATE TABLE "statistics"
 (
-    id                       uuid not null default gen_random_uuid(),
+    id                       uuid not null default gen_random_uuid(), --
     creator_id               uuid not null,
     posts_per_month          int           default 0,
     subscriptions_bought     int           default 0,
