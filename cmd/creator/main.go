@@ -50,7 +50,7 @@ func run() error {
 
 	zapSugar := logger.Sugar()
 
-	str, err := utils.GetConnectionString()
+	str, err := utils.GetConnectionStringCreator()
 	if err != nil {
 		return err
 	}
