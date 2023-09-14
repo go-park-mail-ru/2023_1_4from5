@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/go-park-mail-ru/2023_1_4from5/internal/models"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -216,7 +217,7 @@ func (r *PostRepo) GetPost(ctx context.Context, postID, userID uuid.UUID) (model
 		})
 	}
 	post.Subscriptions, err = r.GetSubsByID(ctx, subs...)
-
+	fmt.Println(post.Subscriptions)
 	row = r.db.QueryRowContext(ctx, IsLiked, postID, userID)
 	var postUUID, userUUID uuid.UUID
 	if err := row.Scan(&postUUID, &userUUID); err != nil && !errors.Is(sql.ErrNoRows, err) {

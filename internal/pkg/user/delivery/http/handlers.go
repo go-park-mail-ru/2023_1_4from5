@@ -379,8 +379,8 @@ func (h *UserHandler) UpdatePassword(w http.ResponseWriter, r *http.Request) {
 	updPwd := models.UpdatePasswordInfo{}
 
 	err = easyjson.UnmarshalFromReader(r.Body, &updPwd)
-	if err != nil || !(models.User{PasswordHash: updPwd.NewPassword}.UserPasswordIsValid()) {
-		utils.Response(w, http.StatusBadRequest, nil)
+	if err != nil || (models.User{PasswordHash: updPwd.NewPassword}).UserPasswordIsValid() != nil {
+		utils.Response(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -484,8 +484,18 @@ func (h *UserHandler) UpdateData(w http.ResponseWriter, r *http.Request) {
 	updProfile := models.UpdateProfileInfo{}
 
 	err = easyjson.UnmarshalFromReader(r.Body, &updProfile)
-	if err != nil || !(models.User{Name: updProfile.Name}.UserNameIsValid() && models.User{Login: updProfile.Login}.UserLoginIsValid()) {
+	if err != nil {
 		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if err = (models.User{Name: updProfile.Name}).UserNameIsValid(); err != nil {
+		utils.Response(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err = (models.User{Login: updProfile.Login}.UserLoginIsValid()); err != nil {
+		utils.Response(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -564,8 +574,13 @@ func (h *UserHandler) BecomeCreator(w http.ResponseWriter, r *http.Request) {
 	authorInfo := models.BecameCreatorInfo{}
 
 	err = easyjson.UnmarshalFromReader(r.Body, &authorInfo)
-	if err != nil || !(authorInfo.IsValid()) {
+	if err != nil {
 		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if err = authorInfo.IsValid(); err != nil {
+		utils.Response(w, http.StatusBadRequest, err.Error())
 		return
 	}
 

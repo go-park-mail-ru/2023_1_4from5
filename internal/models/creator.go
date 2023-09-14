@@ -4,13 +4,15 @@ import (
 	generatedCreator "github.com/go-park-mail-ru/2023_1_4from5/internal/pkg/creator/delivery/grpc/generated"
 	"github.com/google/uuid"
 	"html"
+	"unicode"
 )
 
 // easyjson -all ./internal/models/creator.go
 
 const (
-	RequestPaymentURL = "https://yoomoney.ru/api/request-payment"
-	ProcessPaymentURL = "https://yoomoney.ru/api/process-payment"
+	RequestPaymentURL    = "https://yoomoney.ru/api/request-payment"
+	ProcessPaymentURL    = "https://yoomoney.ru/api/process-payment"
+	aimDescriptionLength = 100
 )
 
 type Creator struct {
@@ -42,6 +44,18 @@ type Aim struct {
 	Description string    `json:"description"`
 	MoneyNeeded float32   `json:"money_needed"`
 	MoneyGot    float32   `json:"money_got"`
+}
+
+func (aim *Aim) IsValid() error {
+	if len(aim.Description) > aimDescriptionLength {
+		return WrongAimDescriptionLength
+	}
+	for _, c := range aim.Description {
+		if !unicode.IsLetter(c) && !(c >= 32 && c <= 126) && c != 10 && c != 13 {
+			return WrongAimDescriptionSymbols
+		}
+	}
+	return nil
 }
 
 type UpdateCreatorInfo struct {

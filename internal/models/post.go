@@ -7,6 +7,12 @@ import (
 	"github.com/google/uuid"
 	"html"
 	"time"
+	"unicode"
+)
+
+const (
+	postTitleMaxLength = 80
+	postTextMaxLength  = 4000
 )
 
 type Post struct {
@@ -47,8 +53,24 @@ type PostEditData struct {
 	AvailableSubscriptions []uuid.UUID `json:"available_subscriptions"`
 }
 
-func (postCreationData PostCreationData) IsValid() bool {
-	return len(postCreationData.Text) != 0 || len(postCreationData.Title) != 0 || postCreationData.Attachments != nil
+func (postCreationData PostCreationData) IsValid() error {
+	if len(postCreationData.Title) == 0 || len([]rune(postCreationData.Title)) > postTitleMaxLength {
+		return WrongPostTitleLength
+	}
+	if len([]rune(postCreationData.Text)) > postTextMaxLength {
+		return WrongPostTextLength
+	}
+	for _, c := range postCreationData.Title {
+		if !unicode.IsLetter(c) && !(c >= 32 && c <= 126) && c != 10 && c != 13 {
+			return WrongPostTitleSymbols
+		}
+	}
+	for _, c := range postCreationData.Text {
+		if !unicode.IsLetter(c) && !(c >= 32 && c <= 126) && c != 10 && c != 13 {
+			return WrongPostTextSymbols
+		}
+	}
+	return nil
 }
 
 func (post *Post) Sanitize() {

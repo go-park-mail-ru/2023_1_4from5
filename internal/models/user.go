@@ -8,6 +8,15 @@ import (
 )
 
 // easyjson -all ./internal/models/user.go
+const (
+	creatorNameMaxLength        = 40
+	userLoginMaxLength          = 40
+	userLoginMinLength          = 7
+	userPasswordMaxLength       = 20
+	userPasswordMinLength       = 7
+	userNameMaxLength           = 40
+	creatorDescriptionMaxLength = 500
+)
 
 type User struct {
 	Id           uuid.UUID `json:"id"`
@@ -19,25 +28,25 @@ type User struct {
 	UserVersion  int64     `json:"user_version"`
 }
 
-func (user User) UserLoginIsValid() bool {
-	if !(len(user.Login) >= 7 && len(user.Login) < 40) {
-		return false
+func (user User) UserLoginIsValid() error {
+	if !(len([]rune(user.Login)) >= userLoginMinLength && len([]rune(user.Login)) < userLoginMaxLength) {
+		return WrongLoginLength
 	}
 	for _, c := range user.Login {
 		if !unicode.IsLetter(c) && !unicode.IsDigit(c) && !(c == '.') && !(c == '_') && !(c == '-') {
-			return false
+			return WrongLoginSymbols
 		}
 	}
-	return true
+	return nil
 }
 
-func (user User) UserPasswordIsValid() bool {
-	if len(user.PasswordHash) >= 40 {
-		return false
+func (user User) UserPasswordIsValid() error {
+	if len([]rune(user.PasswordHash)) >= userPasswordMaxLength {
+		return WrongPasswordLength
 	}
 	for _, c := range user.PasswordHash {
 		if !unicode.IsLetter(c) && !unicode.IsDigit(c) && !unicode.IsPunct(c) {
-			return false
+			return WrongPasswordSymbols
 		}
 	}
 
@@ -45,7 +54,7 @@ func (user User) UserPasswordIsValid() bool {
 		hasMinLen = false
 		hasNumber = false
 	)
-	if len(user.PasswordHash) >= 7 {
+	if len([]rune(user.PasswordHash)) >= userPasswordMinLength {
 		hasMinLen = true
 	}
 
@@ -54,20 +63,49 @@ func (user User) UserPasswordIsValid() bool {
 			hasNumber = true
 		}
 	}
-	return hasMinLen && hasNumber
-
+	if !hasMinLen {
+		return WrongPasswordLength
+	}
+	if !hasNumber {
+		return PasswordHasNoNumber
+	}
+	return nil
 }
 
-func (user User) UserNameIsValid() bool {
-	return len(user.Name) > 0 && len(user.Name) < 40
+func (user User) UserNameIsValid() error {
+	if len(user.Name) == 0 || len([]rune(user.Name)) > userNameMaxLength {
+		return WrongNameLength
+	}
+	hasLetter := false
+	for _, c := range user.Name {
+		if !unicode.IsLetter(c) && !unicode.IsDigit(c) && !(c == '.') && !(c == '_') && !(c == '-') && !(c == ' ') {
+			return WrongNameSymbols
+		}
+		if unicode.IsLetter(c) {
+			hasLetter = true
+		}
+	}
+	if !hasLetter {
+		return WrongNameHasNoLetter
+	}
+	return nil
 }
 
-func (user User) UserAuthIsValid() bool {
-	return user.UserLoginIsValid() && user.UserPasswordIsValid()
+func (user User) UserAuthIsValid() error {
+	if err := user.UserLoginIsValid(); err != nil {
+		return err
+	}
+	return user.UserPasswordIsValid()
 }
 
-func (user User) UserIsValid() bool {
-	return user.UserLoginIsValid() && user.UserPasswordIsValid() && user.UserNameIsValid()
+func (user User) UserIsValid() error {
+	if err := user.UserLoginIsValid(); err != nil {
+		return err
+	}
+	if err := user.UserPasswordIsValid(); err != nil {
+		return err
+	}
+	return user.UserNameIsValid()
 }
 
 type LoginUser struct {
@@ -103,8 +141,26 @@ type Donate struct {
 	MoneyCount float32   `json:"money_count"`
 }
 
-func (becameCreatorInfo *BecameCreatorInfo) IsValid() bool {
-	return (len(becameCreatorInfo.Name) > 0 && len(becameCreatorInfo.Name) < 40) && (len(becameCreatorInfo.Description) > 0 && len(becameCreatorInfo.Description) < 500)
+func (becameCreatorInfo *BecameCreatorInfo) IsValid() error {
+	if len(becameCreatorInfo.Name) == 0 || len([]rune(becameCreatorInfo.Name)) > creatorNameMaxLength {
+		return WrongCreatorNameLength
+	}
+	if len([]rune(becameCreatorInfo.Description)) > creatorDescriptionMaxLength {
+		return WrongCreatorDescriptionLength
+	}
+	hasLetter := false
+	for _, c := range becameCreatorInfo.Name {
+		if !unicode.IsLetter(c) && !(c >= 32 && c <= 126) {
+			return WrongCreatorNameSymbols
+		}
+		if unicode.IsLetter(c) {
+			hasLetter = true
+		}
+	}
+	if !hasLetter {
+		return WrongCreatorNameHasNoLetter
+	}
+	return nil
 }
 
 func (user *User) Sanitize() {

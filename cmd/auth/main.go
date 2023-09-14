@@ -42,8 +42,8 @@ func run() error {
 	}(logger)
 
 	zapSugar := logger.Sugar()
-
-	str, err := utils.GetConnectionString()
+	utils.Init()
+	str, err := utils.GetConnectionStringAuth()
 	if err != nil {
 		return err
 	}

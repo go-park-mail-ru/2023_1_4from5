@@ -25,10 +25,16 @@ func NewAuthHandler(cl generatedAuth.AuthServiceClient, logger *zap.SugaredLogge
 func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 	user := models.LoginUser{}
 	err := easyjson.UnmarshalFromReader(r.Body, &user)
-	if err != nil || !(models.User{Login: user.Login, PasswordHash: user.PasswordHash}).UserAuthIsValid() {
+	if err != nil {
 		utils.Response(w, http.StatusBadRequest, nil)
 		return
 	}
+
+	if err = (models.User{Login: user.Login, PasswordHash: user.PasswordHash}).UserAuthIsValid(); err != nil {
+		utils.Response(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
 	token, err := h.client.SignIn(r.Context(), &generatedAuth.LoginUser{
 		Login:        user.Login,
 		PasswordHash: user.PasswordHash,
@@ -36,6 +42,10 @@ func (h *AuthHandler) SignIn(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.Error(err)
 		utils.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	if token.Error == models.NotFound.Error() {
+		utils.Response(w, http.StatusUnauthorized, "no user with such login")
 		return
 	}
 	if len(token.Error) != 0 {
@@ -69,8 +79,13 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	err := easyjson.UnmarshalFromReader(r.Body, &user)
-	if err != nil || !user.UserIsValid() {
+	if err != nil {
 		utils.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	if err = user.UserIsValid(); err != nil {
+		utils.Response(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -81,7 +96,7 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 		ProfilePhoto: user.ProfilePhoto.String(),
 		PasswordHash: user.PasswordHash,
 		Registration: user.Registration.String(),
-		UserVersion:  int64(user.UserVersion),
+		UserVersion:  user.UserVersion,
 	})
 
 	if err != nil {
@@ -92,7 +107,7 @@ func (h *AuthHandler) SignUp(w http.ResponseWriter, r *http.Request) {
 
 	if len(token.Cookie) == 0 {
 		if token.Error == models.WrongData.Error() {
-			utils.Response(w, http.StatusConflict, nil)
+			utils.Response(w, http.StatusConflict, "user with such login already exists")
 			return
 		}
 		utils.Response(w, http.StatusInternalServerError, nil)

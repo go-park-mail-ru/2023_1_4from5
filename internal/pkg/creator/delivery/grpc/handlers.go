@@ -523,6 +523,20 @@ func (h GrpcCreatorHandler) GetPost(ctx context.Context, in *generatedCreator.Po
 		return &generatedCreator.PostWithComments{Error: err.Error()}, nil
 	}
 
+	var subs []*generatedCommon.Subscription
+
+	for _, v := range post.Post.Subscriptions {
+		subs = append(subs, &generatedCommon.Subscription{
+			Id:           v.Id.String(),
+			Creator:      v.Creator.String(),
+			CreatorName:  v.CreatorName,
+			CreatorPhoto: v.CreatorPhoto.String(),
+			MonthCost:    v.MonthCost,
+			Title:        v.Title,
+			Description:  v.Description,
+		})
+	}
+
 	var attachs []*generatedCreator.Attachment
 
 	for _, v := range post.Post.Attachments {
@@ -558,6 +572,7 @@ func (h GrpcCreatorHandler) GetPost(ctx context.Context, in *generatedCreator.Po
 		IsAvailable:     post.Post.IsAvailable,
 		PostAttachments: attachs,
 		IsLiked:         post.Post.IsLiked,
+		Subscriptions:   subs,
 	}, Comments: comments}, nil
 }
 

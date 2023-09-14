@@ -1,9 +1,7 @@
 drop table if exists "like_comment" CASCADE;
 drop table if exists "like_post" CASCADE;
-drop table if exists "donation" CASCADE;
 drop table if exists "user_subscription" CASCADE;
 drop table if exists "user_payments" CASCADE;
-drop table if exists "creator_tag" CASCADE;
 drop table if exists "post_subscription" CASCADE;
 drop table if exists "attachment" CASCADE;
 drop table if exists "comment" CASCADE;
@@ -11,32 +9,32 @@ drop table if exists "creator" CASCADE;
 drop table if exists "user" CASCADE;
 drop table if exists "post" CASCADE;
 drop table if exists "subscription" CASCADE;
-drop table if exists "tag" CASCADE;
 drop table if exists "follow" CASCADE;
 drop table if exists "statistics" CASCADE;
 
-
-
+--Таблица соответствует 3НФ
 create table "user"
 (
     user_id           uuid        not null
         constraint user_pk
-            primary key,
+            primary key, -- уникальный идентификатор пользователя
     user_version      integer     not null default 0,
     login             varchar(40) not null
         constraint login_pk
-            unique,
+            unique, --логин пользователя должен быть уникальным
     display_name      varchar(40) not null,
     profile_photo     uuid,
     password_hash     varchar(64) not null,
     registration_date timestamp            default now() not null
 );
-
+--Таблица подвергалась денормализации
+--Аттрибут posts_count был добавлен для того, чтобы избежать запросов на SELECT COUNT(*) FROM posts WHERE...
+--Аналогично аттрибуты followers_count и money_got
 create table creator
 (
     creator_id      uuid              not null
         constraint creator_pk
-            primary key,
+            primary key, -- уникальный идентификатор автора, созданного пользователем
     user_id         uuid              not null
         constraint creator_user_user_id_fk
             references "user" (user_id),
@@ -48,17 +46,15 @@ create table creator
     posts_count     integer default 0 not null,
     aim             varchar(100),
     money_needed    money   default 0,
-    money_got       money   default 0
+    money_got       money   default 0,
+    balance         money   default 0
 );
-
-ALTER TABLE creator
-    ADD COLUMN balance decimal(10, 2) default 0;
-
+--Таблица соответствует 3НФ
 create table subscription
 (
     subscription_id uuid        not null
         constraint subscription_pk
-            primary key,
+            primary key, -- уникальный идентификатор подписки, созданной автором
     creator_id      uuid        not null
         constraint subscription_creator_creator_id_fk
             references creator (creator_id),
@@ -67,31 +63,36 @@ create table subscription
     description     varchar(200),
     is_available    bool default true
 );
-
+--Вспомогательная таблица для реализации связи многие ко многим
+--У пользователя может быть много подписок, один и тот же тип подписки может оформить множество пользователей
+--Таблица соответствует 3НФ ((user_id, subscription_id) - PK)
 create table user_subscription
 (
     user_id         uuid      not null
         constraint user_subscription_user_user_id_fk references "user" (user_id),
     subscription_id uuid      not null
         constraint user_subscription_subscription_subscription_id_fk references subscription (subscription_id),
-    expire_date     timestamp not null default now() + INTERVAL '1 month'
-
+    expire_date     timestamp not null default now() + INTERVAL '1 month',
+    primary key (user_id, subscription_id) -- уникальный идентификатор подписки, приобретённой пользователем, пара ключей (user_id+subscription_id)
 );
 
+--Таблица соответствует 3НФ
 create table user_payments
 (
+    payment_info      uuid primary key, --уникальный идентификатор оплаты
     user_id           uuid      not null
-        constraint user_payments_user_user_id_fk references "user" (user_id),
+        constraint user_payments_user_user_id_fkuser_payments_user_user_id_fk references "user" (user_id),
     subscription_id   uuid      not null
         constraint user_payments_subscription_subscription_id_fk references subscription (subscription_id),
     payment_timestamp timestamp not null default now(),
-    payment_info      text, ---что-то, номер кошелька, что угодно
     money             money     not null
 );
-
+--Таблица подвергалась денормализации
+--Аттрибут likes_count был добавлен для того, чтобы избежать запросов на SELECT COUNT(*) FROM like_post WHERE...
+--Аналогично аттрибут comments_count
 create table post
 (
-    post_id        uuid not null
+    post_id        uuid not null --уникальный идентификатор поста
         constraint post_pk
             primary key,
     creator_id     uuid not null
@@ -104,17 +105,23 @@ create table post
     comments_count int  not null default 0
 );
 
+--Вспомогательная таблица для реализации связи многие ко многим
+--У поста может быть много подписок, одна и та же подписка может быть на нескольких постах
+--Таблица соответствует 3НФ
 create table post_subscription
 (
     post_id         uuid not null
         constraint post_subscription_user_user_id_fk references post (post_id),
     subscription_id uuid not null
-        constraint post_subscription_subscription_subscription_id_fk references subscription (subscription_id)
+        constraint post_subscription_subscription_subscription_id_fk references subscription (subscription_id),
+    primary key (post_id, subscription_id) -- уникальный идентификатор подписки, пара ключей (post_id+subscription_id)
 );
 
+--Таблица подвергалась денормализации
+--Аттрибут likes_count был добавлен для того, чтобы избежать запросов на SELECT COUNT(*) FROM like_comment WHERE...
 create table comment
 (
-    comment_id    uuid         not null
+    comment_id    uuid         not null --уникальный идентификатор комментария
         constraint comment_pk
             primary key,
     post_id       uuid         not null
@@ -126,45 +133,22 @@ create table comment
     comment_text  varchar(400) not null,
     creation_date date                  default now() not null,
     likes_count   int          not null default 0
-
 );
 
+--Таблица соответствует 3НФ
 create table attachment
 (
-    attachment_id   uuid not null
-        constraint attachment_pk
+    attachment_id   uuid not null --уникальный идентификатор картинки, он же и является названием,
+        constraint attachment_pk  --с которым она хранится на сервере
             primary key,
     post_id         uuid not null
         constraint attachment_post_post_id_fk references "post" (post_id),
     attachment_type varchar(40)
 );
 
-create table tag
-(
-    tag_id uuid        not null
-        constraint tag_pk
-            primary key,
-    title  varchar(40) not null
-);
 
-create table creator_tag
-(
-    creator_id uuid not null
-        constraint creator_tag_creator_creator_id_fk references creator (creator_id),
-    tag_id     uuid not null
-        constraint creator_tag_tag_tag_id_fk references tag (tag_id)
-);
-
-create table like_post
-(
-    post_id uuid not null
-        constraint like_post_post_post_id_fk
-            references post (post_id),
-    user_id uuid not null
-        constraint like_post_user_user_id_fk
-            references "user" (user_id)
-);
-
+--Вспомогательная таблица для реализации связи многие ко многим
+--Комментарий может лайкать множество пользователей, один пользователь может лайкать множество комментариев
 create table like_comment
 (
     comment_id uuid not null
@@ -174,18 +158,22 @@ create table like_comment
         constraint like_comment_user_user_id_fk
             references "user" (user_id)
 );
-create table donation
+
+--Вспомогательная таблица для реализации связи многие ко многим
+--У поста может быть много лайков, один пользователь может лайкать разные посты
+create table like_post
 (
-    user_id       uuid      not null
-        constraint donation_user_user_id_fk
+    post_id uuid not null
+        constraint like_post_post_post_id_fk
+            references post (post_id),
+    user_id uuid not null
+        constraint like_post_user_user_id_fk
             references "user" (user_id),
-    creator_id    uuid      not null
-        constraint donation_creator_creator_id_fk
-            references "creator" (creator_id),
-    money_count   money     not null,
-    donation_date timestamp not null default now()
+    primary key (post_id, user_id) -- уникальный идентификатор лайка, пара ключей (user_id+post_id)
 );
 
+--Вспомогательная таблица для реализации связи многие ко многим
+--Пользователь может отслеживать несколько авторов, автора могут остлеживать множество пользователей
 create table follow
 (
     user_id    uuid not null
@@ -193,8 +181,30 @@ create table follow
             references "user" (user_id),
     creator_id uuid not null
         constraint follow_creator_creator_id_fk
-            references "creator" (creator_id)
+            references "creator" (creator_id),
+    primary key (user_id, creator_id) -- уникальный идентификатор отслеживания, пара ключей (user_id+creator_id)
 );
+
+--Таблица для хранения статистики авторов, одна строка соответствует записи
+--о статистике автора за конкретный месяц,  позволяет избежать множества запросов вида SELECT COUNT(*) и SELECT SUM()
+CREATE TABLE "statistics"
+(
+    id                       uuid not null default gen_random_uuid(), --
+    creator_id               uuid not null,
+    posts_per_month          int           default 0,
+    subscriptions_bought     int           default 0,
+    donations_count          int           default 0,
+    money_from_donations     money         default 0,
+    money_from_subscriptions money         default 0,
+    new_followers            int           default 0,
+    likes_count              int           default 0,
+    comments_count           int           default 0,
+    month                    timestamp     default now()
+);
+
+--бакет со статистикой автора за определенный месяц должен быть один
+alter table "statistics"
+    add constraint unique_bucket unique (creator_id, month);
 
 CREATE TEXT SEARCH DICTIONARY russian_ispell (
     TEMPLATE = ispell,
@@ -209,9 +219,17 @@ ALTER TEXT SEARCH CONFIGURATION ru
     ALTER MAPPING FOR hword, hword_part, word
         WITH russian_ispell, russian_stem;
 
+--Индекс по LOWER(name) для поиска по названию блога
 CREATE INDEX idx_creator_name ON creator (LOWER(name) varchar_pattern_ops);
+--Индекс по LOWER(description) для поиска по описанию блога
 CREATE INDEX idx_creator_description ON creator (LOWER(description) varchar_pattern_ops);
-
+--Индексы на foreign keys для JOIN'ов и SELECT ... WHERE ...
+CREATE INDEX IF NOT EXISTS idx_subscription_subscription_id ON subscription USING hash(creator_id);
+CREATE INDEX IF NOT EXISTS idx_creator_creator_id ON creator USING hash(creator_id);
+CREATE INDEX IF NOT EXISTS idx_user_user_id ON "user" USING hash(user_id);
+CREATE INDEX IF NOT EXISTS idx_post_post_id ON post USING hash(post_id);
+CREATE INDEX IF NOT EXISTS idx_post_creator_id ON post USING hash(creator_id);
+------------------------------------------------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION make_tsvector(name TEXT, priority "char")
     RETURNS tsvector AS
 $$
@@ -229,32 +247,16 @@ BEGIN
 END
 $$ LANGUAGE 'plpgsql' IMMUTABLE;
 
---Statistics
-CREATE TABLE "statistics"
-(
-    id                       uuid not null default gen_random_uuid(),
-    creator_id               uuid not null,
-    posts_per_month          int           default 0,
-    subscriptions_bought     int           default 0,
-    donations_count          int           default 0,
-    money_from_donations     money         default 0,
-    money_from_subscriptions money         default 0,
-    new_followers            int           default 0,
-    likes_count              int           default 0,
-    comments_count           int           default 0,
-    month                    timestamp     default now()
-);
-
 CREATE OR REPLACE FUNCTION check_if_bucket_exists(creator uuid, month_val timestamp) RETURNS boolean AS
 $$
 BEGIN
-    RETURN (SELECT EXISTS(SELECT 1 FROM "statistics" WHERE creator_id = creator AND date_trunc('month', month) = month_val));
+    RETURN (SELECT EXISTS(SELECT 1
+                          FROM "statistics"
+                          WHERE creator_id = creator
+                            AND date_trunc('month', month) = month_val));
 END
 $$ LANGUAGE 'plpgsql' IMMUTABLE;
 
-
-alter table "statistics"
-    add constraint unique_bucket unique (creator_id, month);
 --likes
 CREATE OR REPLACE FUNCTION update_likes_count_statistics() RETURNS TRIGGER AS
 $likes_count_statistics$
@@ -470,3 +472,19 @@ CREATE TRIGGER update_creator_balance
     ON user_payments
     FOR EACH ROW
 EXECUTE PROCEDURE update_balance();
+
+CREATE OR REPLACE FUNCTION update_balance2() RETURNS TRIGGER AS
+$update_balance$
+BEGIN
+    UPDATE creator
+    SET balance = balance + NEW.money_count
+    WHERE creator_id = new.creator_id;
+    RETURN NEW;
+END;
+$update_balance$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_creator_balance2
+    AFTER INSERT
+    ON donation
+    FOR EACH ROW
+EXECUTE PROCEDURE update_balance2();
