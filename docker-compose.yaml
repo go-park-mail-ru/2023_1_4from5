@@ -103,7 +103,7 @@ services:
     image: prom/prometheus:latest
     volumes:
       - type: bind
-        source: /home/ubuntu/2023_1_4from5/prometheus.yml
+        source: /home/ubuntu/backend/2023_1_4from5/prometheus.yml
         target: /etc/prometheus/prometheus.yml
       - type: bind
         source: /home/ubuntu/prometheus-data
