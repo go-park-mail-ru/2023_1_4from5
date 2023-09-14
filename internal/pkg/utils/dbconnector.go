@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func init() {
+func Init() {
 	_ = godotenv.Load(".env")
 }
 
