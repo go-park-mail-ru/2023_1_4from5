@@ -49,12 +49,12 @@ func run() error {
 	}(logger)
 
 	zapSugar := logger.Sugar()
-
+	utils.Init()
 	str, err := utils.GetConnectionString()
 	if err != nil {
 		return err
 	}
-	utils.Init()
+
 	db, err := sql.Open("postgres", str)
 	if err != nil {
 		return err
