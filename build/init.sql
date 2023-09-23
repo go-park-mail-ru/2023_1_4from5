@@ -3,7 +3,6 @@ drop table if exists "like_post" CASCADE;
 drop table if exists "donation" CASCADE;
 drop table if exists "user_subscription" CASCADE;
 drop table if exists "user_payments" CASCADE;
-drop table if exists "creator_tag" CASCADE;
 drop table if exists "post_subscription" CASCADE;
 drop table if exists "attachment" CASCADE;
 drop table if exists "comment" CASCADE;
@@ -11,7 +10,6 @@ drop table if exists "creator" CASCADE;
 drop table if exists "user" CASCADE;
 drop table if exists "post" CASCADE;
 drop table if exists "subscription" CASCADE;
-drop table if exists "tag" CASCADE;
 drop table if exists "follow" CASCADE;
 drop table if exists "statistics" CASCADE;
 
@@ -47,8 +45,8 @@ create table creator
     description     varchar(500),
     posts_count     integer default 0 not null,
     aim             varchar(100),
-    money_needed    money   default 0,
-    money_got       money   default 0
+    money_needed    float32   default 0,
+    money_got       float32   default 0
 );
 
 ALTER TABLE creator
@@ -62,7 +60,7 @@ create table subscription
     creator_id      uuid        not null
         constraint subscription_creator_creator_id_fk
             references creator (creator_id),
-    month_cost      money       not null,
+    month_cost      float32       not null,
     title           varchar(40) not null,
     description     varchar(200),
     is_available    bool default true
@@ -86,7 +84,7 @@ create table user_payments
         constraint user_payments_subscription_subscription_id_fk references subscription (subscription_id),
     payment_timestamp timestamp not null default now(),
     payment_info      text, ---что-то, номер кошелька, что угодно
-    money             money     not null
+    money             float32     not null
 );
 
 create table post
@@ -139,22 +137,6 @@ create table attachment
     attachment_type varchar(40)
 );
 
-create table tag
-(
-    tag_id uuid        not null
-        constraint tag_pk
-            primary key,
-    title  varchar(40) not null
-);
-
-create table creator_tag
-(
-    creator_id uuid not null
-        constraint creator_tag_creator_creator_id_fk references creator (creator_id),
-    tag_id     uuid not null
-        constraint creator_tag_tag_tag_id_fk references tag (tag_id)
-);
-
 create table like_post
 (
     post_id uuid not null
@@ -182,7 +164,7 @@ create table donation
     creator_id    uuid      not null
         constraint donation_creator_creator_id_fk
             references "creator" (creator_id),
-    money_count   money     not null,
+    money_count   float32     not null,
     donation_date timestamp not null default now()
 );
 
@@ -237,8 +219,8 @@ CREATE TABLE "statistics"
     posts_per_month          int           default 0,
     subscriptions_bought     int           default 0,
     donations_count          int           default 0,
-    money_from_donations     money         default 0,
-    money_from_subscriptions money         default 0,
+    money_from_donations     float32         default 0,
+    money_from_subscriptions float32         default 0,
     new_followers            int           default 0,
     likes_count              int           default 0,
     comments_count           int           default 0,
