@@ -128,6 +128,7 @@ func (r *CreatorRepo) CreatorInfo(ctx context.Context, creatorPage *models.Creat
 	if err := row.Scan(&creatorPage.CreatorInfo.UserId, &creatorPage.CreatorInfo.Name, &creatorPage.CreatorInfo.CoverPhoto,
 		&creatorPage.CreatorInfo.FollowersCount, &creatorPage.CreatorInfo.Description, &creatorPage.CreatorInfo.PostsCount,
 		&tmpAim, &creatorPage.Aim.MoneyGot, &creatorPage.Aim.MoneyNeeded, &creatorPage.CreatorInfo.ProfilePhoto); err != nil && !errors.Is(sql.ErrNoRows, err) {
+		r.logger.Error(err)
 		return models.InternalError
 	} else if errors.Is(sql.ErrNoRows, err) {
 		return models.NotFound
